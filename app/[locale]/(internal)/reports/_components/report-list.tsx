@@ -435,6 +435,29 @@ export function ReportList({
                 >
                   Riwayat Laporan
                 </h2>
+              </div>
+              <div className="flex items-center justify-between gap-2 border-b border-[var(--rd-border)] pb-3">
+                <div
+                  role="group"
+                  aria-label="Filter status laporan"
+                  className="flex gap-1 overflow-x-auto sm:gap-2"
+                >
+                  {filters.map(([value, label]) => (
+                    <button
+                      type="button"
+                      key={value}
+                      aria-pressed={filter === value}
+                      onClick={() => onFilter(value)}
+                      className={`${button} min-h-9 shrink-0 rounded-xl px-2 py-1 text-[11px] sm:px-4 sm:text-sm ${
+                        filter === value
+                          ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
+                          : "bg-transparent text-[var(--rd-muted)] hover:bg-[var(--rd-hover)]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
                 <button
                   type="button"
                   onClick={() => setNewest((value) => !value)}
@@ -448,27 +471,6 @@ export function ReportList({
                 >
                   <SortIcon size={21} aria-hidden="true" />
                 </button>
-              </div>
-              <div
-                role="group"
-                aria-label="Filter status laporan"
-                className="flex gap-1 overflow-x-auto border-b border-[var(--rd-border)] pb-3 sm:gap-2"
-              >
-                {filters.map(([value, label]) => (
-                  <button
-                    type="button"
-                    key={value}
-                    aria-pressed={filter === value}
-                    onClick={() => onFilter(value)}
-                    className={`${button} min-h-9 shrink-0 rounded-xl px-2 py-1 text-[11px] sm:px-4 sm:text-sm ${
-                      filter === value
-                        ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
-                        : "bg-transparent text-[var(--rd-muted)] hover:bg-[var(--rd-hover)]"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
               </div>
               <p role="status" className="my-3 text-xs text-[var(--rd-muted)]">
                 {loading
