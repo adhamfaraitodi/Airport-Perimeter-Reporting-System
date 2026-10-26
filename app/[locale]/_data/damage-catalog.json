@@ -1,0 +1,54 @@
+[
+  {
+    "id": "pondasi",
+    "name": "Pondasi",
+    "damages": [
+      { "id": "bercelah", "name": "Bercelah" },
+      { "id": "lainnya", "name": "Lainnya" },
+      { "id": "miring", "name": "Miring" },
+      { "id": "runtuh", "name": "Runtuh" }
+    ]
+  },
+  {
+    "id": "tiang-pagar",
+    "name": "Tiang Pagar",
+    "damages": [
+      { "id": "berkarat-berat", "name": "Berkarat berat", "exclusiveGroup": "korosi" },
+      { "id": "berkarat-sedang", "name": "Berkarat sedang", "exclusiveGroup": "korosi" },
+      { "id": "lainnya", "name": "Lainnya" },
+      { "id": "miring", "name": "Miring" },
+      { "id": "penyok", "name": "Penyok" }
+    ]
+  },
+  {
+    "id": "pagar-harmonika-brc",
+    "name": "Pagar Harmonika / BRC",
+    "damages": [
+      { "id": "berkarat-berat", "name": "Berkarat berat", "exclusiveGroup": "korosi" },
+      { "id": "berkarat-sedang", "name": "Berkarat sedang", "exclusiveGroup": "korosi" },
+      { "id": "berlubang", "name": "Berlubang" },
+      { "id": "klem-terlepas", "name": "Klem terlepas" },
+      { "id": "lainnya", "name": "Lainnya" }
+    ]
+  },
+  {
+    "id": "kawat-duri-razor",
+    "name": "Kawat Duri / Razor",
+    "damages": [
+      { "id": "berkarat-berat", "name": "Berkarat berat", "exclusiveGroup": "korosi" },
+      { "id": "berkarat-sedang", "name": "Berkarat sedang", "exclusiveGroup": "korosi" },
+      { "id": "lainnya", "name": "Lainnya" },
+      { "id": "terlepas", "name": "Terlepas" },
+      { "id": "tumpul", "name": "Tumpul" }
+    ]
+  },
+  {
+    "id": "tiang-penyangga-kawat-duri",
+    "name": "Tiang Penyangga Kawat Duri",
+    "damages": [
+      { "id": "lainnya", "name": "Lainnya" },
+      { "id": "patah", "name": "Patah" },
+      { "id": "terlepas", "name": "Terlepas" }
+    ]
+  }
+]

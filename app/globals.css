@@ -1,26 +1,128 @@
+@layer theme, base, legacy, components, utilities;
 @import "tailwindcss";
+@import "./legacy-styles.css" layer(legacy);
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --font-sans: "Carlito", sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+:root,
+body,
+h1,
+h2,
+h3,
+.brand,
+.brand-airport,
+.stats strong,
+button,
+input,
+textarea,
+select,
+.leaflet-container {
+  font-family: "Carlito", sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.leaflet-control-attribution {
+  display: none !important;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Login Page Tokens */
+.login-page {
+  --login-primary: #14848d;
+  --login-primary-hover: #0f6e76;
+  --login-on-primary: #fff;
+  --login-link: #0e7c86;
+  --login-panel: #eaf6f6;
+  --login-brand-bg: var(--login-panel);
+  --login-panel-text: #2b2f33;
+  --login-text: #2b2f33;
+  --login-muted: #6b7280;
+  --login-bg: #f7f9fa;
+  --login-surface: #fff;
+  --login-border: #e5e9eb;
+  --login-error: #c4402f;
+  --login-error-bg: rgba(238, 105, 86, 0.12);
+  --login-theme-hover: color-mix(in srgb, var(--login-panel-text) 7%, transparent);
+  --login-stripe-coral: #ee6956;
+  --login-stripe-amber: #fbae42;
+  --login-stripe-lime: #9fbd3b;
+  --login-stripe-teal: #4ec4c6;
+}
+
+.login-page[data-theme="dark"] {
+  --login-primary-hover: #1a9aa5;
+  --login-link: #4ec4c6;
+  --login-panel: #2b2f33;
+  --login-brand-bg: var(--login-surface);
+  --login-panel-text: #fff;
+  --login-text: #e8ecee;
+  --login-muted: #9aa3ab;
+  --login-bg: #121618;
+  --login-surface: #1b2124;
+  --login-border: #2c3438;
+  --login-error: #f58a7b;
+}
+
+.login-page .login-help::backdrop {
+  background: #07121499;
+  backdrop-filter: blur(4px);
+}
+
+/* Reporter Dashboard Tokens */
+.reporter-dashboard {
+  --rd-primary: #14848d;
+  --rd-primary-hover: #0f6e76;
+  --rd-link: #0e7c86;
+  --rd-bg: #f7f9fa;
+  --rd-panel: #eaf6f6;
+  --rd-surface: #fff;
+  --rd-text: #2b2f33;
+  --rd-muted: #6b7280;
+  --rd-border: #e5e9eb;
+  --rd-active: rgba(20, 132, 141, 0.15);
+  --rd-hover: rgba(20, 132, 141, 0.05);
+  --rd-teal: #0e7c86;
+  --rd-coral: #c4402f;
+  --rd-brown: #8b5e3c;
+  --rd-lime: #617a16;
+  --rd-gray: #6b7280;
+  --rd-tint-opacity: 12%;
+  color-scheme: light;
+}
+
+.reporter-dashboard[data-theme="dark"] {
+  --rd-primary-hover: #1a9aa5;
+  --rd-link: #4ec4c6;
+  --rd-bg: #121618;
+  --rd-panel: #1b2124;
+  --rd-surface: #1b2124;
+  --rd-text: #e8ecee;
+  --rd-muted: #9aa3ab;
+  --rd-border: #2c3438;
+  --rd-active: rgba(78, 196, 198, 0.15);
+  --rd-hover: rgba(78, 196, 198, 0.06);
+  --rd-teal: #4ec4c6;
+  --rd-coral: #f58a7b;
+  --rd-brown: #d4a373;
+  --rd-lime: #b7d65b;
+  --rd-gray: #9aa3ab;
+  --rd-tint-opacity: 16%;
+  color-scheme: dark;
+}
+
+.reporter-dashboard .rd-status {
+  --rd-status: var(--rd-teal);
+  --rd-tint: color-mix(in srgb, var(--rd-status) var(--rd-tint-opacity), transparent);
+}
+.reporter-dashboard [data-status="OPEN"] {
+  --rd-status: var(--rd-coral);
+}
+.reporter-dashboard [data-status="IN_PROGRESS"] {
+  --rd-status: var(--rd-brown);
+}
+.reporter-dashboard [data-status="RESOLVED"] {
+  --rd-status: var(--rd-lime);
+}
+.reporter-dashboard [data-status="CLOSED"] {
+  --rd-status: var(--rd-gray);
 }
