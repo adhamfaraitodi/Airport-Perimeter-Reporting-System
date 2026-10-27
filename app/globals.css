@@ -56,7 +56,8 @@
   }
 }
 
-.leaflet-control-attribution {
+.leaflet-control-attribution,
+.leaflet-control-rotate {
   display: none !important;
 }
 

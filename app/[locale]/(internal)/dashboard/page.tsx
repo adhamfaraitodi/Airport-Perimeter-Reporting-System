@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  CalendarArrowDown,
+  CalendarArrowUp,
   ClipboardCheck,
   ClipboardClock,
   ClipboardPen,
@@ -51,6 +53,8 @@ const statusIcons = {
 
 const inlineAlertButton = `ml-2.5 rounded-md bg-[var(--rd-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--rd-coral)] disabled:cursor-not-allowed disabled:opacity-55 ${focusRing}`;
 
+const button = `transition-colors ${focusRing}`;
+
 export default function DashboardPage() {
   const { theme, dark, toggleTheme } = useTheme();
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -65,6 +69,7 @@ export default function DashboardPage() {
   const [locked, setLocked] = useState(false);
   const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
+  const [newest, setNewest] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -132,6 +137,8 @@ export default function DashboardPage() {
   const active = reports.filter(
     (report) => !report.deletedAt && report.status !== "RESOLVED"
   ).length;
+
+  const SortIcon = newest ? CalendarArrowDown : CalendarArrowUp;
 
   return (
     <div
@@ -204,8 +211,7 @@ export default function DashboardPage() {
             </button>
           </div>
         )}
-        <div className="flex h-[calc(100dvh-184px)] min-h-[550px] flex-col md:grid md:h-[calc(100dvh-280px)] md:grid-cols-[minmax(0,1fr)_360px] md:gap-3 min-[1100px]:grid-cols-[minmax(0,1fr)_410px] min-[1100px]:gap-5">
-          <PerimeterMap
+        <div className="flex h-[calc(100dvh-184px)] min-h-[550px] flex-col md:grid md:h-[calc(100dvh-280px)] md:grid-cols-[minmax(0,1fr)_400px] md:gap-3 min-[1100px]:grid-cols-[minmax(0,1fr)_580px] min-[1100px]:gap-5">          <PerimeterMap
             reports={visible}
             selectedId={selectedId}
             onSelect={(id) => {
@@ -235,10 +241,8 @@ export default function DashboardPage() {
               />
             ) : (
               <>
-                <div className="flex items-center justify-between px-[22px] pt-[17px] md:pt-[23px]">
-                  <h2
-                    className="m-0 text-base leading-normal font-normal sm:text-lg"
-                  >
+                <div className="flex items-center justify-between px-[28px] pt-[17px] md:pt-[23px]">
+                  <h2 className="m-0 text-base leading-normal font-normal sm:text-lg">
                     Riwayat Laporan
                   </h2>
                 </div>
@@ -257,38 +261,52 @@ export default function DashboardPage() {
                       className="min-w-0 flex-1 border-0 bg-transparent py-3 text-sm text-[var(--rd-text)] outline-none placeholder:text-[var(--rd-muted)]"
                     />
                   </label>
-                  <div
-                    role="group"
-                    aria-label="Filter status"
-                    className="mt-3 flex gap-px overflow-x-auto pb-[3px] md:mt-[18px] md:gap-[5px]"
-                  >
-                    {filters.map(([value, label]) => (
-                      <button
-                        type="button"
-                        key={value}
-                        aria-pressed={filter === value}
-                        onClick={() => setFilter(value)}
-                        className={`min-h-9 shrink-0 rounded-xl px-2.5 py-2 text-[10px] whitespace-nowrap transition-colors md:px-[13px] md:text-[11px] ${focusRing} ${
-                          filter === value
-                            ? "bg-[var(--rd-active)] font-bold text-[var(--rd-link)]"
-                            : "bg-transparent text-[var(--rd-muted)] hover:bg-[var(--rd-hover)]"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
+                  <div className="flex items-center justify-between gap-2 pt-2 border-[var(--rd-border)] pb-3">
+                    <div
+                      role="group"
+                      aria-label="Filter status laporan"
+                      className="flex gap-1 overflow-x-auto sm:gap-2"
+                    >
+                      {filters.map(([value, label]) => (
+                        <button
+                          type="button"
+                          key={value}
+                          aria-pressed={filter === value}
+                          onClick={() => setFilter(value)}
+                          className={`${button} min-h-9 shrink-0 rounded-xl px-2 py-1 text-[11px] sm:px-3 sm:text-sm ${                            filter === value
+                              ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
+                              : "bg-transparent text-[var(--rd-muted)] hover:bg-[var(--rd-hover)]"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setNewest((value) => !value)}
+                      aria-label={
+                        newest
+                          ? "Urutan terbaru dahulu. Ubah ke terlama dahulu"
+                          : "Urutan terlama dahulu. Ubah ke terbaru dahulu"
+                      }
+                      title={newest ? "Terbaru → terlama" : "Terlama → terbaru"}
+                      className={`${button} grid size-10 min-h-10 shrink-0 place-items-center rounded-lg bg-transparent p-0 text-[var(--rd-link)] hover:bg-[var(--rd-active)]`}
+                    >
+                      <SortIcon size={21} aria-hidden="true" />
+                    </button>
                   </div>
                 </div>
-                <div className="flex justify-between border-b border-solid border-[var(--rd-border)] px-[15px] py-3 text-[9px] text-[var(--rd-muted)] md:px-6 md:text-[10px]">
+                <div className="flex items-center justify-between border-b border-solid border-[var(--rd-border)] px-[15px] py-1.5 text-[9px] text-[var(--rd-muted)] md:px-6 md:text-[10px]">
                   <span>{visible.length} laporan ditemukan</span>
-                  <span>Terbaru lebih dahulu</span>
                 </div>
                 <div>
                   {[...visible]
                     .sort(
                       (a, b) =>
-                        new Date(b.createdAt).getTime() -
-                        new Date(a.createdAt).getTime()
+                        (new Date(b.createdAt).getTime() -
+                          new Date(a.createdAt).getTime()) *
+                        (newest ? 1 : -1)
                     )
                     .map((report) => (
                       <OperatorReportCard
