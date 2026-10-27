@@ -1,16 +1,30 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import {
+  ClipboardCheck,
+  ClipboardClock,
+  ClipboardPen,
+  ClipboardX,
+  RefreshCw,
+  Search,
+} from "lucide-react";
 import {
   api,
-  isMock,
   setMockRole,
   type ReportRecord,
   type SessionUser,
-  type UserRole,
 } from "../../_lib/client-api";
 import { dateText, message } from "../../_lib/draft-store";
+import { useTheme } from "../../_lib/use-theme";
+import {
+  alertBox,
+  btnSecondary,
+  eyebrow,
+  focusRing,
+} from "../../_lib/ui-classes";
+import { AppHeader } from "../../_components/app-header";
+import { StartupScreen } from "../../_components/startup-screen";
 import { toast } from "@/components/ui/sonner";
 import { PerimeterMap } from "./_components/perimeter-map";
 import {
@@ -18,12 +32,27 @@ import {
   ReportStatusBadge,
 } from "./_components/report-detail-sheet";
 import { UpdateStatusDialog } from "./_components/update-status-dialog";
+import { DashboardFooter } from "./_components/dashboard-footer";
+
+const filters = [
+  ["ALL", "Semua"],
+  ["OPEN", "Baru"],
+  ["IN_PROGRESS", "Ditangani"],
+  ["RESOLVED", "Selesai"],
+  ["CLOSED", "Ditutup"],
+] as const;
+
+const statusIcons = {
+  OPEN: ClipboardClock,
+  IN_PROGRESS: ClipboardPen,
+  RESOLVED: ClipboardCheck,
+  CLOSED: ClipboardX,
+} as const;
+
+const inlineAlertButton = `ml-2.5 rounded-md bg-[var(--rd-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--rd-coral)] disabled:cursor-not-allowed disabled:opacity-55 ${focusRing}`;
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const params = useParams<{ locale?: string }>();
-  const locale = params?.locale || "id";
-
+  const { theme, dark, toggleTheme } = useTheme();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [reports, setReports] = useState<ReportRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +65,6 @@ export default function DashboardPage() {
   const [locked, setLocked] = useState(false);
   const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
-  const [notice, setNotice] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -57,22 +85,6 @@ export default function DashboardPage() {
   useEffect(() => {
     load();
   }, [load]);
-
-  useEffect(() => {
-    if (!notice) return;
-    const timer = setTimeout(() => setNotice(""), 6000);
-    return () => clearTimeout(timer);
-  }, [notice]);
-
-  async function switchRole(nextRole: UserRole) {
-    if (locked) return;
-    await setMockRole(nextRole);
-    if (nextRole === "REPORTER") {
-      router.push(`/${locale}/reports`);
-    } else {
-      await load();
-    }
-  }
 
   async function cancelSubmission(options?: { abandonedSubmissionId?: string }) {
     setAction(null);
@@ -100,22 +112,7 @@ export default function DashboardPage() {
   }
 
   if (!user) {
-    return (
-      <main className="startup">
-        <div className="brand-mark">P</div>
-        <h1>
-          Perimeter<span> / YIA</span>
-        </h1>
-        <p>Pelaporan kondisi perimeter bandara</p>
-        {loading ? (
-          <p role="status">Memeriksa sesi Anda…</p>
-        ) : (
-          <div className="alert" role="alert">
-            {error}
-          </div>
-        )}
-      </main>
-    );
+    return <StartupScreen loading={loading} error={error} />;
   }
 
   const visible = reports.filter(
@@ -137,75 +134,48 @@ export default function DashboardPage() {
   ).length;
 
   return (
-    <div className="app operator">
-      <header className="topbar">
-        <a
-          className="brand"
-          href="#"
-          onClick={(event) => {
-            event.preventDefault();
-            if (!locked) {
-              setSelectedId(null);
-              setAction(null);
-            }
-          }}
-        >
-          <span className="brand-mark">P</span>
-          <span>
-            perimeter
-            <span className="brand-airport">YIA · AIRPORT OPERATIONS</span>
-          </span>
-        </a>
-        <div className="account">
-          {isMock && (
-            <label className="mock-control">
-              MODE DEMO
-              <select
-                aria-label="Peran demo"
-                disabled={locked || loading}
-                value={user.role}
-                onChange={(e) => switchRole(e.target.value as UserRole)}
-              >
-                <option value="REPORTER">Pelapor</option>
-                <option value="OPERATOR">Operator</option>
-              </select>
-            </label>
-          )}
-          <span className="avatar">
-            {(user.name || user.email || "?").slice(0, 1).toUpperCase()}
-          </span>
-          <div className="account-name">
-            <strong>{user.name || user.email || "Pengguna"}</strong>
-            <span>Operator perimeter</span>
-          </div>
-        </div>
-      </header>
-      <main>
-        <div className="page-heading">
+    <div
+      className="operator-dashboard min-h-dvh bg-[var(--rd-bg)] text-[var(--rd-text)]"
+      data-theme={theme}
+    >
+      <AppHeader
+        user={user}
+        dark={dark}
+        onToggleTheme={toggleTheme}
+        roleLabel="Operator perimeter"
+        containerClassName="max-w-[1700px] min-[1100px]:px-[5%]"
+      />
+      <main className="mx-auto max-w-[1700px] px-3 pt-[18px] md:px-[3%] md:pt-9 min-[1100px]:px-[5%]">
+        <div className="mb-[18px] flex items-center justify-between gap-2 px-1.5 md:mb-[30px] md:gap-5 md:px-0">
           <div>
-            <span className="eyebrow">YOGYAKARTA INTERNATIONAL AIRPORT</span>
-            <h1>Pantau perimeter.</h1>
-            <p className="muted">
+            <span className={eyebrow}>YOGYAKARTA INTERNATIONAL AIRPORT</span>
+            <h1 className="m-0 mb-2 text-xl leading-tight font-normal sm:text-3xl">
+              Pantau perimeter.
+            </h1>
+            <p className="m-0 hidden text-sm text-[var(--rd-muted)] md:block">
               Satu peta untuk kondisi dan tindak lanjut di lapangan.
             </p>
           </div>
-          <div className="heading-actions">
-            <button
-              type="button"
-              className="secondary"
-              disabled={locked || !!action || loading}
-              onClick={load}
-            >
-              {loading ? "Memuat…" : "↻ Segarkan"}
-            </button>
-          </div>
+          <button
+            type="button"
+            className={`${btnSecondary} shrink-0 max-md:min-h-9 max-md:px-2.5 max-md:text-xs`}
+            disabled={locked || !!action || loading}
+            onClick={load}
+          >
+            <RefreshCw
+              size={16}
+              aria-hidden="true"
+              className={loading ? "animate-spin motion-reduce:animate-none" : ""}
+            />
+            {loading ? "Memuat…" : "Segarkan"}
+          </button>
         </div>
         {abandonedSubmissionId && (
-          <div className="alert global-error" role="status">
+          <div className={alertBox} role="status">
             <strong>
               Percobaan lokal ditinggalkan, bukan dibatalkan di server.
             </strong>
-            <p>
+            <p className="mt-2 mb-3">
               Transaksi: {abandonedSubmissionId}. Draft teks tetap tersimpan.
               Periksa daftar dan riwayat laporan sebelum mengirim kembali;
               transaksi sebelumnya mungkin sudah tersimpan. Tidak ada pengiriman
@@ -213,6 +183,7 @@ export default function DashboardPage() {
             </p>
             <button
               type="button"
+              className={`${inlineAlertButton} ml-0`}
               onClick={() => setAbandonedSubmissionId(null)}
             >
               Saya sudah memeriksa
@@ -220,10 +191,11 @@ export default function DashboardPage() {
           </div>
         )}
         {error && (
-          <div className="alert global-error" role="alert">
-            {error}{" "}
+          <div className={alertBox} role="alert">
+            {error}
             <button
               type="button"
+              className={inlineAlertButton}
               disabled={locked || !!action}
               onClick={load}
             >
@@ -231,7 +203,7 @@ export default function DashboardPage() {
             </button>
           </div>
         )}
-        <div className="operator-workspace">
+        <div className="flex h-[calc(100dvh-184px)] min-h-[550px] flex-col md:grid md:h-[calc(100dvh-280px)] md:grid-cols-[minmax(0,1fr)_360px] md:gap-3 min-[1100px]:grid-cols-[minmax(0,1fr)_410px] min-[1100px]:gap-5">
           <PerimeterMap
             reports={visible}
             selectedId={selectedId}
@@ -240,7 +212,7 @@ export default function DashboardPage() {
             }}
           />
           <section
-            className="content-panel"
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-b-xl border border-t-0 border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] shadow-[0_-4px_15px_rgba(36,74,53,0.06)] md:rounded-[14px] md:border-t md:shadow-none"
             aria-label="Panel laporan operator"
           >
             {action ? (
@@ -262,107 +234,82 @@ export default function DashboardPage() {
               />
             ) : (
               <>
-                <div className="panel-title">
-                  <h2>Laporan lapangan</h2>
-                  <span className="count-pill">{active} aktif</span>
+                <div className="flex items-center justify-between px-[22px] pt-[17px] md:pt-[23px]">
+                  <h2 className="m-0 text-[17px] font-semibold">
+                    Laporan lapangan
+                  </h2>
                 </div>
-                <div className="list-tools">
-                  <label className="search">
-                    <span>⌕</span>
+                <div className="px-[15px] pt-3 pb-1.5 md:px-5 md:pt-[18px]">
+                  <label className="flex items-center gap-2 rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-3 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--rd-link)]">
+                    <Search
+                      size={18}
+                      className="shrink-0 text-[var(--rd-muted)]"
+                      aria-hidden="true"
+                    />
                     <input
                       aria-label="Cari laporan"
                       placeholder="Cari lokasi atau isi laporan…"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
+                      className="min-w-0 flex-1 border-0 bg-transparent py-3 text-sm text-[var(--rd-text)] outline-none placeholder:text-[var(--rd-muted)]"
                     />
                   </label>
-                  <div className="filters" aria-label="Filter status">
-                    {[
-                      ["ALL", "Semua"],
-                      ["OPEN", "Baru"],
-                      ["IN_PROGRESS", "Ditangani"],
-                      ["RESOLVED", "Selesai"],
-                    ].map(([value, label]) => (
+                  <div
+                    role="group"
+                    aria-label="Filter status"
+                    className="mt-3 flex gap-px overflow-x-auto pb-[3px] md:mt-[18px] md:gap-[5px]"
+                  >
+                    {filters.map(([value, label]) => (
                       <button
                         type="button"
                         key={value}
-                        className={filter === value ? "active" : ""}
                         aria-pressed={filter === value}
                         onClick={() => setFilter(value)}
+                        className={`min-h-9 shrink-0 rounded-xl px-2.5 py-2 text-[10px] whitespace-nowrap transition-colors md:px-[13px] md:text-[11px] ${focusRing} ${
+                          filter === value
+                            ? "bg-[var(--rd-active)] font-bold text-[var(--rd-link)]"
+                            : "bg-transparent text-[var(--rd-muted)] hover:bg-[var(--rd-hover)]"
+                        }`}
                       >
                         {label}
                       </button>
                     ))}
                   </div>
                 </div>
-                <div className="list-caption">
-                  <span>{visible.length} laporan pada peta</span>
+                <div className="flex justify-between border-b border-solid border-[var(--rd-border)] px-[15px] py-3 text-[9px] text-[var(--rd-muted)] md:px-6 md:text-[10px]">
+                  <span>{visible.length} laporan ditemukan</span>
                   <span>Terbaru lebih dahulu</span>
                 </div>
-                <div className="report-list">
+                <div>
                   {[...visible]
                     .sort(
                       (a, b) =>
                         new Date(b.createdAt).getTime() -
                         new Date(a.createdAt).getTime()
                     )
-                    .map((report) => {
-                      const titleLabel = report.findings?.length
-                        ? report.findings.map((f) => f.partName).join(", ")
-                        : `Perimeter sisi ${report.side || "belum ditentukan"}`;
-                      return (
-                        <button
-                          type="button"
-                          className="report-card"
-                          key={report.id}
-                          onClick={() => setSelectedId(report.id)}
-                        >
-                          <div
-                            className={`report-symbol ${
-                              report.deletedAt ? "CLOSED" : report.status
-                            }`}
-                          >
-                            {report.deletedAt
-                              ? "–"
-                              : report.status === "RESOLVED"
-                                ? "✓"
-                                : "!"}
-                          </div>
-                          <div className="report-card-body">
-                            <div className="card-top">
-                              <span className="reference">
-                                #{String(report.id).slice(-6).toUpperCase()}
-                              </span>
-                              <ReportStatusBadge report={report} />
-                            </div>
-                            <h3>{titleLabel}</h3>
-                            <p>{report.narrative}</p>
-                            <div className="card-meta">
-                              <span>{dateText(report.createdAt)}</span>
-                              <span>
-                                {report.images?.length || 0} foto <b>→</b>
-                              </span>
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
+                    .map((report) => (
+                      <OperatorReportCard
+                        key={report.id}
+                        report={report}
+                        onSelect={setSelectedId}
+                      />
+                    ))}
                 </div>
                 {!visible.length && (
-                  <div className="empty">
+                  <div className="px-6 py-[50px] text-center text-[var(--rd-muted)]">
                     <span>⌖</span>
-                    <h3>
+                    <h3 className="mb-3 text-[15px] font-semibold text-[var(--rd-text)]">
                       {search || filter !== "ALL"
                         ? "Tidak ada laporan yang cocok"
                         : "Belum ada laporan"}
                     </h3>
-                    <p>
+                    <p className="mx-auto mb-5 max-w-[290px] text-xs leading-relaxed">
                       Titik laporan akan muncul di sini saat laporan diterima.
                     </p>
                     {(search || filter !== "ALL") && (
                       <button
                         type="button"
-                        className="secondary"
+                        className={btnSecondary}
                         onClick={() => {
                           setSearch("");
                           setFilter("ALL");
@@ -377,11 +324,59 @@ export default function DashboardPage() {
             )}
           </section>
         </div>
-        <footer>
-          PERIMETER / YIA{" "}
-          <span>Waktu Indonesia Barat · Data sesuai akses akun</span>
-        </footer>
+        <DashboardFooter />
       </main>
     </div>
+  );
+}
+
+function OperatorReportCard({
+  report,
+  onSelect,
+}: {
+  report: ReportRecord;
+  onSelect: (id: string) => void;
+}) {
+  const status = report.deletedAt ? "CLOSED" : report.status;
+  const Icon =
+    statusIcons[status as keyof typeof statusIcons] || ClipboardClock;
+  const titleLabel = report.findings?.length
+    ? report.findings.map((f) => f.partName).join(", ")
+    : `Perimeter sisi ${report.side || "belum ditentukan"}`;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(report.id)}
+      className={`flex w-full gap-3 border-b border-solid border-[var(--rd-border)] bg-transparent px-[15px] py-[19px] text-left text-[var(--rd-text)] transition-colors last:border-b-0 hover:bg-[var(--rd-hover)] md:py-[18px] min-[1100px]:p-5 ${focusRing}`}
+    >
+      <span
+        data-status={status}
+        className="rd-status mt-[5px] grid h-9 w-[30px] shrink-0 place-items-center rounded-[10px] bg-[var(--rd-tint)] text-[var(--rd-status)] md:hidden min-[1100px]:grid"
+      >
+        <Icon size={18} strokeWidth={1.9} aria-hidden="true" />
+      </span>
+      <span className="block min-w-0 flex-1">
+        <span className="mb-[9px] flex items-center justify-between gap-2">
+          <span className="text-[9px] tracking-[0.9px] text-[var(--rd-muted)] md:text-[10px]">
+            #{String(report.id).slice(-6).toUpperCase()}
+          </span>
+          <ReportStatusBadge report={report} />
+        </span>
+        <span className="mb-1.5 block text-[13px] font-semibold md:text-[15px]">
+          {titleLabel}
+        </span>
+        <span className="mb-[13px] block truncate text-[11px] text-[var(--rd-muted)] md:text-xs">
+          {report.narrative}
+        </span>
+        <span className="flex justify-between gap-2 text-[9px] text-[var(--rd-muted)]">
+          <span>{dateText(report.createdAt)}</span>
+          <span>
+            {report.images?.length || 0} foto{" "}
+            <b className="pl-2.5 text-sm text-[var(--rd-link)]">→</b>
+          </span>
+        </span>
+      </span>
+    </button>
   );
 }

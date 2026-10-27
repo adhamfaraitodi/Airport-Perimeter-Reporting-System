@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   CalendarArrowDown,
   CalendarArrowUp,
@@ -11,12 +11,13 @@ import {
   ClipboardX,
   Images,
   MapPin,
-  Moon,
-  Sun,
   Plus,
   RefreshCw,
 } from "lucide-react";
-import type { ReportRecord, SessionUser, UserRole } from "../../../_lib/client-api";
+import type { ReportRecord, SessionUser } from "../../../_lib/client-api";
+import { useTheme } from "../../../_lib/use-theme";
+import { AppHeader } from "../../../_components/app-header";
+import { ReportFooter } from "./report-footer";
 
 const filters = [
   ["ALL", "Semua"],
@@ -38,7 +39,7 @@ const states: Record<
 };
 
 const button =
-  "border-0 font-normal shadow-none hover:shadow-none hover:filter-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--rd-link)]";
+  "border-0 font-normal focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--rd-link)] disabled:cursor-not-allowed disabled:opacity-55";
 
 const dateFormat = new Intl.DateTimeFormat("id-ID", {
   day: "2-digit",
@@ -55,19 +56,6 @@ function dateLabel(value?: string | null) {
   return Number.isNaN(date.getTime())
     ? "Tanggal tidak tersedia"
     : `${dateFormat.format(date)} WIB`;
-}
-
-function initialTheme(): "light" | "dark" {
-  if (typeof window === "undefined") return "light";
-  try {
-    const saved = localStorage.getItem("perimeter-theme");
-    if (saved === "light" || saved === "dark") return saved;
-  } catch {
-    /* Optional browser storage. */
-  }
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
 }
 
 function StateIcon({ status, size = 24 }: { status: string; size?: number }) {
@@ -105,7 +93,7 @@ function ReportCard({
     <button
       type="button"
       onClick={() => onSelect(report.id)}
-      className={`${button} flex w-full items-start gap-3 rounded-lg border! border-solid! border-[var(--rd-border)]! bg-[var(--rd-surface)] p-3 text-left text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-hover)] sm:p-4`}
+      className={`${button} flex w-full items-start gap-3 rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 text-left text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-hover)] sm:p-4`}
       aria-label={`Buka laporan ${report.id}, ${state.label}`}
     >
       <span className="pt-0.5">
@@ -187,8 +175,6 @@ export interface ReporterDashboardProps {
   onRefresh: () => void;
   onCreate: () => void;
   onSelect: (id: string) => void;
-  isMock: boolean;
-  onSwitchRole: (role: UserRole) => void;
   abandonedSubmissionId: string | null;
   onDismissAbandoned: () => void;
   children?: ReactNode;
@@ -206,39 +192,13 @@ export function ReportList({
   onRefresh,
   onCreate,
   onSelect,
-  isMock,
-  onSwitchRole,
   abandonedSubmissionId,
   onDismissAbandoned,
   children,
   formOpen = false,
 }: ReporterDashboardProps) {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const { theme, dark, toggleTheme } = useTheme();
   const [newest, setNewest] = useState(true);
-
-  useEffect(() => {
-    setTheme(initialTheme());
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("perimeter-theme", theme);
-    } catch {
-      /* Theme remains usable without persistence. */
-    }
-  }, [theme]);
-
-  const dark = theme === "dark";
-  const displayName = user.name?.trim() || user.email || "Pengguna";
-  const initials = user.name?.trim()
-    ? user.name
-        .trim()
-        .split(/\s+/)
-        .slice(0, 2)
-        .map((word) => Array.from(word)[0])
-        .join("")
-        .toUpperCase()
-    : Array.from(displayName).slice(0, 2).join("").toUpperCase();
 
   const owned = reports.filter((report) => report.reporterId === user.id);
   const visible = owned
@@ -278,43 +238,12 @@ export function ReportList({
       className="reporter-dashboard min-h-dvh bg-[var(--rd-bg)] text-[var(--rd-text)]"
       data-theme={theme}
     >
-      <header className="bg-[var(--rd-panel)]">
-        <div className="mx-auto flex h-[86px] max-w-5xl items-center justify-between gap-3 px-[18px] sm:px-8">
-          <div className="flex min-w-0 items-center gap-3">
-            <img
-              src={dark ? "/injourney-logo-white.webp" : "/injourney-logo.webp"}
-              alt="InJourney Airports"
-              className="h-auto w-[68px] shrink-0 sm:w-24"
-            />
-            <span className="max-w-[155px] text-[11px] leading-tight sm:max-w-56 sm:text-sm">
-              Airport Perimeter Fence
-              <br />
-              Reporting System
-            </span>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setTheme(dark ? "light" : "dark")}
-              className={`${button} grid size-11 min-h-11 place-items-center rounded-full bg-transparent p-0 text-[var(--rd-text)] hover:bg-[var(--rd-active)]`}
-              aria-label={dark ? "Aktifkan light mode" : "Aktifkan dark mode"}
-            >
-              {dark ? (
-                <Sun size={27} strokeWidth={1.7} />
-              ) : (
-                <Moon size={29} strokeWidth={1.7} />
-              )}
-            </button>
-            <span
-              className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--rd-surface)] text-xs"
-              title={displayName}
-              aria-label={displayName}
-            >
-              {initials}
-            </span>
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        user={user}
+        dark={dark}
+        onToggleTheme={toggleTheme}
+        containerClassName="max-w-5xl"
+      />
       <main className="mx-auto max-w-5xl px-[26px] pt-11 pb-6 sm:px-8 sm:pt-12">
         <div className="sm:flex sm:items-end sm:justify-between sm:gap-10">
           <div>
@@ -342,7 +271,7 @@ export function ReportList({
               onClick={onRefresh}
               aria-label="Segarkan laporan"
               title="Segarkan laporan"
-              className={`${button} grid min-h-10 w-12 place-items-center rounded-[10px] border-2! border-solid! border-[var(--rd-primary)]! bg-[var(--rd-active)] p-0 text-[var(--rd-link)]`}
+              className={`${button} grid min-h-10 w-12 place-items-center rounded-[10px] border-2 border-solid border-[var(--rd-primary)] bg-[var(--rd-active)] p-0 text-[var(--rd-link)]`}
             >
               <RefreshCw
                 size={21}
@@ -387,7 +316,7 @@ export function ReportList({
             <button
               type="button"
               onClick={onDismissAbandoned}
-              className={`${button} bg-[var(--rd-active)] text-[var(--rd-link)]`}
+              className={`${button} rounded-lg bg-[var(--rd-active)] px-3 py-1.5 text-[var(--rd-link)]`}
             >
               Saya sudah memeriksa
             </button>
@@ -500,19 +429,7 @@ export function ReportList({
             </section>
           </>
         )}
-        {isMock && !children && (
-          <div className="mt-5 flex items-center justify-center gap-3 text-xs text-[var(--rd-muted)]">
-            <span>Mode demo · Pelapor</span>
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => onSwitchRole("OPERATOR")}
-              className={`${button} min-h-9 rounded-lg bg-transparent px-2 py-1 text-xs text-[var(--rd-link)]`}
-            >
-              Buka operator
-            </button>
-          </div>
-        )}
+        <ReportFooter/>
       </main>
     </div>
   );

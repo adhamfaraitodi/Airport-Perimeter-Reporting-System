@@ -1,26 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import {
   api,
-  isMock,
   setMockRole,
   type ReportRecord,
   type SessionUser,
-  type UserRole,
 } from "../../_lib/client-api";
 import { message } from "../../_lib/draft-store";
+import { StartupScreen } from "../../_components/startup-screen";
 import { toast } from "@/components/ui/sonner";
 import { ReportList } from "./_components/report-list";
 import { CreateReportDialog } from "./_components/create-report-dialog";
 import { ReportDetail } from "./[reportId]/_components/report-detail";
 
 export default function ReportsPage() {
-  const router = useRouter();
-  const params = useParams<{ locale?: string }>();
-  const locale = params?.locale || "id";
-
   const [user, setUser] = useState<SessionUser | null>(null);
   const [reports, setReports] = useState<ReportRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +24,7 @@ export default function ReportsPage() {
   >(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [action, setAction] = useState<"CREATE" | null>(null);
-  const [locked, setLocked] = useState(false);
+  const [, setLocked] = useState(false);
   const [filter, setFilter] = useState("ALL");
   const [notice, setNotice] = useState("");
 
@@ -60,16 +54,6 @@ export default function ReportsPage() {
     return () => clearTimeout(timer);
   }, [notice]);
 
-  async function handleSwitchRole(nextRole: UserRole) {
-    if (locked) return;
-    await setMockRole(nextRole);
-    if (nextRole === "OPERATOR" || nextRole === "TECHNICIAN") {
-      router.push(`/${locale}/dashboard`);
-    } else {
-      await load();
-    }
-  }
-
   async function cancelSubmission(options?: { abandonedSubmissionId?: string }) {
     setAction(null);
     setLocked(false);
@@ -95,22 +79,7 @@ export default function ReportsPage() {
   }
 
   if (!user) {
-    return (
-      <main className="startup">
-        <div className="brand-mark">P</div>
-        <h1>
-          Perimeter<span> / YIA</span>
-        </h1>
-        <p>Pelaporan kondisi perimeter bandara</p>
-        {loading ? (
-          <p role="status">Memeriksa sesi Anda…</p>
-        ) : (
-          <div className="alert" role="alert">
-            {error}
-          </div>
-        )}
-      </main>
-    );
+    return <StartupScreen loading={loading} error={error} />;
   }
 
   const owned = reports.filter((r) => r.reporterId === user.id);
@@ -131,8 +100,6 @@ export default function ReportsPage() {
         setAction("CREATE");
       }}
       onSelect={setSelectedId}
-      isMock={isMock}
-      onSwitchRole={handleSwitchRole}
       abandonedSubmissionId={abandonedSubmissionId}
       onDismissAbandoned={() => setAbandonedSubmissionId(null)}
       formOpen={action === "CREATE"}

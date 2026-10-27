@@ -38,8 +38,8 @@ const parts: CatalogPart[] = (catalog as CatalogPart[]).map((part) => ({
 }));
 
 const button =
-  "border-0 font-normal shadow-none hover:shadow-none hover:filter-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] disabled:cursor-not-allowed disabled:opacity-50";
-const secondary = `${button} rounded-lg border! border-solid! border-[var(--rd-border)]! bg-[var(--rd-surface)] px-3 py-1.5 text-[var(--rd-text)]`;
+  "border-0 font-normal shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] disabled:cursor-not-allowed disabled:opacity-50";
+const secondary = `${button} rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-1.5 text-[var(--rd-text)]`;
 const muted = "text-xs text-[var(--rd-muted)]";
 
 function readBase64(file: File): Promise<string> {
@@ -595,7 +595,7 @@ function ReporterFormSession({
             setPoint(value);
             setSource("MANUAL");
           }}
-          className="border-[var(--rd-border)]! bg-[var(--rd-bg)]! [&_.overview]:bg-[var(--rd-surface)] [&_.overview]:text-[var(--rd-link)] [&_.map-note]:bg-[var(--rd-surface)] [&_.map-note]:text-[var(--rd-muted)] [&_.map-warning]:bg-[var(--rd-surface)] [&_.map-warning]:text-[var(--rd-coral)]"
+         
         />
         <p className={`${muted} mb-0 mt-2`}>
           {point
@@ -675,7 +675,7 @@ function ReporterFormSession({
             </button>
             <button
               type="button"
-              className={`${secondary} text-[var(--rd-coral)]!`}
+              className={`${secondary} text-[var(--rd-coral)]`}
               onClick={leave}
             >
               {confirmation === "attempt"

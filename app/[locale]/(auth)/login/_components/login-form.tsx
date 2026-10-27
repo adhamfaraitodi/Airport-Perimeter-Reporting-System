@@ -277,7 +277,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
           id="login-help-title"
           className="mt-[14px] mb-[10px] font-[inherit] text-[24px] leading-[1.35] font-bold tracking-normal"
         >
-          Akun asisten
+          Help Info Akun
         </h2>
         <p
           id="login-help-description"

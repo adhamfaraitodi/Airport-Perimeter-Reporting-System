@@ -45,10 +45,14 @@ function Photo({ image }: { image: ImageRef }) {
   }, [visible, image.id, url, retry]);
 
   return (
-    <div className="gallery-photo" ref={host}>
+    <div
+      className="grid aspect-square min-h-[70px] place-items-center overflow-hidden rounded-lg bg-[var(--rd-bg)] md:min-h-[85px]"
+      ref={host}
+    >
       {error ? (
         <button
           type="button"
+          className="max-w-full bg-transparent p-2 text-center text-[10px] text-[var(--rd-coral)] [overflow-wrap:anywhere]"
           onClick={() => {
             setUrl(null);
             setError("");
@@ -58,24 +62,33 @@ function Photo({ image }: { image: ImageRef }) {
           {error} · Coba lagi
         </button>
       ) : url ? (
-        <a href={url} target="_blank" rel="noopener noreferrer">
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block h-full w-full"
+        >
           <img
             src={url}
             loading="lazy"
             alt="Foto bukti laporan"
+            className="block h-full w-full object-cover"
             onError={() => setError("Foto gagal dimuat")}
           />
         </a>
       ) : (
-        <span>Memuat foto…</span>
+        <span className="p-2 text-center text-[10px] text-[var(--rd-muted)]">
+          Memuat foto…
+        </span>
       )}
     </div>
   );
 }
 
 export default function Gallery({ images = [] }: { images?: ImageRef[] }) {
+  if (!images.length) return null;
   return (
-    <div className="gallery">
+    <div className="mb-6 grid grid-cols-3 gap-1.5 md:gap-2">
       {images.map((image) => (
         <Photo key={image.id} image={image} />
       ))}

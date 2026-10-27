@@ -23,7 +23,7 @@ const states: Record<string, { label: string; icon: typeof ClipboardClock }> = {
 };
 
 const button =
-  "border-0 shadow-none hover:shadow-none hover:filter-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--rd-link)]";
+  "border-0 shadow-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--rd-link)]";
 const heading = "m-0 mb-3 text-base leading-normal font-normal tracking-normal";
 const small = "text-xs leading-relaxed text-[var(--rd-muted)]";
 
@@ -332,7 +332,7 @@ export function ReportDetail({ report, onBack }: ReportDetailProps) {
         {hasPoint ? (
           <MapView
             point={{ latitude: report.latitude, longitude: report.longitude }}
-            className="border-[var(--rd-border)]! [&_.overview]:bg-[var(--rd-surface)] [&_.overview]:text-[var(--rd-link)] [&_.map-note]:bg-[var(--rd-surface)] [&_.map-note]:text-[var(--rd-muted)] [&_.map-warning]:bg-[var(--rd-surface)] [&_.map-warning]:text-[var(--rd-coral)]"
+           
           />
         ) : (
           <p className={small}>Koordinat laporan belum tersedia.</p>

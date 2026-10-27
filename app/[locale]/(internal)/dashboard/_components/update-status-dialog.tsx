@@ -7,6 +7,7 @@ import {
   type ChangeEvent,
   type FormEvent,
 } from "react";
+import { LocateFixed, Plus, X } from "lucide-react";
 import {
   api,
   type BeginSubmissionPayload,
@@ -26,6 +27,20 @@ import MapView, {
   isPointInNavigationBounds,
   type LatLngPoint,
 } from "../../../_components/perimeter-map-view";
+import {
+  alertBox,
+  btnDanger,
+  btnDangerGhost,
+  btnIcon,
+  btnPrimary,
+  btnSecondary,
+  btnText,
+  eyebrow,
+  fieldControl,
+  fieldLabel,
+  focusRing,
+  mutedText,
+} from "../../../_lib/ui-classes";
 
 const sides = [
   "Utara",
@@ -37,6 +52,9 @@ const sides = [
   "Barat",
   "Barat Laut",
 ];
+
+/** Buttons stretch to full width on mobile, natural width from `md`. */
+const formActions = "flex justify-end gap-2.5 *:max-md:flex-1";
 
 function readBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -284,14 +302,16 @@ export function UpdateStatusDialog({
     }
   }
 
+  const overLimit = countText(narrative) > 2000;
+
   return (
-    <form className="submission" onSubmit={submit}>
-      <div className="section-heading">
+    <form className="px-[18px] py-[21px] md:p-[26px]" onSubmit={submit}>
+      <div className="mb-5 flex items-center justify-between gap-2.5">
         <div>
-          <span className="eyebrow">
+          <span className={eyebrow}>
             {action === "CREATE" ? "PELAPORAN LAPANGAN" : "TINDAKAN OPERATOR"}
           </span>
-          <h2>
+          <h2 className="m-0 text-[21px] leading-snug font-semibold md:text-[23px]">
             {action === "CREATE"
               ? "Buat laporan baru"
               : action === "DELETE"
@@ -302,24 +322,28 @@ export function UpdateStatusDialog({
         {!frozen && (
           <button
             type="button"
-            className="icon-button"
+            className={btnIcon}
             aria-label="Tutup formulir"
             onClick={() => onCancel()}
           >
-            ×
+            <X size={20} aria-hidden="true" />
           </button>
         )}
       </div>
-      <p className="muted">
+      <p className="mb-5 text-sm leading-relaxed text-[var(--rd-muted)]">
         {action === "DELETE"
           ? "Penutupan menyembunyikan titik dari peta, bukan menghapus bukti atau menyatakan masalah selesai."
           : "Informasi yang jelas membantu tim menindaklanjuti kondisi perimeter."}
       </p>
-      <fieldset disabled={frozen}>
+      <fieldset
+        disabled={frozen}
+        className="m-0 min-w-0 border-0 p-0 disabled:opacity-70"
+      >
         {action === "STATUS" && report && (
-          <label>
+          <label className={fieldLabel}>
             Status berikutnya
             <select
+              className={fieldControl}
               value={status}
               onChange={(e) => setStatus(e.target.value as LifecycleStatus)}
             >
@@ -337,9 +361,10 @@ export function UpdateStatusDialog({
           </label>
         )}
         {action === "CREATE" && (
-          <label>
+          <label className={fieldLabel}>
             Sisi perimeter
             <select
+              className={fieldControl}
               value={side}
               onChange={(e) => update(key, { side: e.target.value })}
             >
@@ -350,12 +375,13 @@ export function UpdateStatusDialog({
             </select>
           </label>
         )}
-        <label>
+        <label className={fieldLabel}>
           {action === "DELETE"
             ? "Alasan penutupan"
             : "Narasi laporan / tindakan"}
           <textarea
             rows={5}
+            className={`${fieldControl} leading-[1.65]`}
             value={narrative}
             onChange={(e) => update(key, { narrative: e.target.value })}
             placeholder="Jelaskan kondisi, titik patokan, dan tindakan yang diperlukan."
@@ -364,29 +390,46 @@ export function UpdateStatusDialog({
         </label>
         <div
           id="narrative-count"
-          className={`counter ${countText(narrative) > 2000 ? "invalid" : ""}`}
+          className={`-mt-2.5 mb-5 text-right text-[10px] ${
+            overLimit ? "text-[var(--rd-coral)]" : "text-[var(--rd-muted)]"
+          }`}
         >
           {countText(narrative).toLocaleString("id-ID")} / 2.000 karakter
         </div>
-        <label className="upload-box">
-          <span className="upload-symbol">+</span>
+        <label className="relative mb-[18px] flex min-h-[145px] cursor-pointer flex-col items-center justify-center gap-[7px] overflow-hidden rounded-[10px] border border-dashed border-[var(--rd-link)]/50 bg-[var(--rd-bg)] p-5 text-center text-xs font-semibold focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--rd-link)]">
+          <Plus
+            size={28}
+            className="text-[var(--rd-link)]"
+            aria-hidden="true"
+          />
           <strong>Tambahkan foto bukti</strong>
-          <span>JPG, PNG, WebP · maksimal 3 MB per foto</span>
+          <span className="text-[10px] font-normal text-[var(--rd-muted)]">
+            JPG, PNG, WebP · maksimal 3 MB per foto
+          </span>
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
             multiple
             onChange={selectFiles}
+            className="absolute inset-0 m-0 h-full w-full cursor-pointer opacity-0"
           />
         </label>
         {!!files.length && (
-          <div className="previews">
+          <div className="mb-5 grid grid-cols-3 gap-2">
             {files.map((item) => (
-              <div className="preview" key={item.id}>
-                <img src={item.preview} alt={item.file.name} />
+              <div
+                className="relative aspect-square overflow-hidden rounded-lg bg-[var(--rd-bg)]"
+                key={item.id}
+              >
+                <img
+                  src={item.preview}
+                  alt={item.file.name}
+                  className="h-full w-full object-cover"
+                />
                 <button
                   type="button"
                   aria-label={`Hapus ${item.file.name}`}
+                  className={`absolute top-1 right-1 grid size-8 place-items-center rounded-full bg-white/90 p-0 text-[#384e3d] ${focusRing}`}
                   onClick={() => {
                     URL.revokeObjectURL(item.preview);
                     setFiles((old) =>
@@ -394,31 +437,33 @@ export function UpdateStatusDialog({
                     );
                   }}
                 >
-                  ×
+                  <X size={18} aria-hidden="true" />
                 </button>
-                <span>{progress[item.id] || "Siap dikirim"}</span>
+                <span className="absolute inset-x-0 bottom-0 bg-black/60 p-1.5 text-[10px] text-white">
+                  {progress[item.id] || "Siap dikirim"}
+                </span>
               </div>
             ))}
           </div>
         )}
       </fieldset>
       {action === "CREATE" && (
-        <section className="location-section">
-          <div className="section-heading">
-            <h3>Lokasi kejadian</h3>
+        <section className="mt-[22px]">
+          <div className="flex items-center justify-between gap-2.5">
+            <h3 className="m-0 text-[15px] font-semibold">Lokasi kejadian</h3>
             <button
               type="button"
-              className="text-button"
+              className={btnText}
               disabled={frozen}
               onClick={locate}
             >
-              ⌖ Ambil GPS
+              <LocateFixed size={16} aria-hidden="true" /> Ambil GPS
             </button>
           </div>
-          <p className="muted small" role="status">
+          <p className={`${mutedText} mb-2`} role="status">
             {gpsMessage}
           </p>
-          <div className={frozen ? "map-disabled" : ""}>
+          <div className={frozen ? "pointer-events-none opacity-70" : ""}>
             <MapView
               editable={!frozen}
               point={point}
@@ -430,7 +475,7 @@ export function UpdateStatusDialog({
               }}
             />
           </div>
-          <p className="small muted">
+          <p className={`${mutedText} mt-2`}>
             {point
               ? `${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)} · ${
                   source === "GPS" ? "GPS" : "Pin manual"
@@ -439,15 +484,15 @@ export function UpdateStatusDialog({
           </p>
         </section>
       )}
-      <p className="draft-note">
+      <p className="my-[22px] rounded-[7px] bg-[var(--rd-bg)] p-3 text-[10px] leading-[1.7] text-[var(--rd-muted)]">
         Teks draft tersimpan di perangkat ini, khusus akun Anda. Foto dan lokasi
         perlu dipilih ulang setelah halaman dimuat ulang.
       </p>
       {error && (
-        <div className="alert" role="alert">
+        <div className={alertBox} role="alert">
           {error}
           {attempt && (
-            <p>
+            <p className="mt-2 mb-0">
               Data dikunci agar percobaan ulang tetap konsisten. Coba lagi
               dengan transaksi yang sama, atau tinggalkan percobaan untuk
               memeriksa laporan terbaru. Tidak ada pengiriman ulang otomatis.
@@ -456,34 +501,37 @@ export function UpdateStatusDialog({
         </div>
       )}
       {attempt && !busy && confirmAbandon && (
-        <section className="alert" aria-label="Konfirmasi tinggalkan percobaan">
+        <section
+          className={alertBox}
+          aria-label="Konfirmasi tinggalkan percobaan"
+        >
           <strong>Hasil pengiriman mungkin belum pasti</strong>
-          <p>
+          <p className="mt-2 mb-0">
             Transaksi {attempt.id} mungkin sudah tersimpan meskipun respons
             gagal diterima. Meninggalkan halaman ini tidak membatalkan transaksi
             di server. Periksa daftar dan riwayat terbaru sebelum membuat
             pengiriman baru agar tidak terjadi duplikasi.
           </p>
-          <p>
+          <p className="mt-2 mb-3">
             Draft teks tetap tersimpan. Foto dan lokasi harus dipilih ulang bila
             Anda membuka formulir baru.
           </p>
-          <div className="form-actions">
+          <div className={formActions}>
             <button
               type="button"
-              className="secondary"
+              className={btnSecondary}
               onClick={() => setConfirmAbandon(false)}
             >
               Tetap di sini
             </button>
-            <button type="button" className="danger-ghost" onClick={abandon}>
-              Tinggalkan & periksa laporan
+            <button type="button" className={btnDangerGhost} onClick={abandon}>
+              Tinggalkan &amp; periksa laporan
             </button>
           </div>
         </section>
       )}
       {attempt && (
-        <p role="status" className="small">
+        <p role="status" className="mb-3 text-xs">
           {
             Object.values(progress).filter((value) => value === "Berhasil")
               .length
@@ -492,11 +540,11 @@ export function UpdateStatusDialog({
           {busy ? "Jangan tutup halaman." : "Pengiriman belum dikonfirmasi."}
         </p>
       )}
-      <div className="form-actions">
+      <div className={formActions}>
         {!frozen && (
           <button
             type="button"
-            className="secondary"
+            className={btnSecondary}
             onClick={() => onCancel()}
           >
             Batal
@@ -505,7 +553,7 @@ export function UpdateStatusDialog({
         {attempt && !busy && !confirmAbandon && (
           <button
             type="button"
-            className="secondary"
+            className={btnSecondary}
             onClick={() => setConfirmAbandon(true)}
           >
             Tinggalkan percobaan
@@ -513,7 +561,7 @@ export function UpdateStatusDialog({
         )}
         <button
           disabled={busy || confirmAbandon}
-          className={action === "DELETE" ? "danger" : ""}
+          className={action === "DELETE" ? btnDanger : btnPrimary}
           type="submit"
         >
           {busy

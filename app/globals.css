@@ -1,25 +1,59 @@
-@layer theme, base, legacy, components, utilities;
 @import "tailwindcss";
-@import "./legacy-styles.css" layer(legacy);
 
 @theme {
   --font-sans: "Carlito", sans-serif;
 }
 
-:root,
-body,
-h1,
-h2,
-h3,
-.brand,
-.brand-airport,
-.stats strong,
-button,
-input,
-textarea,
-select,
-.leaflet-container {
-  font-family: "Carlito", sans-serif;
+/*
+ * Base layer — the few element defaults the app relies on.
+ * Everything else is expressed with Tailwind utilities in the components.
+ */
+@layer base {
+  /* Keep the 14px rem scale the UI was designed against. */
+  html {
+    font-size: 14px;
+    font-synthesis: none;
+  }
+
+  body {
+    color: #2b2f33;
+    background: #f7f9fa;
+  }
+
+  :root,
+  body,
+  button,
+  input,
+  textarea,
+  select,
+  .leaflet-container {
+    font-family: "Carlito", sans-serif;
+  }
+
+  /* Tailwind v4 preflight resets buttons to cursor: default. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      scroll-behavior: auto !important;
+      transition: none !important;
+    }
+  }
 }
 
 .leaflet-control-attribution {
@@ -68,8 +102,9 @@ select,
   backdrop-filter: blur(4px);
 }
 
-/* Reporter Dashboard Tokens */
-.reporter-dashboard {
+/* App Tokens — shared by the reporter (/reports) and operator (/dashboard) pages */
+.reporter-dashboard,
+.operator-dashboard {
   --rd-primary: #14848d;
   --rd-primary-hover: #0f6e76;
   --rd-link: #0e7c86;
@@ -90,7 +125,8 @@ select,
   color-scheme: light;
 }
 
-.reporter-dashboard[data-theme="dark"] {
+.reporter-dashboard[data-theme="dark"],
+.operator-dashboard[data-theme="dark"] {
   --rd-primary-hover: #1a9aa5;
   --rd-link: #4ec4c6;
   --rd-bg: #121618;
@@ -110,19 +146,20 @@ select,
   color-scheme: dark;
 }
 
-.reporter-dashboard .rd-status {
+/* Status color hook: add `rd-status` + `data-status="…"` to any element. */
+.rd-status {
   --rd-status: var(--rd-teal);
   --rd-tint: color-mix(in srgb, var(--rd-status) var(--rd-tint-opacity), transparent);
 }
-.reporter-dashboard [data-status="OPEN"] {
+.rd-status[data-status="OPEN"] {
   --rd-status: var(--rd-coral);
 }
-.reporter-dashboard [data-status="IN_PROGRESS"] {
+.rd-status[data-status="IN_PROGRESS"] {
   --rd-status: var(--rd-brown);
 }
-.reporter-dashboard [data-status="RESOLVED"] {
+.rd-status[data-status="RESOLVED"] {
   --rd-status: var(--rd-lime);
 }
-.reporter-dashboard [data-status="CLOSED"] {
+.rd-status[data-status="CLOSED"] {
   --rd-status: var(--rd-gray);
 }
