@@ -158,16 +158,17 @@ export default function DashboardPage() {
           </div>
           <button
             type="button"
-            className={`${btnSecondary} shrink-0 max-md:min-h-9 max-md:px-2.5 max-md:text-xs`}
             disabled={locked || !!action || loading}
             onClick={load}
+            aria-label="Segarkan laporan"
+            title="Segarkan laporan"
+            className="grid min-h-10 w-12 place-items-center rounded-[10px] border-2 border-solid border-[var(--rd-primary)] bg-[var(--rd-active)] p-0 text-[var(--rd-link)] transition-colors disabled:cursor-not-allowed disabled:opacity-55 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
           >
             <RefreshCw
-              size={16}
+              size={21}
               aria-hidden="true"
               className={loading ? "animate-spin motion-reduce:animate-none" : ""}
             />
-            {loading ? "Memuat…" : "Segarkan"}
           </button>
         </div>
         {abandonedSubmissionId && (
@@ -235,8 +236,10 @@ export default function DashboardPage() {
             ) : (
               <>
                 <div className="flex items-center justify-between px-[22px] pt-[17px] md:pt-[23px]">
-                  <h2 className="m-0 text-[17px] font-semibold">
-                    Laporan lapangan
+                  <h2
+                    className="m-0 text-base leading-normal font-normal sm:text-lg"
+                  >
+                    Riwayat Laporan
                   </h2>
                 </div>
                 <div className="px-[15px] pt-3 pb-1.5 md:px-5 md:pt-[18px]">
@@ -298,7 +301,7 @@ export default function DashboardPage() {
                 {!visible.length && (
                   <div className="px-6 py-[50px] text-center text-[var(--rd-muted)]">
                     <span>⌖</span>
-                    <h3 className="mb-3 text-[15px] font-semibold text-[var(--rd-text)]">
+                    <h3 className="mb-3 text-[15px] font-medium text-[var(--rd-text)]">
                       {search || filter !== "ALL"
                         ? "Tidak ada laporan yang cocok"
                         : "Belum ada laporan"}
