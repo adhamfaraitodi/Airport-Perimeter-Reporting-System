@@ -150,10 +150,10 @@ export default function DashboardPage() {
           <div>
             <span className={eyebrow}>YOGYAKARTA INTERNATIONAL AIRPORT</span>
             <h1 className="m-0 mb-2 text-xl leading-tight font-normal sm:text-3xl">
-              Pantau perimeter.
+              Pantau Laporan Perimeter,
             </h1>
             <p className="m-0 hidden text-sm text-[var(--rd-muted)] md:block">
-              Satu peta untuk kondisi dan tindak lanjut di lapangan.
+              Satu peta untuk melihat titik laporan kondisi dan statusnya secara langsung.
             </p>
           </div>
           <button
@@ -300,7 +300,7 @@ export default function DashboardPage() {
                 </div>
                 {!visible.length && (
                   <div className="px-6 py-[50px] text-center text-[var(--rd-muted)]">
-                    <span>⌖</span>
+                    <span className="text-4xl">⌖</span>
                     <h3 className="mb-3 text-[15px] font-medium text-[var(--rd-text)]">
                       {search || filter !== "ALL"
                         ? "Tidak ada laporan yang cocok"
