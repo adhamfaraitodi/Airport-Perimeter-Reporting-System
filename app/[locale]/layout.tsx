@@ -5,6 +5,7 @@ import {
   SUPPORTED_LOCALES,
   type SupportedLocale,
 } from "../../proxy";
+import { Toaster } from "@/components/ui/sonner";
 
 interface LocaleLayoutProps {
   children: ReactNode;
@@ -25,6 +26,7 @@ export default async function LocaleLayout({
   return (
     <div data-locale={locale} className="min-h-screen flex flex-col">
       {children}
+      <Toaster />
     </div>
   );
 }

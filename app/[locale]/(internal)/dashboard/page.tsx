@@ -11,6 +11,7 @@ import {
   type UserRole,
 } from "../../_lib/client-api";
 import { dateText, message } from "../../_lib/draft-store";
+import { toast } from "@/components/ui/sonner";
 import { PerimeterMap } from "./_components/perimeter-map";
 import {
   ReportDetailSheet,
@@ -93,7 +94,9 @@ export default function DashboardPage() {
     setAction(null);
     setLocked(false);
     setSelectedId(report.id);
-    setNotice("Berhasil disimpan. Laporan dan bukti telah dikonfirmasi.");
+    toast.success("Perubahan berhasil disimpan", {
+      description: "Status laporan dan bukti foto telah dikonfirmasi.",
+    });
   }
 
   if (!user) {
@@ -177,11 +180,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </header>
-      {notice && (
-        <div className="toast" role="status">
-          ✓ {notice}
-        </div>
-      )}
       <main>
         <div className="page-heading">
           <div>

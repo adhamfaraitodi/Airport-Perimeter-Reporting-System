@@ -11,6 +11,7 @@ import {
   type UserRole,
 } from "../../_lib/client-api";
 import { message } from "../../_lib/draft-store";
+import { toast } from "@/components/ui/sonner";
 import { ReportList } from "./_components/report-list";
 import { CreateReportDialog } from "./_components/create-report-dialog";
 import { ReportDetail } from "./[reportId]/_components/report-detail";
@@ -88,7 +89,9 @@ export default function ReportsPage() {
     setAction(null);
     setLocked(false);
     setSelectedId(report.id);
-    setNotice("Berhasil disimpan. Laporan dan bukti telah dikonfirmasi.");
+    toast.success("Laporan berhasil disimpan", {
+      description: "Laporan dan bukti foto telah dikonfirmasi.",
+    });
   }
 
   if (!user) {

@@ -82,8 +82,8 @@ select,
   --rd-active: rgba(20, 132, 141, 0.15);
   --rd-hover: rgba(20, 132, 141, 0.05);
   --rd-teal: #0e7c86;
-  --rd-coral: #c4402f;
-  --rd-brown: #8b5e3c;
+  --rd-coral: #F43F5E;
+  --rd-brown: #FBAE42;
   --rd-lime: #617a16;
   --rd-gray: #6b7280;
   --rd-tint-opacity: 12%;
@@ -103,7 +103,7 @@ select,
   --rd-hover: rgba(78, 196, 198, 0.06);
   --rd-teal: #4ec4c6;
   --rd-coral: #f58a7b;
-  --rd-brown: #d4a373;
+  --rd-brown: #DD9A3B;
   --rd-lime: #b7d65b;
   --rd-gray: #9aa3ab;
   --rd-tint-opacity: 16%;
