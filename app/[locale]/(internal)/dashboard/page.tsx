@@ -155,7 +155,7 @@ export default function DashboardPage() {
       <main className="mx-auto max-w-[1700px] px-3 pt-[18px] md:px-[3%] md:pt-9 min-[1100px]:px-[5%]">
         <div className="mb-[18px] flex items-center justify-between gap-2 px-1.5 md:mb-[30px] md:gap-5 md:px-0">
           <div>
-            <span className={eyebrow}>YOGYAKARTA INTERNATIONAL AIRPORT</span>
+            {/*<span className={eyebrow}>YOGYAKARTA INTERNATIONAL AIRPORT</span>*/}
             <h1 className="m-0 mb-2 text-xl leading-tight font-normal sm:text-3xl">
               Pantau Laporan Perimeter,
             </h1>
