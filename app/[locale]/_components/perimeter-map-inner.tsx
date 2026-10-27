@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
+import "leaflet-rotate";
 import perimeter from "../_data/new_perimeter.json";
 import { labels } from "../_lib/draft-store";
 import type { ReportRecord } from "../_lib/client-api";
@@ -23,6 +24,8 @@ export interface PerimeterMapInnerProps {
   fill?: boolean;
   className?: string;
 }
+
+const MAP_BEARING = -20;
 
 const geometry = L.geoJSON(perimeter as GeoJSON.GeoJsonObject);
 const perimeterBounds = geometry.getBounds();
@@ -78,16 +81,22 @@ export default function PerimeterMapInner({
 
   useEffect(() => {
     if (!host.current) return;
-    const instance = L.map(host.current, {
+    const mapOptions = {
       center: perimeterBounds.getCenter(),
       zoom: 14,
+      rotate: true,
+      bearing: MAP_BEARING,
+      rotateControl: false,
+      touchRotate: false,
+      shiftKeyRotate: false,
       maxBounds: navigationBounds,
       maxBoundsViscosity: 1,
       maxZoom: 18,
       zoomControl: true,
       attributionControl: false,
       scrollWheelZoom: false,
-    });
+    } as unknown as L.MapOptions;
+    const instance = L.map(host.current, mapOptions);
     map.current = instance;
 
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
