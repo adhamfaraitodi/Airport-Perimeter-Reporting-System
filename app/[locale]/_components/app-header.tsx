@@ -60,6 +60,7 @@ export function AppHeader({
   const locale = params?.locale || "id";
 
   const [dataMasterOpen, setDataMasterOpen] = useState(false);
+  const [mobileDataMasterOpen, setMobileDataMasterOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
   const dataMasterRef = useRef<HTMLDivElement | null>(null);
@@ -86,6 +87,7 @@ export function AppHeader({
         !profileRef.current.contains(target)
       ) {
         setProfileOpen(false);
+        setMobileDataMasterOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -104,35 +106,37 @@ export function AppHeader({
   return (
     <header className="border-b border-[var(--rd-border)] bg-[var(--rd-panel)]">
       <div
-        className={`mx-auto flex h-[86px] items-center justify-between gap-3 px-[18px] sm:px-8 ${containerClassName}`}
+        className={`mx-auto flex h-[72px] items-center justify-between gap-2 px-4 sm:h-[86px] sm:gap-3 sm:px-8 ${containerClassName}`}
       >
-        {/* Left: Branding & Operator Navigation */}
+        {/* Left: Branding & Desktop Operator Navigation */}
         <div className="flex min-w-0 items-center gap-6">
-          <div className="flex shrink-0 items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2.5 sm:gap-3">
             <img
               src={dark ? "/injourney-logo-white.webp" : "/injourney-logo.webp"}
               alt="InJourney Airports"
-              className="h-auto w-[68px] shrink-0 sm:w-24"
+              className="h-auto w-[64px] shrink-0 sm:w-24"
             />
-            <span className="max-w-[155px] text-[11px] leading-tight sm:max-w-56 sm:text-sm">
+            <span className="max-w-[140px] text-[11px] leading-tight sm:max-w-56 sm:text-sm">
               Airport Perimeter
               <br />
               Reporting System
             </span>
           </div>
 
-          {/* Navigation for Operator Dashboard */}
+          {/* Desktop Navigation for Operator Dashboard */}
           {isOperator && (
             <nav className="hidden items-center gap-1.5 md:flex">
               <Link
                 href={`/${locale}/dashboard`}
                 className="inline-flex h-9 items-center gap-2 rounded-xl px-3 text-xs font-semibold text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-active)] hover:text-[var(--rd-link)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
               >
-                <SquareChartGantt size={22} strokeWidth={1.8} aria-hidden="true" />
-                <span className="block text-[13px] font-medium text-[var(--rd-text)]">Dashboard</span>
+                <SquareChartGantt size={20} strokeWidth={1.8} aria-hidden="true" />
+                <span className="block text-[13px] font-medium text-[var(--rd-text)]">
+                  Dashboard
+                </span>
               </Link>
 
-              {/* Data Master Dropdown */}
+              {/* Desktop Data Master Dropdown */}
               <div className="relative" ref={dataMasterRef}>
                 <button
                   type="button"
@@ -145,8 +149,10 @@ export function AppHeader({
                       : "text-[var(--rd-text)] hover:bg-[var(--rd-active)] hover:text-[var(--rd-link)]"
                   }`}
                 >
-                  <Database size={22} strokeWidth={1.8} aria-hidden="true" />
-                  <span className="block text-[13px] font-medium text-[var(--rd-text)]">Data Master</span>
+                  <Database size={20} strokeWidth={1.8} aria-hidden="true" />
+                  <span className="block text-[13px] font-medium text-[var(--rd-text)]">
+                    Data Master
+                  </span>
                   <ChevronDown
                     size={14}
                     className={`transition-transform duration-200 ${
@@ -159,7 +165,7 @@ export function AppHeader({
                 {dataMasterOpen && (
                   <div
                     role="menu"
-                    className="absolute left-0 top-full z-[100] mt-1.5 w-52 rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-surface)] p-1.5 text-[var(--rd-text)] shadow-xl animate-in fade-in zoom-in-95 duration-100"
+                    className="absolute left-0 top-full z-[600] mt-1.5 w-52 rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-surface)] p-1.5 text-[var(--rd-text)] shadow-xl animate-in fade-in zoom-in-95 duration-100"
                   >
                     <button
                       type="button"
@@ -167,8 +173,15 @@ export function AppHeader({
                       onClick={() => setDataMasterOpen(false)}
                       className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium transition-colors hover:bg-[var(--rd-hover)] hover:text-[var(--rd-link)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
                     >
-                      <Fence size={18} strokeWidth={1.8} className="shrink-0 text-[var(--rd-muted)]" aria-hidden="true" />
-                      <span className="block text-[13px] font-medium text-[var(--rd-text)]">Kerusakan perimeter</span>
+                      <Fence
+                        size={18}
+                        strokeWidth={1.8}
+                        className="shrink-0 text-[var(--rd-muted)]"
+                        aria-hidden="true"
+                      />
+                      <span className="block text-[13px] font-medium text-[var(--rd-text)]">
+                        Kerusakan perimeter
+                      </span>
                     </button>
                     <button
                       type="button"
@@ -176,8 +189,15 @@ export function AppHeader({
                       onClick={() => setDataMasterOpen(false)}
                       className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium transition-colors hover:bg-[var(--rd-hover)] hover:text-[var(--rd-link)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
                     >
-                      <Users size={18} strokeWidth={1.8} className="shrink-0 text-[var(--rd-muted)]" aria-hidden="true" />
-                      <span className="block text-[13px] font-medium text-[var(--rd-text)]">Kelola akun</span>
+                      <Users
+                        size={18}
+                        strokeWidth={1.8}
+                        className="shrink-0 text-[var(--rd-muted)]"
+                        aria-hidden="true"
+                      />
+                      <span className="block text-[13px] font-medium text-[var(--rd-text)]">
+                        Kelola akun
+                      </span>
                     </button>
                   </div>
                 )}
@@ -187,17 +207,17 @@ export function AppHeader({
         </div>
 
         {/* Right: Theme, Notification & User Account Menu */}
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
           <button
             type="button"
             onClick={onToggleTheme}
-            className="grid size-10 place-items-center rounded-xl bg-transparent p-0 text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-active)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+            className="grid size-9 place-items-center rounded-xl bg-transparent p-0 text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-active)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] sm:size-10"
             aria-label={dark ? "Aktifkan light mode" : "Aktifkan dark mode"}
           >
             {dark ? (
-              <Sun size={22} strokeWidth={1.8} />
+              <Sun size={21} strokeWidth={1.8} />
             ) : (
-              <MoonStar size={22} strokeWidth={1.8} />
+              <MoonStar size={21} strokeWidth={1.8} />
             )}
           </button>
 
@@ -205,19 +225,19 @@ export function AppHeader({
             type="button"
             onClick={onNotificationClick}
             aria-label="Notifikasi"
-            className="relative grid size-10 place-items-center rounded-xl bg-transparent p-0 text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-active)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+            className="relative grid size-9 place-items-center rounded-xl bg-transparent p-0 text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-active)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] sm:size-10"
           >
-            <Bell size={21} strokeWidth={1.9} />
+            <Bell size={20} strokeWidth={1.9} />
             {hasNotification && (
               <span
-                className="absolute top-2 right-2 size-2.5 rounded-full bg-[var(--rd-coral)] ring-2 ring-[var(--rd-panel)]"
+                className="absolute top-1.5 right-1.5 size-2.5 rounded-full bg-[var(--rd-coral)] ring-2 ring-[var(--rd-panel)] sm:top-2 sm:right-2"
                 aria-hidden="true"
               />
             )}
           </button>
 
           {/* Account Profile Trigger & Dropdown */}
-          <div className="relative pl-1" ref={profileRef}>
+          <div className="relative pl-0.5 sm:pl-1" ref={profileRef}>
             <button
               type="button"
               onClick={() => setProfileOpen((prev) => !prev)}
@@ -226,7 +246,7 @@ export function AppHeader({
               className="flex items-center gap-2.5 rounded-2xl p-1 text-left transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
             >
               <span
-                className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[var(--rd-surface)] text-sm font-semibold tracking-wide text-[var(--rd-text)] shadow-xs"
+                className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-surface)] text-xs font-semibold tracking-wide text-[var(--rd-text)] shadow-xs sm:size-10 sm:rounded-2xl sm:text-sm"
                 title={displayName}
                 aria-label={displayName}
               >
@@ -242,24 +262,128 @@ export function AppHeader({
               </div>
             </button>
 
-            {/* Profile Dropdown Menu */}
+            {/* Profile & Mobile Navigation Dropdown Menu */}
             {profileOpen && (
               <div
                 role="menu"
-                className="absolute right-0 top-full z-[100] mt-2 w-56 rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-surface)] p-2 text-[var(--rd-text)] shadow-xl animate-in fade-in zoom-in-95 duration-100"
+                className="absolute right-0 top-full z-[600] mt-2 w-60 rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-surface)] p-2 text-[var(--rd-text)] shadow-xl animate-in fade-in zoom-in-95 duration-100"
               >
-                <div className="border-b border-[var(--rd-border)] px-3 py-2 sm:hidden">
-                  <p className="text-xs font-semibold text-[var(--rd-text)]">{displayName}</p>
-                  <p className="text-[10px] text-[var(--rd-muted)]">{roleLabel || "Pelapor"}</p>
+                {/* User Info on Mobile */}
+                <div className="mb-1 border-b border-[var(--rd-border)] px-3 py-2 sm:hidden">
+                  <p className="m-0 text-[13px] font-semibold text-[var(--rd-text)]">
+                    {displayName}
+                  </p>
+                  <p className="m-0 mt-0.5 text-[11px] text-[var(--rd-muted)]">
+                    {roleLabel || "Pelapor"}
+                  </p>
                 </div>
+
+                {/* Operator Navigation on Mobile (< md) */}
+                {isOperator && (
+                  <div className="mb-1 border-b border-[var(--rd-border)] pb-1 md:hidden">
+                    <Link
+                      href={`/${locale}/dashboard`}
+                      role="menuitem"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+                    >
+                      <SquareChartGantt
+                        size={18}
+                        strokeWidth={1.8}
+                        className="shrink-0 text-[var(--rd-muted)]"
+                        aria-hidden="true"
+                      />
+                      <span className="block text-[13px] font-medium text-[var(--rd-text)]">
+                        Dashboard
+                      </span>
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={() => setMobileDataMasterOpen((prev) => !prev)}
+                      aria-expanded={mobileDataMasterOpen}
+                      className="flex w-full items-center justify-between gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <Database
+                          size={18}
+                          strokeWidth={1.8}
+                          className="shrink-0 text-[var(--rd-muted)]"
+                          aria-hidden="true"
+                        />
+                        <span className="block text-[13px] font-medium text-[var(--rd-text)]">
+                          Data Master
+                        </span>
+                      </span>
+                      <ChevronDown
+                        size={15}
+                        className={`text-[var(--rd-muted)] transition-transform duration-200 ${
+                          mobileDataMasterOpen ? "rotate-180" : ""
+                        }`}
+                        aria-hidden="true"
+                      />
+                    </button>
+
+                    {mobileDataMasterOpen && (
+                      <div className="mt-0.5 ml-4 space-y-0.5 border-l border-[var(--rd-border)] pl-2.5">
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setMobileDataMasterOpen(false);
+                            setProfileOpen(false);
+                          }}
+                          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+                        >
+                          <Fence
+                            size={16}
+                            strokeWidth={1.8}
+                            className="shrink-0 text-[var(--rd-muted)]"
+                            aria-hidden="true"
+                          />
+                          <span className="block text-xs font-medium text-[var(--rd-text)]">
+                            Kerusakan perimeter
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setMobileDataMasterOpen(false);
+                            setProfileOpen(false);
+                          }}
+                          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+                        >
+                          <Users
+                            size={16}
+                            strokeWidth={1.8}
+                            className="shrink-0 text-[var(--rd-muted)]"
+                            aria-hidden="true"
+                          />
+                          <span className="block text-xs font-medium text-[var(--rd-text)]">
+                            Kelola akun
+                          </span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <button
                   type="button"
                   role="menuitem"
                   onClick={() => setProfileOpen(false)}
                   className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs font-medium transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
                 >
-                  <User size={18} strokeWidth={1.8} className="shrink-0 text-[var(--rd-muted)]" aria-hidden="true" />
-                  <span className="block text-[13px] font-medium text-[var(--rd-text)]">Profil saya</span>
+                  <User
+                    size={18}
+                    strokeWidth={1.8}
+                    className="shrink-0 text-[var(--rd-muted)]"
+                    aria-hidden="true"
+                  />
+                  <span className="block text-[13px] font-medium text-[var(--rd-text)]">
+                    Profil saya
+                  </span>
                 </button>
                 <div className="my-1 border-t border-[var(--rd-border)]" />
                 <button
