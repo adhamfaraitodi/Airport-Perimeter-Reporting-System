@@ -22,7 +22,6 @@ import { useTheme } from "../../_lib/use-theme";
 import {
   alertBox,
   btnSecondary,
-  eyebrow,
   focusRing,
 } from "../../_lib/ui-classes";
 import { AppHeader } from "../../_components/app-header";
@@ -152,7 +151,15 @@ export default function DashboardPage() {
         roleLabel="Operator perimeter"
         containerClassName="max-w-[1700px] min-[1100px]:px-[5%]"
       />
-      <main className="mx-auto max-w-[1700px] px-3 pt-[18px] md:px-[3%] md:pt-9 min-[1100px]:px-[5%]">
+      <main className="mx-auto max-w-[1700px] px-3 pt-4 md:px-[3%] md:pt-6 min-[1100px]:px-[5%]">
+        <nav
+          aria-label="Breadcrumb"
+          className="mb-3 flex items-center gap-2 text-xs md:text-[13px]"
+        >
+          <span className="text-[var(--rd-muted)]">Dashboard</span>
+          <span className="text-[var(--rd-muted)]/50 select-none">/</span>
+          <span className="font-medium text-[var(--rd-link)]">Pantau Perimeter</span>
+        </nav>
         <div className="mb-[18px] flex items-center justify-between gap-2 px-1.5 md:mb-[30px] md:gap-5 md:px-0">
           <div>
             {/*<span className={eyebrow}>YOGYAKARTA INTERNATIONAL AIRPORT</span>*/}
@@ -211,7 +218,8 @@ export default function DashboardPage() {
             </button>
           </div>
         )}
-        <div className="flex h-[calc(100dvh-184px)] min-h-[550px] flex-col md:grid md:h-[calc(100dvh-280px)] md:grid-cols-[minmax(0,1fr)_400px] md:gap-3 min-[1100px]:grid-cols-[minmax(0,1fr)_580px] min-[1100px]:gap-5">          <PerimeterMap
+        <div className="flex h-[calc(100dvh-184px)] min-h-[550px] flex-col md:grid md:h-[calc(100dvh-280px)] md:grid-cols-[minmax(0,1fr)_400px] md:gap-3 min-[1100px]:grid-cols-[minmax(0,1fr)_580px] min-[1100px]:gap-5">
+          <PerimeterMap
             reports={visible}
             selectedId={selectedId}
             onSelect={(id) => {
@@ -273,7 +281,8 @@ export default function DashboardPage() {
                           key={value}
                           aria-pressed={filter === value}
                           onClick={() => setFilter(value)}
-                          className={`${button} min-h-9 shrink-0 rounded-xl px-2 py-1 text-[11px] sm:px-3 sm:text-sm ${                            filter === value
+                          className={`${button} min-h-9 shrink-0 rounded-xl px-2 py-1 text-[11px] sm:px-3 sm:text-sm ${
+                            filter === value
                               ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
                               : "bg-transparent text-[var(--rd-muted)] hover:bg-[var(--rd-hover)]"
                           }`}
