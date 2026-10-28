@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Info, Moon, Sun, X } from "lucide-react";
+import { Info, MoonStar, Sun, X } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 
 const focusClasses =
@@ -99,7 +99,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
           {dark ? (
             <Sun size={27} strokeWidth={1.7} />
           ) : (
-            <Moon size={29} strokeWidth={1.7} />
+            <MoonStar size={29} strokeWidth={1.7} />
           )}
         </button>
         <div className="flex h-full flex-col items-center justify-end gap-[35px] px-[20px] pt-0 pb-[40px] min-[900px]:justify-center min-[900px]:gap-[40px] min-[900px]:px-[40px] min-[900px]:py-[70px]">

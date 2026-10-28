@@ -242,6 +242,7 @@ export function ReportList({
         user={user}
         dark={dark}
         onToggleTheme={toggleTheme}
+        roleLabel="Reporter perimeter"
         containerClassName="max-w-5xl"
       />
       <main className="mx-auto max-w-5xl px-[26px] pt-11 pb-6 sm:px-8 sm:pt-12">
