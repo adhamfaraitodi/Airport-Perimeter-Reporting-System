@@ -32,9 +32,9 @@ export const ROW_LABELS = [
  */
 const SW_ANCHOR_LAT = -7.898498;
 const SW_ANCHOR_LNG = 110.033862;
-const SW_COL_OFFSET = 1.127;
-const SW_ROW_OFFSET = 13.06;
-const CELL_WIDTH_M = 195;
+const SW_COL_OFFSET = 1.307;
+const SW_ROW_OFFSET = 12.96;
+const CELL_WIDTH_M = 200;
 const CELL_HEIGHT_M = 170;
 
 const DEG_TO_RAD = Math.PI / 180;
