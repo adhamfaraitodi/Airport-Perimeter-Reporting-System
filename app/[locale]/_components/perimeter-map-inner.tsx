@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet-rotate";
+import { Grid2x2 } from "lucide-react";
 import perimeter from "../_data/new_perimeter.json";
 import { labels } from "../_lib/draft-store";
 import type { ReportRecord } from "../_lib/client-api";
@@ -87,8 +88,10 @@ export default function PerimeterMapInner({
   const host = useRef<HTMLDivElement | null>(null);
   const map = useRef<L.Map | null>(null);
   const layer = useRef<L.LayerGroup | null>(null);
+  const gridLayer = useRef<L.LayerGroup | null>(null);
   const callbacks = useRef({ onPoint, onSelect });
   const [tileError, setTileError] = useState(false);
+  const [showGrid, setShowGrid] = useState(false);
   const pointOutsideBounds = point && !isPointInNavigationBounds(point);
   callbacks.current = { onPoint, onSelect };
 
@@ -132,7 +135,9 @@ export default function PerimeterMapInner({
       },
     }).addTo(instance);
 
-    // 2. Rotated 29x14 Grid lines (counter-angled +20 deg so they appear straight on -20 deg map)
+    // 2. Toggleable Airport Grid LayerGroup (off by default)
+    const gridGroup = L.layerGroup();
+
     L.geoJSON(gridData.linesCollection as GeoJSON.GeoJsonObject, {
       interactive: false,
       style: {
@@ -140,9 +145,8 @@ export default function PerimeterMapInner({
         weight: 1,
         opacity: 0.75,
       },
-    }).addTo(instance);
+    }).addTo(gridGroup);
 
-    // 3. Outer header cells (1..29 top/bottom, A..N left/right)
     L.geoJSON(gridData.headerCellsCollection as GeoJSON.GeoJsonObject, {
       interactive: false,
       style: {
@@ -151,9 +155,8 @@ export default function PerimeterMapInner({
         fillColor: "#ffffff",
         fillOpacity: 0.94,
       },
-    }).addTo(instance);
+    }).addTo(gridGroup);
 
-    // 4. Four black corner blocks matching Appendix 3
     L.geoJSON(gridData.cornersCollection as GeoJSON.GeoJsonObject, {
       interactive: false,
       style: {
@@ -162,16 +165,17 @@ export default function PerimeterMapInner({
         fillColor: "#111827",
         fillOpacity: 0.98,
       },
-    }).addTo(instance);
+    }).addTo(gridGroup);
 
-    // 5. Header labels (1..29 & A..N)
     gridData.labels.forEach((item) => {
       L.marker(item.position, {
         interactive: false,
         keyboard: false,
         icon: gridHeaderLabelIcon(item.text),
-      }).addTo(instance);
+      }).addTo(gridGroup);
     });
+
+    gridLayer.current = gridGroup;
 
     layer.current = L.layerGroup().addTo(instance);
     let initialized = false;
@@ -205,8 +209,20 @@ export default function PerimeterMapInner({
       observer.disconnect();
       instance.remove();
       map.current = null;
+      gridLayer.current = null;
     };
   }, [editable]);
+
+  useEffect(() => {
+    if (!map.current || !gridLayer.current) return;
+    if (showGrid) {
+      if (!map.current.hasLayer(gridLayer.current)) {
+        gridLayer.current.addTo(map.current);
+      }
+    } else {
+      gridLayer.current.remove();
+    }
+  }, [showGrid]);
 
   useEffect(() => {
     if (!map.current || !layer.current) return;
@@ -262,6 +278,21 @@ export default function PerimeterMapInner({
         ref={host}
         aria-label="Peta perimeter YIA"
       />
+      {/* Toggle Grid button directly beneath the Leaflet zoom (+/-) control */}
+      <button
+        type="button"
+        aria-pressed={showGrid}
+        title={showGrid ? "Sembunyikan grid" : "Tampilkan grid"}
+        aria-label={showGrid ? "Sembunyikan grid" : "Tampilkan grid"}
+        className={`absolute top-[82px] left-[10px] z-[500] grid size-[34px] place-items-center rounded-[4px] border-2 border-black/20 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
+          showGrid
+            ? "bg-white text-[#333333] hover:bg-[#f4f4f4]"
+            : "bg-[#f4f4f4] text-[#bbbbbb] hover:bg-[#eaeaea]"
+        }`}
+        onClick={() => setShowGrid((prev) => !prev)}
+      >
+        <Grid2x2 size={16} strokeWidth={2} aria-hidden="true" />
+      </button>
       <button
         type="button"
         className="absolute top-3 right-3 z-[500] inline-flex min-h-[34px] items-center gap-1 rounded-[4px] border-2 border-black/20 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#333333] shadow-none transition-colors hover:bg-[#f4f4f4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
