@@ -14,6 +14,7 @@ import {
   Plus,
   RefreshCw,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { ReportRecord, SessionUser } from "../../../_lib/client-api";
 import { useTheme } from "../../../_lib/use-theme";
 import { AppHeader } from "../../../_components/app-header";
@@ -402,35 +403,42 @@ export function ReportList({
                   <SortIcon size={21} aria-hidden="true" />
                 </button>
               </div>
-              <p role="status" className="my-3 text-xs text-[var(--rd-muted)]">
-                {loading
-                  ? "Memuat laporan…"
-                  : `${visible.length} laporan ditemukan`}
-              </p>
-              <div className="grid gap-3">
-                {visible.map((report) => (
-                  <ReportCard
-                    key={report.id}
-                    report={report}
-                    onSelect={onSelect}
-                  />
-                ))}
+              <div role="status" className="my-3 text-xs text-[var(--rd-muted)]">
+                {loading ? (
+                  <Skeleton className="h-4 w-32 rounded-md" />
+                ) : (
+                  `${visible.length} laporan ditemukan`
+                )}
               </div>
-              {!visible.length && (
+              {loading && !visible.length ? (
+                <div className="grid gap-3">
+                  <Skeleton className="h-28 w-full rounded-lg" />
+                  <Skeleton className="h-28 w-full rounded-lg" />
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {visible.map((report) => (
+                    <ReportCard
+                      key={report.id}
+                      report={report}
+                      onSelect={onSelect}
+                    />
+                  ))}
+                </div>
+              )}
+              {!visible.length && !loading && (
                 <div className="flex min-h-40 items-center justify-center px-3 text-center text-base text-[var(--rd-muted)]">
-                  {loading
-                    ? "Memuat laporan…"
-                    : error
-                      ? "Daftar laporan belum dapat dimuat"
-                      : filter === "ALL"
-                        ? "Belum ada laporan"
-                        : "Belum ada laporan dengan status ini"}
+                  {error
+                    ? "Daftar laporan belum dapat dimuat"
+                    : filter === "ALL"
+                      ? "Belum ada laporan"
+                      : "Belum ada laporan dengan status ini"}
                 </div>
               )}
             </section>
           </>
         )}
-        <ReportFooter/>
+        <ReportFooter />
       </main>
     </div>
   );

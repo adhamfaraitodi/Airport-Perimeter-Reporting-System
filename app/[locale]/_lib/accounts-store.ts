@@ -87,7 +87,7 @@ const defaultAccounts: ManagedAccount[] = [
 export interface AccountInput {
   nip: string;
   name: string;
-  email: string;
+  email?: string;
   role: UserRole;
   unit: string;
   status: AccountStatus;
@@ -110,19 +110,18 @@ export const useAccountsStore = create<AccountsState>()(
       addAccount: (input) => {
         const nip = input.nip.trim();
         const name = input.name.trim();
-        const email = input.email.trim().toLowerCase();
+        const email =
+          (input.email || "").trim().toLowerCase() ||
+          `${nip.toLowerCase()}@injourneyairports.id`;
         const unit = input.unit.trim() || "Operasional Bandara";
 
-        if (!nip || !name || !email) {
-          throw new Error("NIP, nama lengkap, dan email wajib diisi.");
+        if (!nip || !name) {
+          throw new Error("NIP dan nama lengkap wajib diisi.");
         }
 
         const current = get().accounts;
         if (current.some((a) => a.nip.toLowerCase() === nip.toLowerCase())) {
           throw new Error("NIP sudah terdaftar pada akun lain.");
-        }
-        if (current.some((a) => a.email.toLowerCase() === email)) {
-          throw new Error("Alamat email sudah digunakan oleh akun lain.");
         }
 
         const created: ManagedAccount = {
@@ -143,11 +142,10 @@ export const useAccountsStore = create<AccountsState>()(
       updateAccount: (id, patch) => {
         const nip = patch.nip.trim();
         const name = patch.name.trim();
-        const email = patch.email.trim().toLowerCase();
         const unit = patch.unit.trim() || "Operasional Bandara";
 
-        if (!nip || !name || !email) {
-          throw new Error("NIP, nama lengkap, dan email wajib diisi.");
+        if (!nip || !name) {
+          throw new Error("NIP dan nama lengkap wajib diisi.");
         }
 
         const current = get().accounts;
@@ -158,11 +156,6 @@ export const useAccountsStore = create<AccountsState>()(
         ) {
           throw new Error("NIP sudah terdaftar pada akun lain.");
         }
-        if (
-          current.some((a) => a.id !== id && a.email.toLowerCase() === email)
-        ) {
-          throw new Error("Alamat email sudah digunakan oleh akun lain.");
-        }
 
         set({
           accounts: current.map((account) =>
@@ -171,7 +164,9 @@ export const useAccountsStore = create<AccountsState>()(
                   ...account,
                   nip,
                   name,
-                  email,
+                  email: patch.email?.trim()
+                    ? patch.email.trim().toLowerCase()
+                    : account.email,
                   role: patch.role,
                   unit,
                   status: patch.status,

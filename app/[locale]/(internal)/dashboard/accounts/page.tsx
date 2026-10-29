@@ -76,7 +76,7 @@ interface PasswordModalState {
   confirmPassword: string;
 }
 
-function initialsOfName(name: string, email: string) {
+function initialsOfName(name: string, email = "") {
   const cleaned = name.trim() || email || "PG";
   return name.trim()
     ? name

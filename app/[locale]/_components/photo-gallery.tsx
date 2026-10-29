@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api, type ImageRef } from "../_lib/client-api";
 import { message } from "../_lib/draft-store";
 
@@ -77,9 +78,7 @@ function Photo({ image }: { image: ImageRef }) {
           />
         </a>
       ) : (
-        <span className="p-2 text-center text-[10px] text-[var(--rd-muted)]">
-          Memuat foto…
-        </span>
+        <Skeleton className="h-full w-full rounded-lg" />
       )}
     </div>
   );

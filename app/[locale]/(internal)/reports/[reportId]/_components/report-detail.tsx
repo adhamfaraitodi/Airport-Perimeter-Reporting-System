@@ -11,6 +11,7 @@ import {
   X,
   ZoomIn,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import MapView from "../../../../_components/perimeter-map-view";
 import { api, type ImageRef, type ReportRecord } from "../../../../_lib/client-api";
 import { dateText, message } from "../../../../_lib/draft-store";
@@ -140,12 +141,7 @@ function Photo({
           </span>
         </button>
       ) : (
-        <span
-          role="status"
-          className={`${small} grid h-full place-items-center p-3`}
-        >
-          Memuat foto…
-        </span>
+        <Skeleton className="h-full w-full rounded-lg" />
       )}
     </div>
   );
