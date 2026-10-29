@@ -8,7 +8,6 @@ import {
   type SessionUser,
 } from "../../_lib/client-api";
 import { message } from "../../_lib/draft-store";
-import { StartupScreen } from "../../_components/startup-screen";
 import { toast } from "@/components/ui/sonner";
 import { ReportList } from "./_components/report-list";
 import { CreateReportDialog } from "./_components/create-report-dialog";
@@ -78,11 +77,7 @@ export default function ReportsPage() {
     });
   }
 
-  if (!user) {
-    return <StartupScreen loading={loading} error={error} />;
-  }
-
-  const owned = reports.filter((r) => r.reporterId === user.id);
+  const owned = user ? reports.filter((r) => r.reporterId === user.id) : [];
   const selected = owned.find((r) => r.id === selectedId) || null;
 
   return (
@@ -104,7 +99,7 @@ export default function ReportsPage() {
       onDismissAbandoned={() => setAbandonedSubmissionId(null)}
       formOpen={action === "CREATE"}
     >
-      {action === "CREATE" ? (
+      {action === "CREATE" && user ? (
         <CreateReportDialog
           user={user}
           onSuccess={success}

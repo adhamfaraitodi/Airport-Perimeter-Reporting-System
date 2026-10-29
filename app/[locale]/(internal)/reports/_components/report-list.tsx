@@ -166,7 +166,7 @@ function ReportCard({
 }
 
 export interface ReporterDashboardProps {
-  user: SessionUser;
+  user?: SessionUser | null;
   reports: ReportRecord[];
   loading: boolean;
   error: string;
@@ -201,7 +201,9 @@ export function ReportList({
   const { theme, dark, toggleTheme } = useTheme();
   const [newest, setNewest] = useState(true);
 
-  const owned = reports.filter((report) => report.reporterId === user.id);
+  const owned = user
+    ? reports.filter((report) => report.reporterId === user.id)
+    : [];
   const visible = owned
     .filter(
       (r) =>
@@ -260,7 +262,7 @@ export function ReportList({
           <div className="mt-5 flex gap-[14px] sm:mt-0 sm:w-80 sm:shrink-0">
             <button
               type="button"
-              disabled={loading || !!error || formOpen}
+              disabled={loading || !!error || formOpen || !user}
               onClick={onCreate}
               className={`${button} flex min-h-10 flex-1 items-center justify-center gap-1 rounded-[10px] bg-[var(--rd-primary)] px-3 py-2 text-sm font-bold text-white hover:bg-[var(--rd-primary-hover)]`}
             >
@@ -344,9 +346,13 @@ export function ReportList({
                 >
                   <StateIcon status={status} />
                   <div>
-                    <span className="mt-2 block px-1 text-xl leading-tight sm:mt-0 sm:text-3xl">
-                      {count}
-                    </span>
+                    {loading ? (
+                      <Skeleton className="mt-2 h-7 w-10 rounded-md sm:mt-0 sm:h-9 sm:w-12" />
+                    ) : (
+                      <span className="mt-2 block px-1 text-xl leading-tight sm:mt-0 sm:text-3xl">
+                        {count}
+                      </span>
+                    )}
                     <span className="mt-2 block text-[10px] min-[390px]:text-[11px] sm:text-sm">
                       {label}
                     </span>
@@ -410,10 +416,32 @@ export function ReportList({
                   `${visible.length} laporan ditemukan`
                 )}
               </div>
-              {loading && !visible.length ? (
+              {loading ? (
                 <div className="grid gap-3">
-                  <Skeleton className="h-28 w-full rounded-lg" />
-                  <Skeleton className="h-28 w-full rounded-lg" />
+                  {[0, 1, 2].map((index) => (
+                    <div
+                      key={index}
+                      className="flex w-full items-start gap-3 rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 sm:p-4"
+                    >
+                      <Skeleton className="mt-0.5 size-8 shrink-0 rounded-lg" />
+                      <div className="min-w-0 flex-1 space-y-2.5">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <Skeleton className="h-4 w-16 rounded" />
+                          <Skeleton className="h-5 w-20 rounded-full" />
+                          <Skeleton className="ml-auto h-3.5 w-28 rounded" />
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          <Skeleton className="h-5 w-36 rounded-md" />
+                          <Skeleton className="h-5 w-28 rounded-md" />
+                        </div>
+                        <Skeleton className="h-4 w-4/5 rounded" />
+                        <div className="flex gap-5 pt-2">
+                          <Skeleton className="h-3.5 w-20 rounded" />
+                          <Skeleton className="h-3.5 w-28 rounded" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="grid gap-3">

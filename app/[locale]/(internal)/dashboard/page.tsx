@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Search,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   api,
   setMockRole,
@@ -25,7 +26,6 @@ import {
   focusRing,
 } from "../../_lib/ui-classes";
 import { AppHeader } from "../../_components/app-header";
-import { StartupScreen } from "../../_components/startup-screen";
 import { toast } from "@/components/ui/sonner";
 import { PerimeterMap } from "./_components/perimeter-map";
 import {
@@ -115,10 +115,6 @@ export default function DashboardPage() {
     });
   }
 
-  if (!user) {
-    return <StartupScreen loading={loading} error={error} />;
-  }
-
   const visible = reports.filter(
     (report) =>
       !report.deletedAt &&
@@ -133,9 +129,6 @@ export default function DashboardPage() {
   );
 
   const selected = reports.find((report) => report.id === selectedId) || null;
-  const active = reports.filter(
-    (report) => !report.deletedAt && report.status !== "RESOLVED"
-  ).length;
 
   const SortIcon = newest ? CalendarArrowDown : CalendarArrowUp;
 
@@ -229,8 +222,9 @@ export default function DashboardPage() {
           <section
             className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-b-xl border border-t-0 border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] shadow-[0_-4px_15px_rgba(36,74,53,0.06)] md:rounded-[14px] md:border-t md:shadow-none"
             aria-label="Panel laporan operator"
+            aria-busy={loading}
           >
-            {action ? (
+            {action && user ? (
               <UpdateStatusDialog
                 key={`${user.id}:${action}:${selected?.id || "new"}`}
                 user={user}
@@ -307,48 +301,79 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between border-b border-solid border-[var(--rd-border)] px-[15px] py-1.5 text-[9px] text-[var(--rd-muted)] md:px-6 md:text-[10px]">
-                  <span>{visible.length} laporan ditemukan</span>
+                  {loading ? (
+                    <Skeleton className="h-3.5 w-28 rounded" />
+                  ) : (
+                    <span>{visible.length} laporan ditemukan</span>
+                  )}
                 </div>
-                <div>
-                  {[...visible]
-                    .sort(
-                      (a, b) =>
-                        (new Date(b.createdAt).getTime() -
-                          new Date(a.createdAt).getTime()) *
-                        (newest ? 1 : -1)
-                    )
-                    .map((report) => (
-                      <OperatorReportCard
-                        key={report.id}
-                        report={report}
-                        onSelect={setSelectedId}
-                      />
-                    ))}
-                </div>
-                {!visible.length && (
-                  <div className="px-6 py-[50px] text-center text-[var(--rd-muted)]">
-                    <span className="text-4xl">⌖</span>
-                    <h3 className="mb-3 text-[15px] font-medium text-[var(--rd-text)]">
-                      {search || filter !== "ALL"
-                        ? "Tidak ada laporan yang cocok"
-                        : "Belum ada laporan"}
-                    </h3>
-                    <p className="mx-auto mb-5 max-w-[290px] text-xs leading-relaxed">
-                      Titik laporan akan muncul di sini saat laporan diterima.
-                    </p>
-                    {(search || filter !== "ALL") && (
-                      <button
-                        type="button"
-                        className={btnSecondary}
-                        onClick={() => {
-                          setSearch("");
-                          setFilter("ALL");
-                        }}
+                {loading ? (
+                  <div>
+                    {[0, 1, 2].map((index) => (
+                      <div
+                        key={index}
+                        className="flex w-full gap-3 border-b border-solid border-[var(--rd-border)] px-[15px] py-[19px] last:border-b-0 md:py-[18px] min-[1100px]:p-5"
                       >
-                        Reset pencarian
-                      </button>
-                    )}
+                        <Skeleton className="mt-[5px] h-9 w-[30px] shrink-0 rounded-[10px] md:hidden min-[1100px]:block" />
+                        <div className="min-w-0 flex-1 space-y-2.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <Skeleton className="h-3.5 w-16 rounded" />
+                            <Skeleton className="h-5 w-20 rounded-full" />
+                          </div>
+                          <Skeleton className="h-4 w-3/5 rounded" />
+                          <Skeleton className="h-3.5 w-full rounded" />
+                          <div className="flex justify-between gap-2 pt-1">
+                            <Skeleton className="h-3 w-28 rounded" />
+                            <Skeleton className="h-3 w-14 rounded" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
+                ) : (
+                  <>
+                    <div>
+                      {[...visible]
+                        .sort(
+                          (a, b) =>
+                            (new Date(b.createdAt).getTime() -
+                              new Date(a.createdAt).getTime()) *
+                            (newest ? 1 : -1)
+                        )
+                        .map((report) => (
+                          <OperatorReportCard
+                            key={report.id}
+                            report={report}
+                            onSelect={setSelectedId}
+                          />
+                        ))}
+                    </div>
+                    {!visible.length && (
+                      <div className="px-6 py-[50px] text-center text-[var(--rd-muted)]">
+                        <span className="text-4xl">⌖</span>
+                        <h3 className="mb-3 text-[15px] font-medium text-[var(--rd-text)]">
+                          {search || filter !== "ALL"
+                            ? "Tidak ada laporan yang cocok"
+                            : "Belum ada laporan"}
+                        </h3>
+                        <p className="mx-auto mb-5 max-w-[290px] text-xs leading-relaxed">
+                          Titik laporan akan muncul di sini saat laporan diterima.
+                        </p>
+                        {(search || filter !== "ALL") && (
+                          <button
+                            type="button"
+                            className={btnSecondary}
+                            onClick={() => {
+                              setSearch("");
+                              setFilter("ALL");
+                            }}
+                          >
+                            Reset pencarian
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}

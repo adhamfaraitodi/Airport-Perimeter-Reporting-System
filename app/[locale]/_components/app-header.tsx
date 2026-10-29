@@ -26,6 +26,7 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { SessionUser } from "../_lib/client-api";
 
 export interface NotificationItem {
@@ -92,7 +93,7 @@ const initialReporterNotifications: NotificationItem[] = [
 ];
 
 export interface AppHeaderProps {
-  user: SessionUser;
+  user?: SessionUser | null;
   dark: boolean;
   onToggleTheme: () => void;
   /** Optional role caption shown next to the avatar on wide screens. */
@@ -106,7 +107,8 @@ export interface AppHeaderProps {
   onLogout?: () => void;
 }
 
-function initialsOf(user: SessionUser) {
+function initialsOf(user?: SessionUser | null) {
+  if (!user) return "PG";
   const displayName = user.name?.trim() || user.email || "Pengguna";
   return user.name?.trim()
     ? user.name
@@ -135,8 +137,8 @@ export function AppHeader({
   const locale = params?.locale || "id";
 
   const isOperator =
-    user.role === "OPERATOR" ||
-    roleLabel?.toLowerCase().includes("operator");
+    user?.role === "OPERATOR" ||
+    Boolean(roleLabel?.toLowerCase().includes("operator"));
 
   const [dataMasterOpen, setDataMasterOpen] = useState(false);
   const [mobileDataMasterOpen, setMobileDataMasterOpen] = useState(false);
@@ -158,7 +160,7 @@ export function AppHeader({
   const isDashboardHomeActive =
     pathname?.endsWith("/dashboard") && !isDataMasterActive;
 
-  const displayName = user.name?.trim() || user.email || "Pengguna";
+  const displayName = user?.name?.trim() || user?.email || "Pengguna";
 
   const unreadCount = notifications.filter((n) => !n.read).length;
   const showUnreadDot =
@@ -561,17 +563,25 @@ export function AppHeader({
               aria-haspopup="menu"
               className="flex items-center gap-2.5 rounded-2xl p-1 text-left transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
             >
-              <span
-                className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-surface)] text-xs font-semibold tracking-wide text-[var(--rd-text)] shadow-xs sm:size-10 sm:rounded-2xl sm:text-sm"
-                title={displayName}
-                aria-label={displayName}
-              >
-                {initialsOf(user)}
-              </span>
+              {user ? (
+                <span
+                  className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-surface)] text-xs font-semibold tracking-wide text-[var(--rd-text)] shadow-xs sm:size-10 sm:rounded-2xl sm:text-sm"
+                  title={displayName}
+                  aria-label={displayName}
+                >
+                  {initialsOf(user)}
+                </span>
+              ) : (
+                <Skeleton className="size-9 shrink-0 rounded-xl sm:size-10 sm:rounded-2xl" />
+              )}
               <div className="hidden leading-tight sm:block">
-                <strong className="block text-[13px] font-semibold text-[var(--rd-text)]">
-                  {displayName}
-                </strong>
+                {user ? (
+                  <strong className="block text-[13px] font-semibold text-[var(--rd-text)]">
+                    {displayName}
+                  </strong>
+                ) : (
+                  <Skeleton className="mb-1 h-3.5 w-24 rounded-md" />
+                )}
                 <span className="block text-[11px] text-[var(--rd-muted)]">
                   {roleLabel || "Pelapor"}
                 </span>
@@ -713,7 +723,7 @@ export function AppHeader({
                   type="button"
                   role="menuitem"
                   onClick={() => setProfileOpen(false)}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs font-medium transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
                 >
                   <User
                     size={18}
@@ -721,19 +731,26 @@ export function AppHeader({
                     className="shrink-0 text-[var(--rd-muted)]"
                     aria-hidden="true"
                   />
-                  <span className="block text-[13px] font-medium text-[var(--rd-text)]">
+                  <span className="block text-[13px] font-medium">
                     Profil saya
                   </span>
                 </button>
-                <div className="my-1 border-t border-[var(--rd-border)]" />
+
                 <button
                   type="button"
                   role="menuitem"
                   onClick={handleLogout}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs font-medium text-[var(--rd-coral)] transition-colors hover:bg-[var(--rd-coral)]/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[var(--rd-coral)] transition-colors hover:bg-[var(--rd-coral)]/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-coral)]"
                 >
-                  <LogOut size={18} strokeWidth={1.8} className="shrink-0" aria-hidden="true" />
-                  <span className="block text-[13px] font-medium">Keluar</span>
+                  <LogOut
+                    size={18}
+                    strokeWidth={1.8}
+                    className="shrink-0"
+                    aria-hidden="true"
+                  />
+                  <span className="block text-[13px] font-medium">
+                    Keluar
+                  </span>
                 </button>
               </div>
             )}

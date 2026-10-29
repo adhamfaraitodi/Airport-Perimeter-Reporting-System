@@ -19,6 +19,7 @@ import {
   Wrench,
   X,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   api,
   setMockRole,
@@ -43,7 +44,6 @@ import {
 } from "../../../_lib/ui-classes";
 import { useTheme } from "../../../_lib/use-theme";
 import { AppHeader } from "../../../_components/app-header";
-import { StartupScreen } from "../../../_components/startup-screen";
 import { DashboardFooter } from "../_components/dashboard-footer";
 import {
   Table,
@@ -96,7 +96,6 @@ export default function ManageAccountsPage() {
 
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   const {
     accounts,
@@ -128,7 +127,7 @@ export default function ManageAccountsPage() {
         const session = await api.getSession();
         if (active) setUser(session);
       } catch (e) {
-        if (active) setError(message(e));
+        if (active) toast.error(message(e));
       } finally {
         if (active) setLoading(false);
       }
@@ -137,10 +136,6 @@ export default function ManageAccountsPage() {
       active = false;
     };
   }, []);
-
-  if (!user) {
-    return <StartupScreen loading={loading} error={error} />;
-  }
 
   const totalAccounts = accounts.length;
   const totalOperators = accounts.filter((a) => a.role === "OPERATOR").length;
@@ -325,12 +320,16 @@ export default function ManageAccountsPage() {
               <span className="block text-xs text-[var(--rd-muted)]">
                 Total Akun Terdaftar
               </span>
-              <strong className="text-xl font-semibold text-[var(--rd-text)]">
-                {totalAccounts}{" "}
-                <span className="text-xs font-normal text-[var(--rd-muted)]">
-                  pengguna
-                </span>
-              </strong>
+              {loading ? (
+                <Skeleton className="mt-1 h-6 w-20 rounded-md" />
+              ) : (
+                <strong className="text-xl font-semibold text-[var(--rd-text)]">
+                  {totalAccounts}{" "}
+                  <span className="text-xs font-normal text-[var(--rd-muted)]">
+                    pengguna
+                  </span>
+                </strong>
+              )}
             </div>
           </div>
 
@@ -342,12 +341,16 @@ export default function ManageAccountsPage() {
               <span className="block text-xs text-[var(--rd-muted)]">
                 Operator Perimeter
               </span>
-              <strong className="text-xl font-semibold text-[var(--rd-text)]">
-                {totalOperators}{" "}
-                <span className="text-xs font-normal text-[var(--rd-muted)]">
-                  operator
-                </span>
-              </strong>
+              {loading ? (
+                <Skeleton className="mt-1 h-6 w-20 rounded-md" />
+              ) : (
+                <strong className="text-xl font-semibold text-[var(--rd-text)]">
+                  {totalOperators}{" "}
+                  <span className="text-xs font-normal text-[var(--rd-muted)]">
+                    operator
+                  </span>
+                </strong>
+              )}
             </div>
           </div>
 
@@ -359,12 +362,16 @@ export default function ManageAccountsPage() {
               <span className="block text-xs text-[var(--rd-muted)]">
                 Pelapor & Teknisi
               </span>
-              <strong className="text-xl font-semibold text-[var(--rd-text)]">
-                {totalFieldStaff}{" "}
-                <span className="text-xs font-normal text-[var(--rd-muted)]">
-                  personel lapangan
-                </span>
-              </strong>
+              {loading ? (
+                <Skeleton className="mt-1 h-6 w-24 rounded-md" />
+              ) : (
+                <strong className="text-xl font-semibold text-[var(--rd-text)]">
+                  {totalFieldStaff}{" "}
+                  <span className="text-xs font-normal text-[var(--rd-muted)]">
+                    personel lapangan
+                  </span>
+                </strong>
+              )}
             </div>
           </div>
 
@@ -376,12 +383,16 @@ export default function ManageAccountsPage() {
               <span className="block text-xs text-[var(--rd-muted)]">
                 Status Akun Aktif
               </span>
-              <strong className="text-xl font-semibold text-[var(--rd-text)]">
-                {totalActive}{" "}
-                <span className="text-xs font-normal text-[var(--rd-muted)]">
-                  dari {totalAccounts} akun
-                </span>
-              </strong>
+              {loading ? (
+                <Skeleton className="mt-1 h-6 w-24 rounded-md" />
+              ) : (
+                <strong className="text-xl font-semibold text-[var(--rd-text)]">
+                  {totalActive}{" "}
+                  <span className="text-xs font-normal text-[var(--rd-muted)]">
+                    dari {totalAccounts} akun
+                  </span>
+                </strong>
+              )}
             </div>
           </div>
         </div>
@@ -480,125 +491,163 @@ export default function ManageAccountsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAccounts.map((account, index) => {
-                const roleBadgeClass =
-                  account.role === "OPERATOR"
-                    ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
-                    : account.role === "TECHNICIAN"
-                      ? "bg-[var(--rd-brown)]/15 text-[var(--rd-brown)]"
-                      : "bg-[var(--rd-border)]/70 text-[var(--rd-text)]";
-
-                return (
-                  <TableRow key={account.id}>
-                    <TableCell className="text-center font-medium text-[var(--rd-muted)]">
-                      {index + 1}
+              {loading ? (
+                [0, 1, 2, 3].map((index) => (
+                  <TableRow key={index}>
+                    <TableCell className="text-center">
+                      <Skeleton className="mx-auto h-4 w-6 rounded" />
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <span
-                          className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-panel)] text-xs font-semibold tracking-wide text-[var(--rd-link)]"
-                          aria-hidden="true"
-                        >
-                          {initialsOfName(account.name)}
-                        </span>
-                        <div className="min-w-0">
-                          <div className="truncate font-semibold text-[var(--rd-text)]">
-                            {account.name}
-                          </div>
-                        </div>
+                        <Skeleton className="size-9 shrink-0 rounded-xl" />
+                        <Skeleton className="h-4 w-36 rounded" />
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="font-mono text-xs font-semibold text-[var(--rd-text)]">
-                        {account.nip}
-                      </div>
-                      <div className="text-xs text-[var(--rd-muted)]">
-                        {account.unit}
-                      </div>
+                      <Skeleton className="mb-1.5 h-3.5 w-28 rounded" />
+                      <Skeleton className="h-3 w-36 rounded" />
                     </TableCell>
                     <TableCell>
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${roleBadgeClass}`}
-                      >
-                        {roleLabels[account.role]}
-                      </span>
+                      <Skeleton className="h-5 w-28 rounded-full" />
                     </TableCell>
                     <TableCell className="text-center">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          toggleAccountStatus(account.id);
-                          toast.success(
-                            account.status === "ACTIVE"
-                              ? `Akun ${account.name} dinonaktifkan`
-                              : `Akun ${account.name} diaktifkan`
-                          );
-                        }}
-                        title="Klik untuk ubah status aktif/nonaktif"
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold transition-opacity hover:opacity-80 ${focusRing} ${
-                          account.status === "ACTIVE"
-                            ? "bg-[var(--rd-lime)]/15 text-[var(--rd-lime)]"
-                            : "bg-[var(--rd-border)] text-[var(--rd-muted)]"
-                        }`}
-                      >
-                        <CheckCircle2 size={12} aria-hidden="true" />
-                        <span>
-                          {account.status === "ACTIVE" ? "Aktif" : "Nonaktif"}
-                        </span>
-                      </button>
+                      <Skeleton className="mx-auto h-5 w-16 rounded-full" />
                     </TableCell>
-                    <TableCell className="text-xs text-[var(--rd-muted)]">
-                      {dateText(account.createdAt)}
+                    <TableCell>
+                      <Skeleton className="h-3.5 w-28 rounded" />
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="inline-flex items-center justify-end gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => openEditAccountModal(account)}
-                          className={btnIcon}
-                          title={`Ubah akun ${account.name}`}
-                          aria-label={`Ubah akun ${account.name}`}
-                        >
-                          <Pencil size={16} aria-hidden="true" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setPasswordModal({
-                              account,
-                              newPassword: "",
-                              confirmPassword: "",
-                            })
-                          }
-                          className={btnIcon}
-                          title={`Reset password ${account.name}`}
-                          aria-label={`Reset password ${account.name}`}
-                        >
-                          <KeyRound size={16} aria-hidden="true" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeleteTarget(account)}
-                          className={`${btnIcon} hover:!bg-[var(--rd-coral)]/15 hover:!text-[var(--rd-coral)]`}
-                          title={`Hapus akun ${account.name}`}
-                          aria-label={`Hapus akun ${account.name}`}
-                        >
-                          <Trash2 size={16} aria-hidden="true" />
-                        </button>
+                      <div className="inline-flex justify-end gap-1.5">
+                        <Skeleton className="size-8 rounded-lg" />
+                        <Skeleton className="size-8 rounded-lg" />
+                        <Skeleton className="size-8 rounded-lg" />
                       </div>
                     </TableCell>
                   </TableRow>
-                );
-              })}
-              {filteredAccounts.length === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="py-12 text-center text-[var(--rd-muted)]"
-                  >
-                    Tidak ada akun pengguna yang cocok dengan filter pencarian.
-                  </TableCell>
-                </TableRow>
+                ))
+              ) : (
+                <>
+                  {filteredAccounts.map((account, index) => {
+                    const roleBadgeClass =
+                      account.role === "OPERATOR"
+                        ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
+                        : account.role === "TECHNICIAN"
+                          ? "bg-[var(--rd-brown)]/15 text-[var(--rd-brown)]"
+                          : "bg-[var(--rd-border)]/70 text-[var(--rd-text)]";
+
+                    return (
+                      <TableRow key={account.id}>
+                        <TableCell className="text-center font-medium text-[var(--rd-muted)]">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <span
+                              className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-panel)] text-xs font-semibold tracking-wide text-[var(--rd-link)]"
+                              aria-hidden="true"
+                            >
+                              {initialsOfName(account.name)}
+                            </span>
+                            <div className="min-w-0">
+                              <div className="truncate font-semibold text-[var(--rd-text)]">
+                                {account.name}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-mono text-xs font-semibold text-[var(--rd-text)]">
+                            {account.nip}
+                          </div>
+                          <div className="text-xs text-[var(--rd-muted)]">
+                            {account.unit}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${roleBadgeClass}`}
+                          >
+                            {roleLabels[account.role]}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              toggleAccountStatus(account.id);
+                              toast.success(
+                                account.status === "ACTIVE"
+                                  ? `Akun ${account.name} dinonaktifkan`
+                                  : `Akun ${account.name} diaktifkan`
+                              );
+                            }}
+                            title="Klik untuk ubah status aktif/nonaktif"
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold transition-opacity hover:opacity-80 ${focusRing} ${
+                              account.status === "ACTIVE"
+                                ? "bg-[var(--rd-lime)]/15 text-[var(--rd-lime)]"
+                                : "bg-[var(--rd-border)] text-[var(--rd-muted)]"
+                            }`}
+                          >
+                            <CheckCircle2 size={12} aria-hidden="true" />
+                            <span>
+                              {account.status === "ACTIVE" ? "Aktif" : "Nonaktif"}
+                            </span>
+                          </button>
+                        </TableCell>
+                        <TableCell className="text-xs text-[var(--rd-muted)]">
+                          {dateText(account.createdAt)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="inline-flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => openEditAccountModal(account)}
+                              className={btnIcon}
+                              title={`Ubah akun ${account.name}`}
+                              aria-label={`Ubah akun ${account.name}`}
+                            >
+                              <Pencil size={16} aria-hidden="true" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPasswordModal({
+                                  account,
+                                  newPassword: "",
+                                  confirmPassword: "",
+                                })
+                              }
+                              className={btnIcon}
+                              title={`Reset password ${account.name}`}
+                              aria-label={`Reset password ${account.name}`}
+                            >
+                              <KeyRound size={16} aria-hidden="true" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteTarget(account)}
+                              className={`${btnIcon} hover:!bg-[var(--rd-coral)]/15 hover:!text-[var(--rd-coral)]`}
+                              title={`Hapus akun ${account.name}`}
+                              aria-label={`Hapus akun ${account.name}`}
+                            >
+                              <Trash2 size={16} aria-hidden="true" />
+                            </button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {filteredAccounts.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className="py-12 text-center text-[var(--rd-muted)]"
+                      >
+                        Tidak ada akun pengguna yang cocok dengan filter pencarian.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
               )}
             </TableBody>
           </Table>

@@ -16,6 +16,7 @@ import {
   Wrench,
   X,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   api,
   setMockRole,
@@ -39,7 +40,6 @@ import {
 } from "../../../_lib/ui-classes";
 import { useTheme } from "../../../_lib/use-theme";
 import { AppHeader } from "../../../_components/app-header";
-import { StartupScreen } from "../../../_components/startup-screen";
 import { DashboardFooter } from "../_components/dashboard-footer";
 import {
   Table,
@@ -85,7 +85,6 @@ export default function PerimeterDamageMasterPage() {
 
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   const {
     parts,
@@ -116,7 +115,7 @@ export default function PerimeterDamageMasterPage() {
         const session = await api.getSession();
         if (active) setUser(session);
       } catch (e) {
-        if (active) setError(message(e));
+        if (active) toast.error(message(e));
       } finally {
         if (active) setLoading(false);
       }
@@ -125,10 +124,6 @@ export default function PerimeterDamageMasterPage() {
       active = false;
     };
   }, []);
-
-  if (!user) {
-    return <StartupScreen loading={loading} error={error} />;
-  }
 
   const totalParts = parts.length;
   const totalDamages = parts.reduce((sum, p) => sum + p.damages.length, 0);
@@ -427,12 +422,16 @@ export default function PerimeterDamageMasterPage() {
               <span className="block text-xs text-[var(--rd-muted)]">
                 Bagian Pagar Perimeter
               </span>
-              <strong className="text-xl font-semibold text-[var(--rd-text)]">
-                {totalParts}{" "}
-                <span className="text-xs font-normal text-[var(--rd-muted)]">
-                  bagian
-                </span>
-              </strong>
+              {loading ? (
+                <Skeleton className="mt-1 h-6 w-20 rounded-md" />
+              ) : (
+                <strong className="text-xl font-semibold text-[var(--rd-text)]">
+                  {totalParts}{" "}
+                  <span className="text-xs font-normal text-[var(--rd-muted)]">
+                    bagian
+                  </span>
+                </strong>
+              )}
             </div>
           </div>
 
@@ -444,12 +443,16 @@ export default function PerimeterDamageMasterPage() {
               <span className="block text-xs text-[var(--rd-muted)]">
                 Total Jenis Kerusakan
               </span>
-              <strong className="text-xl font-semibold text-[var(--rd-text)]">
-                {totalDamages}{" "}
-                <span className="text-xs font-normal text-[var(--rd-muted)]">
-                  klasifikasi
-                </span>
-              </strong>
+              {loading ? (
+                <Skeleton className="mt-1 h-6 w-24 rounded-md" />
+              ) : (
+                <strong className="text-xl font-semibold text-[var(--rd-text)]">
+                  {totalDamages}{" "}
+                  <span className="text-xs font-normal text-[var(--rd-muted)]">
+                    klasifikasi
+                  </span>
+                </strong>
+              )}
             </div>
           </div>
 
@@ -461,12 +464,16 @@ export default function PerimeterDamageMasterPage() {
               <span className="block text-xs text-[var(--rd-muted)]">
                 Opsi Grup Eksklusif (Korosi)
               </span>
-              <strong className="text-xl font-semibold text-[var(--rd-text)]">
-                {totalExclusive}{" "}
-                <span className="text-xs font-normal text-[var(--rd-muted)]">
-                  opsi tingkat korosi
-                </span>
-              </strong>
+              {loading ? (
+                <Skeleton className="mt-1 h-6 w-28 rounded-md" />
+              ) : (
+                <strong className="text-xl font-semibold text-[var(--rd-text)]">
+                  {totalExclusive}{" "}
+                  <span className="text-xs font-normal text-[var(--rd-muted)]">
+                    opsi tingkat korosi
+                  </span>
+                </strong>
+              )}
             </div>
           </div>
         </div>
@@ -561,123 +568,155 @@ export default function PerimeterDamageMasterPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredParts.map((part, index) => {
-                  const sortedDamages = [...part.damages].sort((a, b) =>
-                    a.name.localeCompare(b.name, "id")
-                  );
-                  return (
-                    <TableRow key={part.id}>
-                      <TableCell className="text-center font-medium text-[var(--rd-muted)]">
-                        {index + 1}
-                      </TableCell>
-                      <TableCell className="align-top">
-                        <div className="font-semibold text-[var(--rd-text)]">
-                          {part.name}
-                        </div>
-                        <span className="mt-0.5 inline-block font-mono text-[11px] text-[var(--rd-muted)]">
-                          ID: {part.id}
-                        </span>
+                {loading ? (
+                  [0, 1, 2].map((index) => (
+                    <TableRow key={index}>
+                      <TableCell className="text-center">
+                        <Skeleton className="mx-auto h-4 w-6 rounded" />
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {sortedDamages.map((damage) => (
-                            <span
-                              key={damage.id}
-                              className="group inline-flex items-center gap-1.5 rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-2.5 py-1 text-xs font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-primary)]/40 hover:bg-[var(--rd-hover)]"
-                            >
+                        <Skeleton className="mb-1.5 h-4 w-40 rounded" />
+                        <Skeleton className="h-3 w-24 rounded" />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1.5">
+                          <Skeleton className="h-6 w-24 rounded-lg" />
+                          <Skeleton className="h-6 w-28 rounded-lg" />
+                          <Skeleton className="h-6 w-20 rounded-lg" />
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Skeleton className="mx-auto h-5 w-16 rounded-full" />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="inline-flex justify-end gap-1.5">
+                          <Skeleton className="size-8 rounded-lg" />
+                          <Skeleton className="size-8 rounded-lg" />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <>
+                    {filteredParts.map((part, index) => {
+                      const sortedDamages = [...part.damages].sort((a, b) =>
+                        a.name.localeCompare(b.name, "id")
+                      );
+                      return (
+                        <TableRow key={part.id}>
+                          <TableCell className="text-center font-medium text-[var(--rd-muted)]">
+                            {index + 1}
+                          </TableCell>
+                          <TableCell className="align-top">
+                            <div className="font-semibold text-[var(--rd-text)]">
+                              {part.name}
+                            </div>
+                            <span className="mt-0.5 inline-block font-mono text-[11px] text-[var(--rd-muted)]">
+                              ID: {part.id}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {sortedDamages.map((damage) => (
+                                <span
+                                  key={damage.id}
+                                  className="group inline-flex items-center gap-1.5 rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-2.5 py-1 text-xs font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-primary)]/40 hover:bg-[var(--rd-hover)]"
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      openEditDamageModal(part.id, damage)
+                                    }
+                                    title="Klik untuk ubah jenis kerusakan ini"
+                                    className={`inline-flex items-center gap-1.5 text-left ${focusRing}`}
+                                  >
+                                    <span>{damage.name}</span>
+                                    {damage.exclusiveGroup && (
+                                      <span
+                                        title="Grup eksklusif: hanya satu opsi korosi dapat dipilih per bagian"
+                                        className="rounded bg-[var(--rd-brown)]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--rd-brown)]"
+                                      >
+                                        {damage.exclusiveGroup}
+                                      </span>
+                                    )}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setDeleteTarget({
+                                        type: "DAMAGE",
+                                        partId: part.id,
+                                        partName: part.name,
+                                        damageId: damage.id,
+                                        damageName: damage.name,
+                                      })
+                                    }
+                                    aria-label={`Hapus ${damage.name} dari ${part.name}`}
+                                    title="Hapus jenis kerusakan"
+                                    className="ml-0.5 rounded p-0.5 text-[var(--rd-muted)] transition-colors hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)]"
+                                  >
+                                    <X size={12} aria-hidden="true" />
+                                  </button>
+                                </span>
+                              ))}
+
                               <button
                                 type="button"
-                                onClick={() =>
-                                  openEditDamageModal(part.id, damage)
-                                }
-                                title="Klik untuk ubah jenis kerusakan ini"
-                                className={`inline-flex items-center gap-1.5 text-left ${focusRing}`}
+                                onClick={() => openCreateDamageModal(part.id)}
+                                className={`inline-flex items-center gap-1 rounded-lg border border-dashed border-[var(--rd-primary)]/50 bg-[var(--rd-active)]/50 px-2.5 py-1 text-xs font-semibold text-[var(--rd-link)] transition-colors hover:bg-[var(--rd-active)] ${focusRing}`}
                               >
-                                <span>{damage.name}</span>
-                                {damage.exclusiveGroup && (
-                                  <span
-                                    title="Grup eksklusif: hanya satu opsi korosi dapat dipilih per bagian"
-                                    className="rounded bg-[var(--rd-brown)]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--rd-brown)]"
-                                  >
-                                    {damage.exclusiveGroup}
-                                  </span>
-                                )}
+                                <Plus size={13} aria-hidden="true" />
+                                <span>Tambah</span>
+                              </button>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="inline-flex items-center rounded-full bg-[var(--rd-active)] px-2.5 py-0.5 text-xs font-semibold text-[var(--rd-link)]">
+                              {part.damages.length} jenis
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="inline-flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => openEditPartModal(part)}
+                                className={btnIcon}
+                                title={`Ubah ${part.name}`}
+                                aria-label={`Ubah ${part.name}`}
+                              >
+                                <Pencil size={16} aria-hidden="true" />
                               </button>
                               <button
                                 type="button"
                                 onClick={() =>
                                   setDeleteTarget({
-                                    type: "DAMAGE",
+                                    type: "PART",
                                     partId: part.id,
                                     partName: part.name,
-                                    damageId: damage.id,
-                                    damageName: damage.name,
                                   })
                                 }
-                                aria-label={`Hapus ${damage.name} dari ${part.name}`}
-                                title="Hapus jenis kerusakan"
-                                className="ml-0.5 rounded p-0.5 text-[var(--rd-muted)] transition-colors hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)]"
+                                className={`${btnIcon} hover:!bg-[var(--rd-coral)]/15 hover:!text-[var(--rd-coral)]`}
+                                title={`Hapus ${part.name}`}
+                                aria-label={`Hapus ${part.name}`}
                               >
-                                <X size={12} aria-hidden="true" />
+                                <Trash2 size={16} aria-hidden="true" />
                               </button>
-                            </span>
-                          ))}
-
-                          <button
-                            type="button"
-                            onClick={() => openCreateDamageModal(part.id)}
-                            className={`inline-flex items-center gap-1 rounded-lg border border-dashed border-[var(--rd-primary)]/50 bg-[var(--rd-active)]/50 px-2.5 py-1 text-xs font-semibold text-[var(--rd-link)] transition-colors hover:bg-[var(--rd-active)] ${focusRing}`}
-                          >
-                            <Plus size={13} aria-hidden="true" />
-                            <span>Tambah</span>
-                          </button>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="inline-flex items-center rounded-full bg-[var(--rd-active)] px-2.5 py-0.5 text-xs font-semibold text-[var(--rd-link)]">
-                          {part.damages.length} jenis
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="inline-flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => openEditPartModal(part)}
-                            className={btnIcon}
-                            title={`Ubah ${part.name}`}
-                            aria-label={`Ubah ${part.name}`}
-                          >
-                            <Pencil size={16} aria-hidden="true" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setDeleteTarget({
-                                type: "PART",
-                                partId: part.id,
-                                partName: part.name,
-                              })
-                            }
-                            className={`${btnIcon} hover:!bg-[var(--rd-coral)]/15 hover:!text-[var(--rd-coral)]`}
-                            title={`Hapus ${part.name}`}
-                            aria-label={`Hapus ${part.name}`}
-                          >
-                            <Trash2 size={16} aria-hidden="true" />
-                          </button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-                {filteredParts.length === 0 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="py-12 text-center text-[var(--rd-muted)]"
-                    >
-                      Tidak ada bagian pagar yang cocok dengan filter pencarian.
-                    </TableCell>
-                  </TableRow>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {filteredParts.length === 0 && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={5}
+                          className="py-12 text-center text-[var(--rd-muted)]"
+                        >
+                          Tidak ada bagian pagar yang cocok dengan filter pencarian.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
                 )}
               </TableBody>
             </Table>
@@ -693,84 +732,112 @@ export default function PerimeterDamageMasterPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredFlatDamages.map((item, index) => (
-                  <TableRow key={`${item.partId}:${item.damage.id}`}>
-                    <TableCell className="text-center font-medium text-[var(--rd-muted)]">
-                      {index + 1}
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-semibold text-[var(--rd-text)]">
-                        {item.damage.name}
-                      </div>
-                      <span className="font-mono text-[11px] text-[var(--rd-muted)]">
-                        ID: {item.damage.id}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="inline-flex items-center gap-1.5 rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-2.5 py-1 text-xs font-medium text-[var(--rd-text)]">
-                        <Fence
-                          size={13}
-                          className="text-[var(--rd-link)]"
-                          aria-hidden="true"
-                        />
-                        {item.partName}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {item.damage.exclusiveGroup ? (
-                        <span className="inline-flex items-center rounded-full bg-[var(--rd-brown)]/15 px-2.5 py-0.5 text-xs font-semibold text-[var(--rd-brown)]">
-                          Eksklusif ({item.damage.exclusiveGroup})
-                        </span>
-                      ) : (
-                        <span className="text-xs text-[var(--rd-muted)]">
-                          Pilihan majemuk (bebas)
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="inline-flex items-center justify-end gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            openEditDamageModal(item.partId, item.damage)
-                          }
-                          className={btnIcon}
-                          title={`Ubah ${item.damage.name}`}
-                          aria-label={`Ubah ${item.damage.name}`}
+                {loading ? (
+                  [0, 1, 2].map((index) => (
+                    <TableRow key={index}>
+                      <TableCell className="text-center">
+                        <Skeleton className="mx-auto h-4 w-6 rounded" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="mb-1.5 h-4 w-36 rounded" />
+                        <Skeleton className="h-3 w-20 rounded" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-6 w-36 rounded-lg" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-32 rounded-full" />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="inline-flex justify-end gap-1.5">
+                          <Skeleton className="size-8 rounded-lg" />
+                          <Skeleton className="size-8 rounded-lg" />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <>
+                    {filteredFlatDamages.map((item, index) => (
+                      <TableRow key={`${item.partId}:${item.damage.id}`}>
+                        <TableCell className="text-center font-medium text-[var(--rd-muted)]">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-semibold text-[var(--rd-text)]">
+                            {item.damage.name}
+                          </div>
+                          <span className="font-mono text-[11px] text-[var(--rd-muted)]">
+                            ID: {item.damage.id}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center gap-1.5 rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-2.5 py-1 text-xs font-medium text-[var(--rd-text)]">
+                            <Fence
+                              size={13}
+                              className="text-[var(--rd-link)]"
+                              aria-hidden="true"
+                            />
+                            {item.partName}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {item.damage.exclusiveGroup ? (
+                            <span className="inline-flex items-center rounded-full bg-[var(--rd-brown)]/15 px-2.5 py-0.5 text-xs font-semibold text-[var(--rd-brown)]">
+                              Eksklusif ({item.damage.exclusiveGroup})
+                            </span>
+                          ) : (
+                            <span className="text-xs text-[var(--rd-muted)]">
+                              Pilihan majemuk (bebas)
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="inline-flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                openEditDamageModal(item.partId, item.damage)
+                              }
+                              className={btnIcon}
+                              title={`Ubah ${item.damage.name}`}
+                              aria-label={`Ubah ${item.damage.name}`}
+                            >
+                              <Pencil size={16} aria-hidden="true" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setDeleteTarget({
+                                  type: "DAMAGE",
+                                  partId: item.partId,
+                                  partName: item.partName,
+                                  damageId: item.damage.id,
+                                  damageName: item.damage.name,
+                                })
+                              }
+                              className={`${btnIcon} hover:!bg-[var(--rd-coral)]/15 hover:!text-[var(--rd-coral)]`}
+                              title={`Hapus ${item.damage.name}`}
+                              aria-label={`Hapus ${item.damage.name}`}
+                            >
+                              <Trash2 size={16} aria-hidden="true" />
+                            </button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredFlatDamages.length === 0 && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={5}
+                          className="py-12 text-center text-[var(--rd-muted)]"
                         >
-                          <Pencil size={16} aria-hidden="true" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setDeleteTarget({
-                              type: "DAMAGE",
-                              partId: item.partId,
-                              partName: item.partName,
-                              damageId: item.damage.id,
-                              damageName: item.damage.name,
-                            })
-                          }
-                          className={`${btnIcon} hover:!bg-[var(--rd-coral)]/15 hover:!text-[var(--rd-coral)]`}
-                          title={`Hapus ${item.damage.name}`}
-                          aria-label={`Hapus ${item.damage.name}`}
-                        >
-                          <Trash2 size={16} aria-hidden="true" />
-                        </button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredFlatDamages.length === 0 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="py-12 text-center text-[var(--rd-muted)]"
-                    >
-                      Tidak ada jenis kerusakan yang cocok dengan filter
-                      pencarian.
-                    </TableCell>
-                  </TableRow>
+                          Tidak ada jenis kerusakan yang cocok dengan filter
+                          pencarian.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
                 )}
               </TableBody>
             </Table>
