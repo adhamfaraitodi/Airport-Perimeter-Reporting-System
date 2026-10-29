@@ -7,6 +7,10 @@ import perimeter from "../_data/new_perimeter.json";
 import { labels } from "../_lib/draft-store";
 import type { ReportRecord } from "../_lib/client-api";
 import {
+  buildAirportGridData,
+  getGridCellFromLatLng,
+} from "./airport-grid";
+import {
   isPointInNavigationBounds,
   NAVIGATION_BOUNDS_BOX,
   type LatLngPoint,
@@ -29,6 +33,7 @@ const MAP_BEARING = -20;
 
 const geometry = L.geoJSON(perimeter as GeoJSON.GeoJsonObject);
 const perimeterBounds = geometry.getBounds();
+const gridData = buildAirportGridData();
 const navigationBounds = L.latLngBounds(
   NAVIGATION_BOUNDS_BOX.southWest,
   NAVIGATION_BOUNDS_BOX.northEast
@@ -60,6 +65,14 @@ const icon = (status: string, selected = false) => {
     iconAnchor: [16, 35],
   });
 };
+
+const gridHeaderLabelIcon = (text: string) =>
+  L.divIcon({
+    className: "",
+    html: `<span class="flex size-full items-center justify-center text-[10px] font-bold leading-none text-gray-900 select-none sm:text-[11px]">${text}</span>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  });
 
 export default function PerimeterMapInner({
   reports = [],
@@ -108,7 +121,9 @@ export default function PerimeterMapInner({
       .on("tileerror", () => setTileError(true))
       .addTo(instance);
 
+    // 1. Perimeter polygon
     L.geoJSON(perimeter as GeoJSON.GeoJsonObject, {
+      interactive: false,
       style: {
         color: "#167b68",
         weight: 3,
@@ -116,6 +131,47 @@ export default function PerimeterMapInner({
         fillOpacity: 0.08,
       },
     }).addTo(instance);
+
+    // 2. Rotated 29x14 Grid lines (counter-angled +20 deg so they appear straight on -20 deg map)
+    L.geoJSON(gridData.linesCollection as GeoJSON.GeoJsonObject, {
+      interactive: false,
+      style: {
+        color: "#ca8a04",
+        weight: 1,
+        opacity: 0.75,
+      },
+    }).addTo(instance);
+
+    // 3. Outer header cells (1..29 top/bottom, A..N left/right)
+    L.geoJSON(gridData.headerCellsCollection as GeoJSON.GeoJsonObject, {
+      interactive: false,
+      style: {
+        color: "#1f2937",
+        weight: 1.2,
+        fillColor: "#ffffff",
+        fillOpacity: 0.94,
+      },
+    }).addTo(instance);
+
+    // 4. Four black corner blocks matching Appendix 3
+    L.geoJSON(gridData.cornersCollection as GeoJSON.GeoJsonObject, {
+      interactive: false,
+      style: {
+        color: "#111827",
+        weight: 1.2,
+        fillColor: "#111827",
+        fillOpacity: 0.98,
+      },
+    }).addTo(instance);
+
+    // 5. Header labels (1..29 & A..N)
+    gridData.labels.forEach((item) => {
+      L.marker(item.position, {
+        interactive: false,
+        keyboard: false,
+        icon: gridHeaderLabelIcon(item.text),
+      }).addTo(instance);
+    });
 
     layer.current = L.layerGroup().addTo(instance);
     let initialized = false;
@@ -164,19 +220,26 @@ export default function PerimeterMapInner({
           Number.isFinite(r.longitude)
       )
       .forEach((report) => {
+        const cell = getGridCellFromLatLng(report.latitude, report.longitude);
+        const gridSuffix = cell ? ` · Grid ${cell.code}` : "";
         L.marker([report.latitude, report.longitude], {
           icon: icon(report.status, report.id === selectedId),
-          title: `${labels[report.status] || report.status} · ${report.side || "Lokasi laporan"}`,
+          title: `${labels[report.status] || report.status} · ${
+            report.side || "Lokasi laporan"
+          }${gridSuffix}`,
         })
           .on("click", () => callbacks.current.onSelect?.(report.id))
           .addTo(layer.current!);
       });
 
     if (point && isPointInNavigationBounds(point)) {
+      const cell = getGridCellFromLatLng(point.latitude, point.longitude);
       const marker = L.marker([point.latitude, point.longitude], {
         icon: icon("LOCATION", true),
         draggable: editable,
-        title: editable ? "Geser pin lokasi laporan" : "Lokasi laporan",
+        title: editable
+          ? `Geser pin lokasi laporan${cell ? ` (Grid ${cell.code})` : ""}`
+          : `Lokasi laporan${cell ? ` (Grid ${cell.code})` : ""}`,
       }).addTo(layer.current);
 
       marker.on("dragend", () => {
@@ -201,7 +264,7 @@ export default function PerimeterMapInner({
       />
       <button
         type="button"
-        className="absolute top-3 right-3 z-[500] inline-flex min-h-[38px] items-center gap-1 rounded-lg bg-[var(--rd-surface)] px-3 py-2 text-[11px] font-semibold text-[var(--rd-link)] shadow-[0_2px_8px_rgba(23,63,37,0.09)] transition-colors hover:bg-[var(--rd-active)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+        className="absolute top-3 right-3 z-[500] inline-flex min-h-[34px] items-center gap-1 rounded-[4px] border-2 border-black/20 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#333333] shadow-none transition-colors hover:bg-[#f4f4f4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
         onClick={() =>
           map.current?.fitBounds(perimeterBounds, {
             padding: [24, 24],
