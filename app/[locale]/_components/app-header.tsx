@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import {
   Bell,
   ChevronDown,
@@ -56,6 +56,7 @@ export function AppHeader({
   onLogout,
 }: AppHeaderProps) {
   const params = useParams<{ locale?: string }>();
+  const pathname = usePathname();
   const router = useRouter();
   const locale = params?.locale || "id";
 
@@ -69,6 +70,14 @@ export function AppHeader({
   const isOperator =
     user.role === "OPERATOR" ||
     roleLabel?.toLowerCase().includes("operator");
+
+  const isPerimeterDamageActive = pathname?.includes(
+    "/dashboard/perimeter-damage"
+  );
+  const isAccountsActive = pathname?.includes("/dashboard/accounts");
+  const isDataMasterActive = isPerimeterDamageActive || isAccountsActive;
+  const isDashboardHomeActive =
+    pathname?.endsWith("/dashboard") && !isDataMasterActive;
 
   const displayName = user.name?.trim() || user.email || "Pengguna";
 
@@ -128,10 +137,14 @@ export function AppHeader({
             <nav className="hidden items-center gap-1.5 md:flex">
               <Link
                 href={`/${locale}/dashboard`}
-                className="inline-flex h-9 items-center gap-2 rounded-xl px-3 text-xs font-semibold text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-active)] hover:text-[var(--rd-link)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+                className={`inline-flex h-9 items-center gap-2 rounded-xl px-3 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
+                  isDashboardHomeActive
+                    ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
+                    : "text-[var(--rd-text)] hover:bg-[var(--rd-active)] hover:text-[var(--rd-link)]"
+                }`}
               >
                 <SquareChartGantt size={20} strokeWidth={1.8} aria-hidden="true" />
-                <span className="block text-[13px] font-medium text-[var(--rd-text)]">
+                <span className="block text-[13px] font-medium">
                   Pantau Perimeter
                 </span>
               </Link>
@@ -144,13 +157,13 @@ export function AppHeader({
                   aria-expanded={dataMasterOpen}
                   aria-haspopup="menu"
                   className={`inline-flex h-9 items-center gap-2 rounded-xl px-3 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
-                    dataMasterOpen
+                    dataMasterOpen || isDataMasterActive
                       ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
                       : "text-[var(--rd-text)] hover:bg-[var(--rd-active)] hover:text-[var(--rd-link)]"
                   }`}
                 >
                   <Database size={20} strokeWidth={1.8} aria-hidden="true" />
-                  <span className="block text-[13px] font-medium text-[var(--rd-text)]">
+                  <span className="block text-[13px] font-medium">
                     Data Master
                   </span>
                   <ChevronDown
@@ -167,38 +180,54 @@ export function AppHeader({
                     role="menu"
                     className="absolute left-0 top-full z-[600] mt-1.5 w-52 rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-surface)] p-1.5 text-[var(--rd-text)] shadow-xl animate-in fade-in zoom-in-95 duration-100"
                   >
-                    <button
-                      type="button"
+                    <Link
+                      href={`/${locale}/dashboard/perimeter-damage`}
                       role="menuitem"
                       onClick={() => setDataMasterOpen(false)}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium transition-colors hover:bg-[var(--rd-hover)] hover:text-[var(--rd-link)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
+                        isPerimeterDamageActive
+                          ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
+                          : "hover:bg-[var(--rd-hover)] hover:text-[var(--rd-link)]"
+                      }`}
                     >
                       <Fence
                         size={18}
                         strokeWidth={1.8}
-                        className="shrink-0 text-[var(--rd-muted)]"
+                        className={`shrink-0 ${
+                          isPerimeterDamageActive
+                            ? "text-[var(--rd-link)]"
+                            : "text-[var(--rd-muted)]"
+                        }`}
                         aria-hidden="true"
                       />
-                      <span className="block text-[13px] font-medium text-[var(--rd-text)]">
+                      <span className="block text-[13px] font-medium">
                         Kerusakan perimeter
                       </span>
-                    </button>
-                    <button
-                      type="button"
+                    </Link>
+                    <Link
+                      href={`/${locale}/dashboard/accounts`}
                       role="menuitem"
                       onClick={() => setDataMasterOpen(false)}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium transition-colors hover:bg-[var(--rd-hover)] hover:text-[var(--rd-link)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
+                        isAccountsActive
+                          ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
+                          : "hover:bg-[var(--rd-hover)] hover:text-[var(--rd-link)]"
+                      }`}
                     >
                       <Users
                         size={18}
                         strokeWidth={1.8}
-                        className="shrink-0 text-[var(--rd-muted)]"
+                        className={`shrink-0 ${
+                          isAccountsActive
+                            ? "text-[var(--rd-link)]"
+                            : "text-[var(--rd-muted)]"
+                        }`}
                         aria-hidden="true"
                       />
-                      <span className="block text-[13px] font-medium text-[var(--rd-text)]">
+                      <span className="block text-[13px] font-medium">
                         Kelola akun
                       </span>
-                    </button>
+                    </Link>
                   </div>
                 )}
               </div>
@@ -285,15 +314,23 @@ export function AppHeader({
                       href={`/${locale}/dashboard`}
                       role="menuitem"
                       onClick={() => setProfileOpen(false)}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
+                        isDashboardHomeActive
+                          ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
+                          : "hover:bg-[var(--rd-hover)]"
+                      }`}
                     >
                       <SquareChartGantt
                         size={18}
                         strokeWidth={1.8}
-                        className="shrink-0 text-[var(--rd-muted)]"
+                        className={`shrink-0 ${
+                          isDashboardHomeActive
+                            ? "text-[var(--rd-link)]"
+                            : "text-[var(--rd-muted)]"
+                        }`}
                         aria-hidden="true"
                       />
-                      <span className="block text-[13px] font-medium text-[var(--rd-text)]">
+                      <span className="block text-[13px] font-medium">
                         Pantau Perimeter
                       </span>
                     </Link>
@@ -326,44 +363,60 @@ export function AppHeader({
 
                     {mobileDataMasterOpen && (
                       <div className="mt-0.5 ml-4 space-y-0.5 border-l border-[var(--rd-border)] pl-2.5">
-                        <button
-                          type="button"
+                        <Link
+                          href={`/${locale}/dashboard/perimeter-damage`}
                           role="menuitem"
                           onClick={() => {
                             setMobileDataMasterOpen(false);
                             setProfileOpen(false);
                           }}
-                          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+                          className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
+                            isPerimeterDamageActive
+                              ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
+                              : "hover:bg-[var(--rd-hover)]"
+                          }`}
                         >
                           <Fence
                             size={16}
                             strokeWidth={1.8}
-                            className="shrink-0 text-[var(--rd-muted)]"
+                            className={`shrink-0 ${
+                              isPerimeterDamageActive
+                                ? "text-[var(--rd-link)]"
+                                : "text-[var(--rd-muted)]"
+                            }`}
                             aria-hidden="true"
                           />
-                          <span className="block text-xs font-medium text-[var(--rd-text)]">
+                          <span className="block text-xs font-medium">
                             Kerusakan perimeter
                           </span>
-                        </button>
-                        <button
-                          type="button"
+                        </Link>
+                        <Link
+                          href={`/${locale}/dashboard/accounts`}
                           role="menuitem"
                           onClick={() => {
                             setMobileDataMasterOpen(false);
                             setProfileOpen(false);
                           }}
-                          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+                          className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
+                            isAccountsActive
+                              ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
+                              : "hover:bg-[var(--rd-hover)]"
+                          }`}
                         >
                           <Users
                             size={16}
                             strokeWidth={1.8}
-                            className="shrink-0 text-[var(--rd-muted)]"
+                            className={`shrink-0 ${
+                              isAccountsActive
+                                ? "text-[var(--rd-link)]"
+                                : "text-[var(--rd-muted)]"
+                            }`}
                             aria-hidden="true"
                           />
-                          <span className="block text-xs font-medium text-[var(--rd-text)]">
+                          <span className="block text-xs font-medium">
                             Kelola akun
                           </span>
-                        </button>
+                        </Link>
                       </div>
                     )}
                   </div>
