@@ -28,15 +28,14 @@ export const ROW_LABELS = [
  *   100% horizontal on the rotated map.
  * - Grid Y axis runs along bearing 200 deg (+20 deg West of South), so it renders
  *   100% vertical on the rotated map.
- * - Each grid cell is 200m x 200m.
- * - Reference anchor is the SW perimeter corner (-7.898498, 110.033862), which lies
- *   at column offset c = 0.85 (inside Col 1) and row offset r = 12.75 (inside Row M).
+ * - Reference anchor is the SW perimeter corner (-7.898498, 110.033862).
  */
 const SW_ANCHOR_LAT = -7.898498;
 const SW_ANCHOR_LNG = 110.033862;
 const SW_COL_OFFSET = 1.127;
-const SW_ROW_OFFSET = 12.36;
-const CELL_SIZE_M = 195;
+const SW_ROW_OFFSET = 13.06;
+const CELL_WIDTH_M = 195;
+const CELL_HEIGHT_M = 170;
 
 const DEG_TO_RAD = Math.PI / 180;
 const GRID_ANGLE_RAD = 20 * DEG_TO_RAD;
@@ -54,8 +53,8 @@ const METERS_PER_DEG_LNG =
  * - `row = 0` is the top edge of Row A; `row = 14` is the bottom edge of Row N.
  */
 export function gridToLatLng(col: number, row: number): [number, number] {
-  const xMeters = (col - SW_COL_OFFSET) * CELL_SIZE_M;
-  const yNorthMeters = (SW_ROW_OFFSET - row) * CELL_SIZE_M;
+  const xMeters = (col - SW_COL_OFFSET) * CELL_WIDTH_M;
+  const yNorthMeters = (SW_ROW_OFFSET - row) * CELL_HEIGHT_M;
 
   const eastMeters = xMeters * COS_THETA + yNorthMeters * SIN_THETA;
   const northMeters = -xMeters * SIN_THETA + yNorthMeters * COS_THETA;
@@ -88,8 +87,8 @@ export function getGridCellFromLatLng(
   const xMeters = eastMeters * COS_THETA - northMeters * SIN_THETA;
   const yNorthMeters = eastMeters * SIN_THETA + northMeters * COS_THETA;
 
-  const colFloat = xMeters / CELL_SIZE_M + SW_COL_OFFSET;
-  const rowFloat = SW_ROW_OFFSET - yNorthMeters / CELL_SIZE_M;
+  const colFloat = xMeters / CELL_WIDTH_M + SW_COL_OFFSET;
+  const rowFloat = SW_ROW_OFFSET - yNorthMeters / CELL_HEIGHT_M;
 
   const colIndex = Math.floor(colFloat);
   const rowIndex = Math.floor(rowFloat);
