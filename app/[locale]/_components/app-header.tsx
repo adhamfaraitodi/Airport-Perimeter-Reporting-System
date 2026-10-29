@@ -132,7 +132,7 @@ export function AppHeader({
               >
                 <SquareChartGantt size={20} strokeWidth={1.8} aria-hidden="true" />
                 <span className="block text-[13px] font-medium text-[var(--rd-text)]">
-                  Dashboard
+                  Pantau Perimeter
                 </span>
               </Link>
 
@@ -294,7 +294,7 @@ export function AppHeader({
                         aria-hidden="true"
                       />
                       <span className="block text-[13px] font-medium text-[var(--rd-text)]">
-                        Dashboard
+                        Pantau Perimeter
                       </span>
                     </Link>
 
