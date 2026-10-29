@@ -309,7 +309,11 @@ export function UpdateStatusDialog({
       <div className="mb-5 flex items-center justify-between gap-2.5">
         <div>
           <span className={eyebrow}>
-            {action === "CREATE" ? "PELAPORAN LAPANGAN" : "TINDAKAN OPERATOR"}
+            {action === "CREATE"
+              ? "PELAPORAN LAPANGAN"
+              : user.role === "TECHNICIAN"
+                ? "TINDAK LANJUT TEKNISI"
+                : "TINDAKAN OPERATOR"}
           </span>
           <h2 className="m-0 text-[21px] leading-snug font-semibold md:text-[23px]">
             {action === "CREATE"

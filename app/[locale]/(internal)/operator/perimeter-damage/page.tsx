@@ -361,7 +361,7 @@ export default function PerimeterDamageMasterPage() {
           className="mb-3 flex items-center gap-2 text-xs md:text-[13px]"
         >
           <Link
-            href={`/${locale}/dashboard`}
+            href={`/${locale}/operator`}
             className="text-[var(--rd-muted)] transition-colors hover:text-[var(--rd-link)]"
           >
             Dashboard

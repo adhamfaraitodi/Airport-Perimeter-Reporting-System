@@ -73,11 +73,38 @@ const initialOperatorNotifications: NotificationItem[] = [
   },
 ];
 
+const initialTechnicianNotifications: NotificationItem[] = [
+  {
+    id: "notif-t1",
+    title: "Tugas Perbaikan Baru · Pagar Harmonika / BRC",
+    description: "Perlu perbaikan segera di Sisi Selatan (Grid M14).",
+    time: "5 menit lalu",
+    status: "OPEN",
+    read: false,
+  },
+  {
+    id: "notif-t2",
+    title: "Tugas Perbaikan Baru · Kawat Duri / Razor",
+    description: "Kawat duri terlepas di Sisi Barat (Grid K3).",
+    time: "28 menit lalu",
+    status: "OPEN",
+    read: false,
+  },
+  {
+    id: "notif-t3",
+    title: "Sedang Dikerjakan · Tiang Pagar",
+    description: "Perbaikan tiang pagar miring di Sisi Timur (Grid L25) menunggu foto selesai.",
+    time: "1 jam lalu",
+    status: "IN_PROGRESS",
+    read: true,
+  },
+];
+
 const initialReporterNotifications: NotificationItem[] = [
   {
     id: "notif-r1",
     title: "Laporan Anda Sedang Ditangani",
-    description: "Operator menindaklanjuti laporan Pagar Harmonika di Sisi Selatan (Grid M14).",
+    description: "Tim teknisi menindaklanjuti laporan Pagar Harmonika di Sisi Selatan (Grid M14).",
     time: "12 menit lalu",
     status: "IN_PROGRESS",
     read: false,
@@ -140,25 +167,33 @@ export function AppHeader({
     user?.role === "OPERATOR" ||
     Boolean(roleLabel?.toLowerCase().includes("operator"));
 
+  const isTechnician =
+    user?.role === "TECHNICIAN" ||
+    Boolean(roleLabel?.toLowerCase().includes("teknisi"));
+
   const [dataMasterOpen, setDataMasterOpen] = useState(false);
   const [mobileDataMasterOpen, setMobileDataMasterOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifFilter, setNotifFilter] = useState<"ALL" | "UNREAD">("ALL");
   const [notifications, setNotifications] = useState<NotificationItem[]>(() =>
-    isOperator ? initialOperatorNotifications : initialReporterNotifications
+    isOperator
+      ? initialOperatorNotifications
+      : isTechnician
+        ? initialTechnicianNotifications
+        : initialReporterNotifications
   );
 
   const dataMasterRef = useRef<HTMLDivElement | null>(null);
   const profileRef = useRef<HTMLDivElement | null>(null);
 
   const isPerimeterDamageActive = pathname?.includes(
-    "/dashboard/perimeter-damage"
+    "/operator/perimeter-damage"
   );
-  const isAccountsActive = pathname?.includes("/dashboard/accounts");
+  const isAccountsActive = pathname?.includes("/operator/accounts");
   const isDataMasterActive = isPerimeterDamageActive || isAccountsActive;
-  const isDashboardHomeActive =
-    pathname?.endsWith("/dashboard") && !isDataMasterActive;
+  const isOperatorHomeActive =
+    pathname?.endsWith("/operator") && !isDataMasterActive;
 
   const displayName = user?.name?.trim() || user?.email || "Pengguna";
 
@@ -197,14 +232,18 @@ export function AppHeader({
     setNotifications((prev) => prev.map((item) => ({ ...item, read: true })));
   }
 
+  function getHomeRoute() {
+    if (isOperator) return `/${locale}/operator`;
+    if (isTechnician) return `/${locale}/technician`;
+    return `/${locale}/reports`;
+  }
+
   function handleSelectNotification(id: string) {
     setNotifications((prev) =>
       prev.map((item) => (item.id === id ? { ...item, read: true } : item))
     );
     setNotifOpen(false);
-    const targetRoute = isOperator
-      ? `/${locale}/dashboard`
-      : `/${locale}/reports`;
+    const targetRoute = getHomeRoute();
     if (pathname !== targetRoute) {
       router.push(targetRoute);
     }
@@ -239,13 +278,13 @@ export function AppHeader({
             </span>
           </div>
 
-          {/* Desktop Navigation for Operator Dashboard */}
+          {/* Desktop Navigation for Operator */}
           {isOperator && (
             <nav className="hidden items-center gap-1.5 md:flex">
               <Link
-                href={`/${locale}/dashboard`}
+                href={`/${locale}/operator`}
                 className={`inline-flex h-9 items-center gap-2 rounded-xl px-3 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
-                  isDashboardHomeActive
+                  isOperatorHomeActive
                     ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
                     : "text-[var(--rd-text)] hover:bg-[var(--rd-active)] hover:text-[var(--rd-link)]"
                 }`}
@@ -292,7 +331,7 @@ export function AppHeader({
                     className="absolute left-0 top-full z-[600] mt-1.5 w-52 rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-surface)] p-1.5 text-[var(--rd-text)] shadow-xl animate-in fade-in zoom-in-95 duration-100"
                   >
                     <Link
-                      href={`/${locale}/dashboard/perimeter-damage`}
+                      href={`/${locale}/operator/perimeter-damage`}
                       role="menuitem"
                       onClick={() => setDataMasterOpen(false)}
                       className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
@@ -316,7 +355,7 @@ export function AppHeader({
                       </span>
                     </Link>
                     <Link
-                      href={`/${locale}/dashboard/accounts`}
+                      href={`/${locale}/operator/accounts`}
                       role="menuitem"
                       onClick={() => setDataMasterOpen(false)}
                       className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
@@ -534,17 +573,15 @@ export function AppHeader({
                   type="button"
                   onClick={() => {
                     setNotifOpen(false);
-                    router.push(
-                      isOperator
-                        ? `/${locale}/dashboard`
-                        : `/${locale}/reports`
-                    );
+                    router.push(getHomeRoute());
                   }}
                   className="block w-full rounded-xl py-2 text-center text-xs font-semibold text-[var(--rd-link)] transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
                 >
                   {isOperator
                     ? "Lihat Semua Laporan Perimeter"
-                    : "Buka Daftar Laporan Saya"}
+                    : isTechnician
+                      ? "Lihat Daftar Tugas Perbaikan"
+                      : "Buka Daftar Laporan Saya"}
                 </button>
               </div>
             </PopoverContent>
@@ -608,11 +645,11 @@ export function AppHeader({
                 {isOperator && (
                   <div className="mb-1 border-b border-[var(--rd-border)] pb-1 md:hidden">
                     <Link
-                      href={`/${locale}/dashboard`}
+                      href={`/${locale}/operator`}
                       role="menuitem"
                       onClick={() => setProfileOpen(false)}
                       className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
-                        isDashboardHomeActive
+                        isOperatorHomeActive
                           ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
                           : "hover:bg-[var(--rd-hover)]"
                       }`}
@@ -621,7 +658,7 @@ export function AppHeader({
                         size={18}
                         strokeWidth={1.8}
                         className={`shrink-0 ${
-                          isDashboardHomeActive
+                          isOperatorHomeActive
                             ? "text-[var(--rd-link)]"
                             : "text-[var(--rd-muted)]"
                         }`}
@@ -661,7 +698,7 @@ export function AppHeader({
                     {mobileDataMasterOpen && (
                       <div className="mt-0.5 ml-4 space-y-0.5 border-l border-[var(--rd-border)] pl-2.5">
                         <Link
-                          href={`/${locale}/dashboard/perimeter-damage`}
+                          href={`/${locale}/operator/perimeter-damage`}
                           role="menuitem"
                           onClick={() => {
                             setMobileDataMasterOpen(false);
@@ -688,7 +725,7 @@ export function AppHeader({
                           </span>
                         </Link>
                         <Link
-                          href={`/${locale}/dashboard/accounts`}
+                          href={`/${locale}/operator/accounts`}
                           role="menuitem"
                           onClick={() => {
                             setMobileDataMasterOpen(false);
