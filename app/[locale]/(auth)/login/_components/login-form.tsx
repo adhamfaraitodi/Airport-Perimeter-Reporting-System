@@ -244,7 +244,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
                   type="button"
                   onClick={() => setHelp(true)}
                 >
-                  Hubungi administrator website.
+                  Hubungi operator website.
                 </button>
               </p>
             </form>
@@ -283,7 +283,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
           id="login-help-description"
           className="mt-0 mb-[22px] text-[14px] leading-[1.6] text-[var(--login-muted)]"
         >
-          Hubungi administrator website untuk akses akun dan bantuan password.
+          Hubungi operator website untuk akses akun dan bantuan password.
         </p>
         <button
           type="button"
