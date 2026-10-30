@@ -8,8 +8,7 @@ import {
   CheckCircle2,
   KeyRound,
   Pencil,
-  Plus,
-  RotateCcw,
+  Phone,
   Search,
   ShieldCheck,
   Trash2,
@@ -64,6 +63,7 @@ interface AccountModalState {
   nip: string;
   name: string;
   email: string;
+  phone: string;
   role: UserRole;
   unit: string;
   status: AccountStatus;
@@ -153,6 +153,7 @@ export default function ManageAccountsPage() {
     return (
       account.name.toLocaleLowerCase("id").includes(normalizedQuery) ||
       account.nip.toLocaleLowerCase("id").includes(normalizedQuery) ||
+      (account.phone || "").toLocaleLowerCase("id").includes(normalizedQuery) ||
       account.email.toLocaleLowerCase("id").includes(normalizedQuery) ||
       account.unit.toLocaleLowerCase("id").includes(normalizedQuery) ||
       roleLabels[account.role].toLocaleLowerCase("id").includes(normalizedQuery)
@@ -165,6 +166,7 @@ export default function ManageAccountsPage() {
       nip: "",
       name: "",
       email: "",
+      phone: "",
       role: "REPORTER",
       unit: "Airport Security (AVSEC)",
       status: "ACTIVE",
@@ -179,6 +181,7 @@ export default function ManageAccountsPage() {
       nip: account.nip,
       name: account.name,
       email: account.email,
+      phone: account.phone || "",
       role: account.role,
       unit: account.unit,
       status: account.status,
@@ -204,6 +207,7 @@ export default function ManageAccountsPage() {
           nip: accountModal.nip,
           name: accountModal.name,
           email: accountModal.email,
+          phone: accountModal.phone,
           role: accountModal.role,
           unit: accountModal.unit,
           status: accountModal.status,
@@ -216,6 +220,7 @@ export default function ManageAccountsPage() {
           nip: accountModal.nip,
           name: accountModal.name,
           email: accountModal.email,
+          phone: accountModal.phone,
           role: accountModal.role,
           unit: accountModal.unit,
           status: accountModal.status,
@@ -294,8 +299,8 @@ export default function ManageAccountsPage() {
               Data Master Kelola Akun,
             </h1>
             <p className="m-0 text-xs text-[var(--rd-muted)] sm:text-sm">
-              Kelola akun pengguna, hak akses peran (Operator, Pelapor,
-              Teknisi), dan status aktif personel bandara.
+              Kelola akun pengguna, kontak person, hak akses peran (Operator,
+              Pelapor, Teknisi), dan status aktif personel bandara.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -469,7 +474,7 @@ export default function ManageAccountsPage() {
               <input
                 type="search"
                 aria-label="Cari akun pengguna"
-                placeholder="Cari nama, NIP, email, atau unit…"
+                placeholder="Cari nama, NIP, kontak, atau unit…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="min-w-0 flex-1 border-0 bg-transparent py-2 text-xs text-[var(--rd-text)] outline-none placeholder:text-[var(--rd-muted)] sm:text-sm"
@@ -484,10 +489,11 @@ export default function ManageAccountsPage() {
                 <TableHead className="w-14 text-center">No</TableHead>
                 <TableHead>Pengguna</TableHead>
                 <TableHead>NIP & Unit Kerja</TableHead>
+                <TableHead className="w-44">Kontak Person</TableHead>
                 <TableHead className="w-44">Peran Akses</TableHead>
                 <TableHead className="w-32 text-center">Status</TableHead>
                 <TableHead className="w-44">Terdaftar</TableHead>
-                <TableHead className="w-40 text-right">Aksi</TableHead>
+                <TableHead className="w-36 text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -506,6 +512,9 @@ export default function ManageAccountsPage() {
                     <TableCell>
                       <Skeleton className="mb-1.5 h-3.5 w-28 rounded" />
                       <Skeleton className="h-3 w-36 rounded" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28 rounded" />
                     </TableCell>
                     <TableCell>
                       <Skeleton className="h-5 w-28 rounded-full" />
@@ -542,12 +551,20 @@ export default function ManageAccountsPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <span
-                              className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-panel)] text-xs font-semibold tracking-wide text-[var(--rd-link)]"
-                              aria-hidden="true"
-                            >
-                              {initialsOfName(account.name)}
-                            </span>
+                            {account.avatarUrl ? (
+                              <img
+                                src={account.avatarUrl}
+                                alt={account.name}
+                                className="size-9 shrink-0 rounded-xl object-cover"
+                              />
+                            ) : (
+                              <span
+                                className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-panel)] text-xs font-semibold tracking-wide text-[var(--rd-link)]"
+                                aria-hidden="true"
+                              >
+                                {initialsOfName(account.name)}
+                              </span>
+                            )}
                             <div className="min-w-0">
                               <div className="truncate font-semibold text-[var(--rd-text)]">
                                 {account.name}
@@ -562,6 +579,16 @@ export default function ManageAccountsPage() {
                           <div className="text-xs text-[var(--rd-muted)]">
                             {account.unit}
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center gap-1.5 font-mono text-xs font-medium text-[var(--rd-text)]">
+                            <Phone
+                              size={13}
+                              className="shrink-0 text-[var(--rd-link)]"
+                              aria-hidden="true"
+                            />
+                            <span>{account.phone || "-"}</span>
+                          </span>
                         </TableCell>
                         <TableCell>
                           <span
@@ -640,7 +667,7 @@ export default function ManageAccountsPage() {
                   {filteredAccounts.length === 0 && (
                     <TableRow>
                       <TableCell
-                        colSpan={7}
+                        colSpan={8}
                         className="py-12 text-center text-[var(--rd-muted)]"
                       >
                         Tidak ada akun pengguna yang cocok dengan filter pencarian.
@@ -717,6 +744,23 @@ export default function ManageAccountsPage() {
 
               <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
                 <label className={fieldLabel}>
+                  Nomor Kontak Telepon
+                  <input
+                    type="tel"
+                    required
+                    placeholder="Contoh: 0812-3456-7890"
+                    value={accountModal.phone}
+                    onChange={(e) =>
+                      setAccountModal({
+                        ...accountModal,
+                        phone: e.target.value,
+                      })
+                    }
+                    className={fieldControl}
+                  />
+                </label>
+
+                <label className={fieldLabel}>
                   Peran Akses (Role)
                   <select
                     value={accountModal.role}
@@ -732,6 +776,22 @@ export default function ManageAccountsPage() {
                     <option value="OPERATOR">Operator Perimeter</option>
                     <option value="TECHNICIAN">Teknisi</option>
                   </select>
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
+                <label className={fieldLabel}>
+                  Unit Kerja / Divisi
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Airport Security (AVSEC)"
+                    value={accountModal.unit}
+                    onChange={(e) =>
+                      setAccountModal({ ...accountModal, unit: e.target.value })
+                    }
+                    className={fieldControl}
+                  />
                 </label>
 
                 <label className={fieldLabel}>
@@ -751,20 +811,6 @@ export default function ManageAccountsPage() {
                   </select>
                 </label>
               </div>
-
-              <label className={fieldLabel}>
-                Unit Kerja / Divisi
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: Airport Security (AVSEC)"
-                  value={accountModal.unit}
-                  onChange={(e) =>
-                    setAccountModal({ ...accountModal, unit: e.target.value })
-                  }
-                  className={fieldControl}
-                />
-              </label>
 
               {accountModal.mode === "CREATE" && (
                 <label className={fieldLabel}>

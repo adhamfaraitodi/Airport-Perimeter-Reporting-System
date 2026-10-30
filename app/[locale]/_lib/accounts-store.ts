@@ -9,6 +9,8 @@ export interface ManagedAccount {
   nip: string;
   name: string;
   email: string;
+  phone: string;
+  avatarUrl?: string | null;
   role: UserRole;
   unit: string;
   status: AccountStatus;
@@ -27,6 +29,8 @@ const defaultAccounts: ManagedAccount[] = [
     nip: "19900314201601",
     name: "Operator Demo",
     email: "operator@injourneyairports.id",
+    phone: "0811-2640-101",
+    avatarUrl: null,
     role: "OPERATOR",
     unit: "Airport Operation Control Center (AOCC)",
     status: "ACTIVE",
@@ -37,6 +41,8 @@ const defaultAccounts: ManagedAccount[] = [
     nip: "19940721201902",
     name: "Petugas Demo",
     email: "reporter@injourneyairports.id",
+    phone: "0812-3456-7890",
+    avatarUrl: null,
     role: "REPORTER",
     unit: "Airport Security (AVSEC)",
     status: "ACTIVE",
@@ -47,6 +53,8 @@ const defaultAccounts: ManagedAccount[] = [
     nip: "19921105201803",
     name: "Teknisi Demo",
     email: "technician@injourneyairports.id",
+    phone: "0813-8899-7766",
+    avatarUrl: null,
     role: "TECHNICIAN",
     unit: "Airport Maintenance & Civil",
     status: "ACTIVE",
@@ -57,6 +65,8 @@ const defaultAccounts: ManagedAccount[] = [
     nip: "19960218202101",
     name: "Budi Santoso",
     email: "budi.santoso@injourneyairports.id",
+    phone: "0812-8765-4321",
+    avatarUrl: null,
     role: "REPORTER",
     unit: "Airport Security (AVSEC)",
     status: "ACTIVE",
@@ -67,6 +77,8 @@ const defaultAccounts: ManagedAccount[] = [
     nip: "19970809202204",
     name: "Rina Wulandari",
     email: "rina.wulandari@injourneyairports.id",
+    phone: "0813-5566-7788",
+    avatarUrl: null,
     role: "REPORTER",
     unit: "Patroli Perimeter & Airside",
     status: "ACTIVE",
@@ -77,6 +89,8 @@ const defaultAccounts: ManagedAccount[] = [
     nip: "19930529201905",
     name: "Hendra Wijaya",
     email: "hendra.wijaya@injourneyairports.id",
+    phone: "0815-4433-2211",
+    avatarUrl: null,
     role: "TECHNICIAN",
     unit: "Airport Maintenance & Civil",
     status: "INACTIVE",
@@ -84,19 +98,32 @@ const defaultAccounts: ManagedAccount[] = [
   },
 ];
 
+const defaultPhoneById = new Map(
+  defaultAccounts.map((acc) => [acc.id, acc.phone])
+);
+
 export interface AccountInput {
   nip: string;
   name: string;
   email?: string;
+  phone?: string;
+  avatarUrl?: string | null;
   role: UserRole;
   unit: string;
   status: AccountStatus;
+}
+
+export interface ProfileUpdateInput {
+  name: string;
+  phone: string;
+  avatarUrl?: string | null;
 }
 
 interface AccountsState {
   accounts: ManagedAccount[];
   addAccount: (input: AccountInput) => ManagedAccount;
   updateAccount: (id: string, patch: AccountInput) => void;
+  updateProfile: (id: string, patch: ProfileUpdateInput) => void;
   toggleAccountStatus: (id: string) => void;
   deleteAccount: (id: string) => void;
   resetToDefault: () => void;
@@ -113,6 +140,7 @@ export const useAccountsStore = create<AccountsState>()(
         const email =
           (input.email || "").trim().toLowerCase() ||
           `${nip.toLowerCase()}@injourneyairports.id`;
+        const phone = (input.phone || "").trim() || "-";
         const unit = input.unit.trim() || "Operasional Bandara";
 
         if (!nip || !name) {
@@ -129,6 +157,8 @@ export const useAccountsStore = create<AccountsState>()(
           nip,
           name,
           email,
+          phone,
+          avatarUrl: input.avatarUrl ?? null,
           role: input.role,
           unit,
           status: input.status,
@@ -143,6 +173,8 @@ export const useAccountsStore = create<AccountsState>()(
         const nip = patch.nip.trim();
         const name = patch.name.trim();
         const unit = patch.unit.trim() || "Operasional Bandara";
+        const phone =
+          patch.phone !== undefined ? patch.phone.trim() || "-" : undefined;
 
         if (!nip || !name) {
           throw new Error("NIP dan nama lengkap wajib diisi.");
@@ -167,6 +199,11 @@ export const useAccountsStore = create<AccountsState>()(
                   email: patch.email?.trim()
                     ? patch.email.trim().toLowerCase()
                     : account.email,
+                  phone: phone !== undefined ? phone : account.phone || "-",
+                  avatarUrl:
+                    patch.avatarUrl !== undefined
+                      ? patch.avatarUrl
+                      : account.avatarUrl,
                   role: patch.role,
                   unit,
                   status: patch.status,
@@ -174,6 +211,31 @@ export const useAccountsStore = create<AccountsState>()(
               : account
           ),
         });
+      },
+
+      updateProfile: (id, patch) => {
+        const name = patch.name.trim();
+        const phone = patch.phone.trim() || "-";
+
+        if (!name) {
+          throw new Error("Nama lengkap wajib diisi.");
+        }
+
+        set((state) => ({
+          accounts: state.accounts.map((account) =>
+            account.id === id
+              ? {
+                  ...account,
+                  name,
+                  phone,
+                  avatarUrl:
+                    patch.avatarUrl !== undefined
+                      ? patch.avatarUrl
+                      : account.avatarUrl,
+                }
+              : account
+          ),
+        }));
       },
 
       toggleAccountStatus: (id) => {
@@ -203,6 +265,22 @@ export const useAccountsStore = create<AccountsState>()(
     }),
     {
       name: "perimeter-accounts-master-v1",
+      merge: (persistedState, currentState) => {
+        const typed = persistedState as Partial<AccountsState> | undefined;
+        if (!typed?.accounts) return currentState;
+        return {
+          ...currentState,
+          ...typed,
+          accounts: typed.accounts.map((acc) => ({
+            ...acc,
+            phone:
+              acc.phone?.trim() ||
+              defaultPhoneById.get(acc.id) ||
+              "0812-0000-0000",
+            avatarUrl: acc.avatarUrl ?? null,
+          })),
+        };
+      },
     }
   )
 );

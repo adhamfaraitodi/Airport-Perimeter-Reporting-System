@@ -27,6 +27,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAccountsStore } from "../_lib/accounts-store";
 import type { SessionUser } from "../_lib/client-api";
 
 export interface NotificationItem {
@@ -134,11 +135,10 @@ export interface AppHeaderProps {
   onLogout?: () => void;
 }
 
-function initialsOf(user?: SessionUser | null) {
-  if (!user) return "PG";
-  const displayName = user.name?.trim() || user.email || "Pengguna";
-  return user.name?.trim()
-    ? user.name
+function initialsFromText(name?: string, email?: string) {
+  const displayName = name?.trim() || email || "PG";
+  return name?.trim()
+    ? name
         .trim()
         .split(/\s+/)
         .slice(0, 2)
@@ -162,6 +162,11 @@ export function AppHeader({
   const pathname = usePathname();
   const router = useRouter();
   const locale = params?.locale || "id";
+
+  const accounts = useAccountsStore((state) => state.accounts);
+  const managedAccount = user
+    ? accounts.find((acc) => acc.id === user.id)
+    : undefined;
 
   const isOperator =
     user?.role === "OPERATOR" ||
@@ -194,8 +199,14 @@ export function AppHeader({
   const isDataMasterActive = isPerimeterDamageActive || isAccountsActive;
   const isOperatorHomeActive =
     pathname?.endsWith("/operator") && !isDataMasterActive;
+  const isProfileActive = pathname?.includes("/profile");
 
-  const displayName = user?.name?.trim() || user?.email || "Pengguna";
+  const displayName =
+    managedAccount?.name?.trim() ||
+    user?.name?.trim() ||
+    user?.email ||
+    "Pengguna";
+  const avatarUrl = managedAccount?.avatarUrl || null;
 
   const unreadCount = notifications.filter((n) => !n.read).length;
   const showUnreadDot =
@@ -265,18 +276,21 @@ export function AppHeader({
       >
         {/* Left: Branding & Desktop Operator Navigation */}
         <div className="flex min-w-0 items-center gap-6">
-          <div className="flex shrink-0 items-center gap-2.5 sm:gap-3">
+          <Link
+            href={getHomeRoute()}
+            className="flex shrink-0 items-center gap-2.5 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] sm:gap-3"
+          >
             <img
               src={dark ? "/injourney-logo-white.webp" : "/injourney-logo.webp"}
               alt="InJourney Airports"
               className="h-auto w-[64px] shrink-0 sm:w-24"
             />
-            <span className="max-w-[140px] text-[11px] leading-tight sm:max-w-56 sm:text-sm">
+            <span className="max-w-[140px] text-[11px] leading-tight text-[var(--rd-text)] sm:max-w-56 sm:text-sm">
               Airport Perimeter
               <br />
               Reporting System
             </span>
-          </div>
+          </Link>
 
           {/* Desktop Navigation for Operator */}
           {isOperator && (
@@ -601,13 +615,21 @@ export function AppHeader({
               className="flex items-center gap-2.5 rounded-2xl p-1 text-left transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
             >
               {user ? (
-                <span
-                  className="grid size-9 shrink-0 place-items-center rounded-2xl bg-[var(--rd-surface)] text-xs font-semibold tracking-wide text-[var(--rd-text)] shadow-xs sm:size-10 sm:rounded-2xl sm:text-sm"
-                  title={displayName}
-                  aria-label={displayName}
-                >
-                  {initialsOf(user)}
-                </span>
+                avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={displayName}
+                    className="size-9 shrink-0 rounded-xl object-cover shadow-xs sm:size-10 sm:rounded-2xl"
+                  />
+                ) : (
+                  <span
+                    className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-surface)] text-xs font-semibold tracking-wide text-[var(--rd-text)] shadow-xs sm:size-10 sm:rounded-2xl sm:text-sm"
+                    title={displayName}
+                    aria-label={displayName}
+                  >
+                    {initialsFromText(displayName, user.email)}
+                  </span>
+                )
               ) : (
                 <Skeleton className="size-9 shrink-0 rounded-xl sm:size-10 sm:rounded-2xl" />
               )}
@@ -756,22 +778,30 @@ export function AppHeader({
                   </div>
                 )}
 
-                <button
-                  type="button"
+                <Link
+                  href={`/${locale}/profile`}
                   role="menuitem"
                   onClick={() => setProfileOpen(false)}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+                  className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
+                    isProfileActive
+                      ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
+                      : "hover:bg-[var(--rd-hover)]"
+                  }`}
                 >
                   <User
                     size={18}
                     strokeWidth={1.8}
-                    className="shrink-0 text-[var(--rd-muted)]"
+                    className={`shrink-0 ${
+                      isProfileActive
+                        ? "text-[var(--rd-link)]"
+                        : "text-[var(--rd-muted)]"
+                    }`}
                     aria-hidden="true"
                   />
                   <span className="block text-[13px] font-medium">
                     Profil saya
                   </span>
-                </button>
+                </Link>
 
                 <button
                   type="button"

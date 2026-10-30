@@ -83,6 +83,19 @@ export const isMock = true;
 
 let role: UserRole = "REPORTER";
 
+function readStoredRole(): UserRole {
+  if (typeof window === "undefined") return role;
+  try {
+    const saved = localStorage.getItem("perimeter-mock-role");
+    if (saved === "OPERATOR" || saved === "REPORTER" || saved === "TECHNICIAN") {
+      role = saved;
+    }
+  } catch {
+    /* Ignore storage access errors */
+  }
+  return role;
+}
+
 const users: Record<UserRole, SessionUser> = {
   REPORTER: {
     id: "demo-reporter",
@@ -133,10 +146,20 @@ export async function setMockRole(next: UserRole): Promise<void> {
     fail("Pergantian role hanya tersedia dalam demo lokal.");
   }
   role = next;
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem("perimeter-mock-role", next);
+    } catch {
+      /* Ignore storage access errors */
+    }
+  }
 }
 
 export const api = {
-  getSession: async (): Promise<SessionUser> => clone(users[role]),
+  getSession: async (): Promise<SessionUser> => {
+    const activeRole = readStoredRole();
+    return clone(users[activeRole]);
+  },
 
   listReports: async (): Promise<ReportRecord[]> =>
     clone(
