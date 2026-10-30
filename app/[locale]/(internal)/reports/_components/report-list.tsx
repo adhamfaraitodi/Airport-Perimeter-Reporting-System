@@ -176,6 +176,8 @@ export interface ReporterDashboardProps {
   onRefresh: () => void;
   onCreate: () => void;
   onSelect: (id: string) => void;
+  selectedReportId?: string | null;
+  onBackToList?: () => void;
   abandonedSubmissionId: string | null;
   onDismissAbandoned: () => void;
   children?: ReactNode;
@@ -193,6 +195,8 @@ export function ReportList({
   onRefresh,
   onCreate,
   onSelect,
+  selectedReportId,
+  onBackToList,
   abandonedSubmissionId,
   onDismissAbandoned,
   children,
@@ -235,6 +239,11 @@ export function ReportList({
   ];
 
   const SortIcon = newest ? CalendarArrowDown : CalendarArrowUp;
+  const subPageLabel = formOpen
+    ? "Buat Laporan"
+    : selectedReportId
+      ? `Detail Laporan #${String(selectedReportId).slice(-6).toUpperCase()}`
+      : null;
 
   return (
     <div
@@ -248,7 +257,33 @@ export function ReportList({
         roleLabel="Reporter perimeter"
         containerClassName="max-w-5xl"
       />
-      <main className="mx-auto max-w-5xl px-[26px] pt-11 pb-6 sm:px-8 sm:pt-12">
+      <main className="mx-auto max-w-5xl px-[26px] pt-6 pb-6 sm:px-8 sm:pt-8">
+        <nav
+          aria-label="Breadcrumb"
+          className="mb-3 flex flex-wrap items-center gap-2 text-xs md:text-[13px]"
+        >
+          <span className="text-[var(--rd-muted)]">Dashboard</span>
+          <span className="text-[var(--rd-muted)]/50 select-none">/</span>
+          {subPageLabel ? (
+            <>
+              <button
+                type="button"
+                onClick={onBackToList}
+                className="border-0 bg-transparent p-0 text-[var(--rd-muted)] transition-colors hover:text-[var(--rd-link)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+              >
+                Laporan Saya
+              </button>
+              <span className="text-[var(--rd-muted)]/50 select-none">/</span>
+              <span className="font-medium text-[var(--rd-link)]">
+                {subPageLabel}
+              </span>
+            </>
+          ) : (
+            <span className="font-medium text-[var(--rd-link)]">
+              Laporan Saya
+            </span>
+          )}
+        </nav>
         <div className="sm:flex sm:items-end sm:justify-between sm:gap-10">
           <div>
             <h1 className="m-0 mb-2 text-xl leading-tight font-normal tracking-normal sm:text-3xl">

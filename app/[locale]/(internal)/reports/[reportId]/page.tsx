@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,6 +30,24 @@ export default function ReportDetailPage() {
   return (
     <div className="reporter-dashboard min-h-dvh bg-[var(--rd-bg)] p-4 sm:p-8 text-[var(--rd-text)]">
       <div className="mx-auto max-w-5xl">
+        <nav
+          aria-label="Breadcrumb"
+          className="mb-3 flex flex-wrap items-center gap-2 text-xs md:text-[13px]"
+        >
+          <span className="text-[var(--rd-muted)]">Dashboard</span>
+          <span className="text-[var(--rd-muted)]/50 select-none">/</span>
+          <Link
+            href={`/${locale}/reports`}
+            className="text-[var(--rd-muted)] transition-colors hover:text-[var(--rd-link)]"
+          >
+            Laporan Saya
+          </Link>
+          <span className="text-[var(--rd-muted)]/50 select-none">/</span>
+          <span className="font-medium text-[var(--rd-link)]">
+            Detail Laporan{" "}
+            {reportId ? `#${String(reportId).slice(-6).toUpperCase()}` : ""}
+          </span>
+        </nav>
         {loading ? (
           <article className="rounded-xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] p-3.5 text-[var(--rd-text)] sm:p-6">
             <button

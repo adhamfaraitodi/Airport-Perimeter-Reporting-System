@@ -95,6 +95,11 @@ export default function ReportsPage() {
         setAction("CREATE");
       }}
       onSelect={setSelectedId}
+      selectedReportId={selected?.id || null}
+      onBackToList={() => {
+        setAction(null);
+        setSelectedId(null);
+      }}
       abandonedSubmissionId={abandonedSubmissionId}
       onDismissAbandoned={() => setAbandonedSubmissionId(null)}
       formOpen={action === "CREATE"}
