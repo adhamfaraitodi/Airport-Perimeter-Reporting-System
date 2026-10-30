@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Info, MoonStar, Sun, X } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
+import { loginAction } from "../_lib/auth.actions";
+import { useAuthStore } from "../_lib/auth.store";
 
 const focusClasses =
   "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--login-link)]";
 const buttonClasses = `${focusClasses} cursor-pointer font-[inherit] leading-normal transition-colors duration-200 hover:filter-none hover:shadow-none`;
-const inputClasses = `${focusClasses} m-0 block h-[38px] min-h-[38px] w-full min-w-0 rounded-[9px] border border-solid border-[var(--login-border)] bg-[var(--login-bg)] px-[11px] py-[8px] font-[inherit] text-[16px] leading-[1.2] font-normal text-[var(--login-text)] placeholder:text-[var(--login-muted)] placeholder:opacity-90 focus:border-[var(--login-link)] min-[900px]:h-[46px] min-[900px]:px-[12px] min-[900px]:py-[12px]`;
-const submitClasses = `${buttonClasses} flex min-h-[38px] w-full items-center justify-center rounded-[8px] border-0 bg-[var(--login-primary)] px-[14px] py-[8px] text-[15px] font-bold text-[var(--login-on-primary)] hover:bg-[var(--login-primary-hover)] min-[900px]:min-h-[44px] min-[900px]:text-[16px]`;
+const inputClasses = `${focusClasses} m-0 block h-[38px] min-h-[38px] w-full min-w-0 rounded-[9px] border border-solid border-[var(--login-border)] bg-[var(--login-bg)] px-[11px] py-[8px] font-[inherit] text-[16px] leading-[1.2] font-normal text-[var(--login-text)] placeholder:text-[var(--login-muted)] placeholder:opacity-90 focus:border-[var(--login-link)] aria-[invalid=true]:border-[var(--login-error)] min-[900px]:h-[46px] min-[900px]:px-[12px] min-[900px]:py-[12px]`;
+const submitClasses = `${buttonClasses} flex min-h-[38px] w-full items-center justify-center rounded-[8px] border-0 bg-[var(--login-primary)] px-[14px] py-[8px] text-[15px] font-bold text-[var(--login-on-primary)] hover:bg-[var(--login-primary-hover)] disabled:cursor-not-allowed disabled:opacity-60 min-[900px]:min-h-[44px] min-[900px]:text-[16px]`;
 const labelClasses =
   "mb-[5px] block text-[12px] leading-[1.3] font-normal min-[900px]:mb-[8px] min-[900px]:text-[14px]";
 
@@ -36,13 +38,27 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
   const locale = params?.locale || "id";
 
   const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [nip, setNip] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(true);
-  const [notice, setNotice] = useState("");
   const [help, setHelp] = useState(false);
   const dialog = useRef<HTMLDialogElement | null>(null);
+
+  const nip = useAuthStore((state) => state.nip);
+  const password = useAuthStore((state) => state.password);
+  const remember = useAuthStore((state) => state.rememberMe);
+  const showPassword = useAuthStore((state) => state.showPassword);
+  const submitting = useAuthStore((state) => state.submitting);
+  const notice = useAuthStore((state) => state.notice);
+  const fieldErrors = useAuthStore((state) => state.fieldErrors);
+
+  const setNip = useAuthStore((state) => state.setNip);
+  const setPassword = useAuthStore((state) => state.setPassword);
+  const setRemember = useAuthStore((state) => state.setRememberMe);
+  const toggleShowPassword = useAuthStore((state) => state.toggleShowPassword);
+  const setSubmitting = useAuthStore((state) => state.setSubmitting);
+  const setNotice = useAuthStore((state) => state.setNotice);
+  const setCurrentUser = useAuthStore((state) => state.setCurrentUser);
+  const validateForm = useAuthStore((state) => state.validateForm);
+  const resetLoginForm = useAuthStore((state) => state.resetLoginForm);
+
   const dark = theme === "dark";
   const demoEnabled = process.env.NODE_ENV === "development" && allowDemo;
 
@@ -64,10 +80,12 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
     if (!help && dialog.current.open) dialog.current.close();
   }, [help]);
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (demoEnabled) {
-      setPassword("");
+
+    // Allow instant demo entry in development only when both fields are empty
+    if (!nip.trim() && !password && demoEnabled) {
+      resetLoginForm();
       if (onDemo) {
         onDemo();
       } else {
@@ -75,9 +93,45 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
       }
       return;
     }
-    setNotice(
-      "Sign in belum terhubung ke Better-Auth PostgreSQL. Kredensial Anda tidak dikirim atau disimpan."
-    );
+
+    // Validate form inputs with Zod via Zustand store
+    const validation = validateForm(locale);
+    if (!validation.valid) {
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const result = await loginAction(validation.data);
+
+      if (result.success && result.redirectTo) {
+        if (result.user) {
+          setCurrentUser(result.user);
+        }
+        resetLoginForm();
+        router.push(result.redirectTo);
+        router.refresh();
+        return;
+      }
+
+      if (result.dbUnavailable && demoEnabled) {
+        resetLoginForm();
+        if (onDemo) {
+          onDemo();
+        } else {
+          router.push(`/${locale}/reports`);
+        }
+        return;
+      }
+
+      setNotice(
+        result.errorMessage || "NIP atau password yang Anda masukkan salah."
+      );
+    } catch {
+      setNotice("Terjadi kesalahan saat menghubungi layanan autentikasi.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -155,7 +209,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
                 setelah masuk.
               </p>{" "}
             </header>
-            <form onSubmit={submit} noValidate={demoEnabled} className="m-0">
+            <form onSubmit={submit} noValidate className="m-0">
               <div className="mb-[12px] min-[900px]:mb-[19px]">
                 <label className={labelClasses} htmlFor="login-nip">
                   NIP
@@ -171,12 +225,12 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
                   spellCheck={false}
                   placeholder="Masukkan NIP"
                   value={nip}
+                  aria-invalid={!!fieldErrors.nip}
                   required={!demoEnabled}
                   pattern="[0-9]+"
                   title="Masukkan NIP menggunakan angka, termasuk nol di depan."
                   onChange={(event) => {
                     setNip(event.target.value);
-                    setNotice("");
                   }}
                 />
               </div>
@@ -192,10 +246,10 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
                     value={password}
+                    aria-invalid={!!fieldErrors.password}
                     required={!demoEnabled}
                     onChange={(event) => {
                       setPassword(event.target.value);
-                      setNotice("");
                     }}
                   />
                   <button
@@ -204,7 +258,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
                     aria-label={showPassword ? "Hide password" : "Show password"}
                     aria-controls="login-password"
                     aria-pressed={showPassword}
-                    onClick={() => setShowPassword((value) => !value)}
+                    onClick={toggleShowPassword}
                   >
                     {showPassword ? "Sembunyi" : "Lihat"}
                   </button>
@@ -234,8 +288,12 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
                   <span>{notice}</span>
                 </div>
               )}
-              <button className={submitClasses} type="submit">
-                Masuk
+              <button
+                className={submitClasses}
+                type="submit"
+                disabled={submitting}
+              >
+                {submitting ? "Memproses…" : "Masuk"}
               </button>
               <p className="m-0 mt-[12px] text-center text-[11px] leading-[1.5] text-[var(--login-muted)] min-[900px]:mt-[20px] min-[900px]:text-[12px]">
                 Butuh akses?{" "}
