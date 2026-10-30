@@ -404,15 +404,20 @@ function ReporterFormSession({
     <form
       onSubmit={submit}
       aria-labelledby={`${id}-title`}
-      className="rounded-xl border border-[var(--rd-border)] bg-[var(--rd-surface)] p-3.5 text-[var(--rd-text)] sm:p-6"
+      className="rounded-2xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] p-3.5 text-[var(--rd-text)] sm:p-6"
     >
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <h2
-          id={`${id}-title`}
-          className="m-0 text-base font-normal tracking-normal"
-        >
-          Buat Laporan Baru
-        </h2>
+      <div className="mb-5 flex items-start justify-between gap-3 border-b border-[var(--rd-border)] pb-4">
+        <div>
+          <h2
+            id={`${id}-title`}
+            className="m-0 text-base font-normal tracking-normal sm:text-lg"
+          >
+            Buat Laporan Baru
+          </h2>
+          <p className={`${muted} m-0 mt-1 max-w-md`}>
+            Informasi yang jelas membantu tim menindaklanjuti kondisi perimeter.
+          </p>
+        </div>
         <button
           type="button"
           aria-label="Tutup formulir"
@@ -423,203 +428,210 @@ function ReporterFormSession({
           <X size={22} aria-hidden="true" />
         </button>
       </div>
-      <p className={`${muted} mb-7 max-w-sm`}>
-        Informasi yang jelas membantu tim menindaklanjuti kondisi perimeter.
-      </p>
-      <fieldset
-        disabled={frozen || !!confirmation}
-        className="m-0 min-w-0 space-y-6 border-0 p-0"
-      >
-        <fieldset className="m-0 min-w-0 border-0 p-0">
-          <legend className="mb-3 text-sm">Bagian Pagar Perimeter</legend>
-          <p className={`${muted} mb-3`}>Pilih satu atau lebih bagian pagar</p>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {parts.map((part) => (
-              <Chip
-                key={part.id}
-                selected={Array.isArray(selection[part.id])}
-                onClick={() => togglePart(part)}
-              >
-                {part.name}
-              </Chip>
-            ))}
-          </div>
-        </fieldset>
-        <section aria-labelledby={`${id}-damages`}>
-          <h3 id={`${id}-damages`} className="mb-3 text-sm font-normal">
-            Jenis Kerusakan
-          </h3>
-          <p className={`${muted} mb-3`}>
-            Pilih satu atau lebih kerusakan untuk setiap bagian.
-          </p>
-          {!selectedParts.length && (
-            <p className={muted}>Pilih bagian pagar terlebih dahulu.</p>
-          )}
-          <div className="space-y-3">
-            {selectedParts.map((part) => (
-              <fieldset
-                key={part.id}
-                className="m-0 min-w-0 rounded-lg border border-[var(--rd-border)] px-2 pb-3 pt-1"
-              >
-                <legend className="px-1 text-xs">{part.name}</legend>
-                <div className="flex flex-wrap gap-2">
-                  {part.damages.map((damage) => (
-                    <Chip
-                      key={damage.id}
-                      selected={selection[part.id].includes(damage.id)}
-                      onClick={() => toggleDamage(part, damage)}
-                    >
-                      {damage.name}
-                    </Chip>
-                  ))}
-                </div>
-                {part.damages.some((damage) => damage.exclusiveGroup) && (
-                  <p className={`${muted} mb-0 mt-2`}>
-                    Berkarat sedang dan berat tidak dapat dipilih bersamaan.
-                    Memilih salah satu menggantikan tingkat karat sebelumnya
-                    pada bagian ini.
-                  </p>
-                )}
-              </fieldset>
-            ))}
-          </div>
-        </section>
-        <div>
-          <label
-            htmlFor={`${id}-narrative`}
-            className="mb-3 text-sm font-normal"
-          >
-            Narasi Laporan Temuan
-          </label>
-          <textarea
-            id={`${id}-narrative`}
-            rows={4}
-            value={narrative}
-            aria-describedby={`${id}-count`}
-            placeholder="Jelaskan dengan detail mengenai temuan"
-            onChange={(event) => {
-              if (!blocked())
-                update(key, {
-                  narrative: Array.from(event.target.value)
-                    .slice(0, 2000)
-                    .join(""),
-                });
-            }}
-            className="m-0 w-full rounded-lg border border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 text-sm text-[var(--rd-text)] placeholder:text-[var(--rd-muted)] focus-visible:outline-[var(--rd-link)]"
-          />
-          <p id={`${id}-count`} className={`${muted} mb-0 mt-2 text-right`}>
-            {countText(narrative).toLocaleString("id-ID")} / 2.000 karakter
-          </p>
-        </div>
-        <section aria-labelledby={`${id}-photos`}>
-          <h3 id={`${id}-photos`} className="mb-3 text-sm font-normal">
-            Foto-foto Laporan Temuan
-          </h3>
-          <label className="relative mb-0 flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-[var(--rd-border)] p-4 text-center text-sm font-normal focus-within:outline-2 focus-within:outline-[var(--rd-link)]">
-            <Plus
-              size={22}
-              className="text-[var(--rd-muted)]"
-              aria-hidden="true"
-            />
-            <span>Tambahkan foto dokumentasi</span>
-            <span className={muted}>
-              JPEG, PNG, WebP · maksimal 3 MB (3.000.000 byte) per foto ·
-              minimal 1 foto
-            </span>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              multiple
-              onChange={selectFiles}
-              className="absolute inset-0 m-0 h-full w-full cursor-pointer opacity-0"
-            />
-          </label>
-          {!!files.length && (
-            <ul className="mt-3 flex list-none flex-wrap gap-3 p-0">
-              {files.map((item) => (
-                <li
-                  key={item.id}
-                  className="relative w-32 overflow-hidden rounded-lg border border-[var(--rd-border)] bg-[var(--rd-bg)]"
+
+      {/* 2-Column Split on Desktop to prevent wide horizontal stretching */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start lg:gap-8">
+        {/* LEFT COLUMN: Damage Selection, Narrative & Photos */}
+        <fieldset
+          disabled={frozen || !!confirmation}
+          className="m-0 min-w-0 space-y-6 border-0 p-0"
+        >
+          <fieldset className="m-0 min-w-0 border-0 p-0">
+            <legend className="mb-3 text-sm">Bagian Pagar Perimeter</legend>
+            <p className={`${muted} mb-3`}>Pilih satu atau lebih bagian pagar</p>
+            <div className="mb-4 flex flex-wrap gap-2">
+              {parts.map((part) => (
+                <Chip
+                  key={part.id}
+                  selected={Array.isArray(selection[part.id])}
+                  onClick={() => togglePart(part)}
                 >
-                  <img
-                    src={item.preview}
-                    alt={item.file.name}
-                    className="h-24 w-full object-cover"
-                  />
-                  <button
-                    type="button"
-                    aria-label={`Hapus foto ${item.file.name}`}
-                    onClick={() => removeFile(item)}
-                    className={`${button} absolute right-1 top-1 flex min-h-8 items-center rounded-md bg-[var(--rd-surface)] p-2 text-[var(--rd-coral)]`}
-                  >
-                    <Trash2 size={16} aria-hidden="true" />
-                  </button>
-                  <span
-                    className="block truncate px-2 pt-1 text-xs"
-                    title={item.file.name}
-                  >
-                    {item.file.name}
-                  </span>
-                  <span className={`${muted} block px-2 pb-2`} role="status">
-                    {progress[item.id] || "Menunggu"}
-                  </span>
-                </li>
+                  {part.name}
+                </Chip>
               ))}
-            </ul>
-          )}
-        </section>
-      </fieldset>
-      <section className="mt-6" aria-labelledby={`${id}-location`}>
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <h3 id={`${id}-location`} className="m-0 text-sm font-normal">
-            Lokasi kejadian
-          </h3>
-          <button
-            type="button"
-            disabled={frozen || !!confirmation}
-            onClick={locate}
-            className={`${button} inline-flex min-h-9 items-center gap-1 bg-transparent px-1 py-1 text-xs text-[var(--rd-link)]`}
-          >
-            <LocateFixed size={20} aria-hidden="true" /> GPS
-          </button>
-        </div>
-        <p className={`${muted} mb-2`} role="status">
-          {gpsMessage}
-        </p>
-        <MapView
-          editable={!frozen && !confirmation}
-          point={point}
-          onPoint={(value) => {
-            if (blocked() || confirmation) return;
-            manualRevision.current += 1;
-            setPoint(value);
-            setSource("MANUAL");
-          }}
-         
-        />
-        <p className={`${muted} mb-0 mt-2`}>
-          {point
-            ? `${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)} · ${
-                source === "GPS" ? "GPS" : "Pin manual"
-              }`
-            : "Ketuk peta atau geser pin untuk menentukan lokasi."}
-        </p>
-        {gps && (
-          <p className={`${muted} mb-0 mt-1`}>
-            GPS asli: {gps.latitude.toFixed(6)}, {gps.longitude.toFixed(6)} ·
-            akurasi ±{Math.round(gps.accuracy)} m
+            </div>
+          </fieldset>
+          <section aria-labelledby={`${id}-damages`}>
+            <h3 id={`${id}-damages`} className="mb-3 text-sm font-normal">
+              Jenis Kerusakan
+            </h3>
+            <p className={`${muted} mb-3`}>
+              Pilih satu atau lebih kerusakan untuk setiap bagian.
+            </p>
+            {!selectedParts.length && (
+              <p className={muted}>Pilih bagian pagar terlebih dahulu.</p>
+            )}
+            <div className="space-y-3">
+              {selectedParts.map((part) => (
+                <fieldset
+                  key={part.id}
+                  className="m-0 min-w-0 rounded-lg border border-[var(--rd-border)] px-2 pb-3 pt-1"
+                >
+                  <legend className="px-1 text-xs">{part.name}</legend>
+                  <div className="flex flex-wrap gap-2">
+                    {part.damages.map((damage) => (
+                      <Chip
+                        key={damage.id}
+                        selected={selection[part.id].includes(damage.id)}
+                        onClick={() => toggleDamage(part, damage)}
+                      >
+                        {damage.name}
+                      </Chip>
+                    ))}
+                  </div>
+                  {part.damages.some((damage) => damage.exclusiveGroup) && (
+                    <p className={`${muted} mb-0 mt-2`}>
+                      Berkarat sedang dan berat tidak dapat dipilih bersamaan.
+                      Memilih salah satu menggantikan tingkat karat sebelumnya
+                      pada bagian ini.
+                    </p>
+                  )}
+                </fieldset>
+              ))}
+            </div>
+          </section>
+          <div>
+            <label
+              htmlFor={`${id}-narrative`}
+              className="mb-3 block text-sm font-normal"
+            >
+              Narasi Laporan Temuan
+            </label>
+            <textarea
+              id={`${id}-narrative`}
+              rows={4}
+              value={narrative}
+              aria-describedby={`${id}-count`}
+              placeholder="Jelaskan dengan detail mengenai temuan"
+              onChange={(event) => {
+                if (!blocked())
+                  update(key, {
+                    narrative: Array.from(event.target.value)
+                      .slice(0, 2000)
+                      .join(""),
+                  });
+              }}
+              className="m-0 w-full rounded-lg border border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 text-sm text-[var(--rd-text)] placeholder:text-[var(--rd-muted)] focus-visible:outline-[var(--rd-link)]"
+            />
+            <p id={`${id}-count`} className={`${muted} mb-0 mt-2 text-right`}>
+              {countText(narrative).toLocaleString("id-ID")} / 2.000 karakter
+            </p>
+          </div>
+          <section aria-labelledby={`${id}-photos`}>
+            <h3 id={`${id}-photos`} className="mb-3 text-sm font-normal">
+              Foto-foto Laporan Temuan
+            </h3>
+            <label className="relative mb-0 flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-[var(--rd-border)] p-4 text-center text-sm font-normal focus-within:outline-2 focus-within:outline-[var(--rd-link)]">
+              <Plus
+                size={22}
+                className="text-[var(--rd-muted)]"
+                aria-hidden="true"
+              />
+              <span>Tambahkan foto dokumentasi</span>
+              <span className={muted}>
+                JPEG, PNG, WebP · maksimal 3 MB (3.000.000 byte) per foto ·
+                minimal 1 foto
+              </span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                onChange={selectFiles}
+                className="absolute inset-0 m-0 h-full w-full cursor-pointer opacity-0"
+              />
+            </label>
+            {!!files.length && (
+              <ul className="mt-3 flex list-none flex-wrap gap-3 p-0">
+                {files.map((item) => (
+                  <li
+                    key={item.id}
+                    className="relative w-32 overflow-hidden rounded-lg border border-[var(--rd-border)] bg-[var(--rd-bg)]"
+                  >
+                    <img
+                      src={item.preview}
+                      alt={item.file.name}
+                      className="h-24 w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      aria-label={`Hapus foto ${item.file.name}`}
+                      onClick={() => removeFile(item)}
+                      className={`${button} absolute right-1 top-1 flex min-h-8 items-center rounded-md bg-[var(--rd-surface)] p-2 text-[var(--rd-coral)]`}
+                    >
+                      <Trash2 size={16} aria-hidden="true" />
+                    </button>
+                    <span
+                      className="block truncate px-2 pt-1 text-xs"
+                      title={item.file.name}
+                    >
+                      {item.file.name}
+                    </span>
+                    <span className={`${muted} block px-2 pb-2`} role="status">
+                      {progress[item.id] || "Menunggu"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </fieldset>
+
+        {/* RIGHT COLUMN: Location Map & Draft Info */}
+        <div className="min-w-0 space-y-5">
+          <section aria-labelledby={`${id}-location`}>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <h3 id={`${id}-location`} className="m-0 text-sm font-normal">
+                Lokasi kejadian
+              </h3>
+              <button
+                type="button"
+                disabled={frozen || !!confirmation}
+                onClick={locate}
+                className={`${button} inline-flex min-h-9 items-center gap-1 bg-transparent px-1 py-1 text-xs text-[var(--rd-link)]`}
+              >
+                <LocateFixed size={20} aria-hidden="true" /> GPS
+              </button>
+            </div>
+            <p className={`${muted} mb-2`} role="status">
+              {gpsMessage}
+            </p>
+            <MapView
+              editable={!frozen && !confirmation}
+              point={point}
+              onPoint={(value) => {
+                if (blocked() || confirmation) return;
+                manualRevision.current += 1;
+                setPoint(value);
+                setSource("MANUAL");
+              }}
+            />
+            <p className={`${muted} mb-0 mt-2`}>
+              {point
+                ? `${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)} · ${
+                    source === "GPS" ? "GPS" : "Pin manual"
+                  }`
+                : "Ketuk peta atau geser pin untuk menentukan lokasi."}
+            </p>
+            {gps && (
+              <p className={`${muted} mb-0 mt-1`}>
+                GPS asli: {gps.latitude.toFixed(6)}, {gps.longitude.toFixed(6)} ·
+                akurasi ±{Math.round(gps.accuracy)} m
+              </p>
+            )}
+          </section>
+
+          <p className={`${muted} m-0 rounded-lg bg-[var(--rd-bg)] p-3 leading-relaxed`}>
+            Pilihan bagian, kerusakan, dan teks draft tersimpan di perangkat ini
+            khusus akun Anda. Foto dan koordinat hanya disimpan dalam memori;
+            pilih ulang setelah menutup formulir atau memuat ulang halaman.
           </p>
-        )}
-      </section>
-      <p className={`${muted} my-5 rounded-lg bg-[var(--rd-bg)] p-3`}>
-        Pilihan bagian, kerusakan, dan teks draft tersimpan di perangkat ini
-        khusus akun Anda. Foto dan koordinat hanya disimpan dalam memori; pilih
-        ulang setelah menutup formulir atau memuat ulang halaman.
-      </p>
+        </div>
+      </div>
+
       {error && (
         <div
           role="alert"
-          className="mb-4 rounded-lg border border-[var(--rd-coral)] p-3 text-sm text-[var(--rd-coral)]"
+          className="mt-5 mb-4 rounded-lg border border-[var(--rd-coral)] p-3 text-sm text-[var(--rd-coral)]"
         >
           {error}
           {attempt && (
@@ -632,7 +644,7 @@ function ReporterFormSession({
         </div>
       )}
       {attempt && (
-        <p role="status" className={muted}>
+        <p role="status" className={`${muted} mt-4`}>
           {
             Object.values(progress).filter((value) => value === "Berhasil")
               .length
@@ -646,7 +658,7 @@ function ReporterFormSession({
       {confirmation && (
         <section
           aria-labelledby={`${id}-confirm`}
-          className="mb-4 rounded-lg border border-[var(--rd-coral)] p-3 text-sm"
+          className="mt-5 mb-4 rounded-lg border border-[var(--rd-coral)] p-3 text-sm"
         >
           <h3 id={`${id}-confirm`} className="text-sm text-[var(--rd-coral)]">
             {confirmation === "attempt"
@@ -685,7 +697,7 @@ function ReporterFormSession({
           </div>
         </section>
       )}
-      <div className="mt-6 flex flex-wrap justify-end gap-2">
+      <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-[var(--rd-border)] pt-5">
         <button
           type="button"
           disabled={busy || !!confirmation}

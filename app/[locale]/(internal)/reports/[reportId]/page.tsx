@@ -5,7 +5,14 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api, type ReportRecord } from "../../../_lib/client-api";
+import {
+  api,
+  type ReportRecord,
+  type SessionUser,
+} from "../../../_lib/client-api";
+import { useTheme } from "../../../_lib/use-theme";
+import { AppHeader } from "../../../_components/app-header";
+import { ReportFooter } from "../_components/report-footer";
 import { ReportDetail } from "./_components/report-detail";
 
 export default function ReportDetailPage() {
@@ -13,14 +20,16 @@ export default function ReportDetailPage() {
   const router = useRouter();
   const locale = params?.locale || "id";
   const reportId = params?.reportId;
+  const { theme, dark, toggleTheme } = useTheme();
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [report, setReport] = useState<ReportRecord | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    api
-      .listReports()
-      .then((items) => {
+    Promise.all([api.getSession(), api.listReports()])
+      .then(([session, items]) => {
+        setUser(session);
         const found = items.find((r) => r.id === reportId) || null;
         setReport(found);
       })
@@ -28,8 +37,18 @@ export default function ReportDetailPage() {
   }, [reportId]);
 
   return (
-    <div className="reporter-dashboard min-h-dvh bg-[var(--rd-bg)] p-4 sm:p-8 text-[var(--rd-text)]">
-      <div className="mx-auto max-w-5xl">
+    <div
+      className="reporter-dashboard flex min-h-dvh flex-col bg-[var(--rd-bg)] text-[var(--rd-text)]"
+      data-theme={theme}
+    >
+      <AppHeader
+        user={user}
+        dark={dark}
+        onToggleTheme={toggleTheme}
+        roleLabel="Reporter perimeter"
+        containerClassName="max-w-[1700px] min-[1100px]:px-[5%]"
+      />
+      <main className="mx-auto flex w-full max-w-[1700px] flex-1 flex-col px-3 pt-4 pb-6 md:px-[3%] md:pt-6 min-[1100px]:px-[5%]">
         <nav
           aria-label="Breadcrumb"
           className="mb-3 flex flex-wrap items-center gap-2 text-xs md:text-[13px]"
@@ -49,11 +68,11 @@ export default function ReportDetailPage() {
           </span>
         </nav>
         {loading ? (
-          <article className="rounded-xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] p-3.5 text-[var(--rd-text)] sm:p-6">
+          <article className="rounded-2xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] p-3.5 text-[var(--rd-text)] sm:p-6">
             <button
               type="button"
               onClick={() => router.push(`/${locale}/reports`)}
-              className="mb-6 inline-flex min-h-9 items-center gap-1.5 rounded-lg border-0 bg-transparent px-0 py-1 text-xs text-[var(--rd-muted)] hover:text-[var(--rd-link)]"
+              className="mb-5 inline-flex min-h-9 items-center gap-1.5 rounded-lg border-0 bg-transparent px-0 py-1 text-xs text-[var(--rd-muted)] hover:text-[var(--rd-link)]"
             >
               <ArrowLeft
                 size={18}
@@ -62,7 +81,7 @@ export default function ReportDetailPage() {
               />
               Daftar Laporan
             </button>
-            <div className="mb-8 flex items-center gap-4">
+            <div className="mb-7 flex items-center gap-4 border-b border-[var(--rd-border)] pb-5">
               <Skeleton className="size-10 shrink-0 rounded-lg" />
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-base">
@@ -75,34 +94,40 @@ export default function ReportDetailPage() {
                 </div>
               </div>
             </div>
-            <section className="mb-6">
-              <h3 className="m-0 mb-3 text-base font-normal">
-                Bagian dan Jenis Kerusakan
-              </h3>
-              <Skeleton className="h-20 w-full rounded-lg" />
-            </section>
-            <section className="mb-6">
-              <h3 className="m-0 mb-3 text-base font-normal">
-                Narasi Laporan Temuan
-              </h3>
-              <Skeleton className="h-24 w-full rounded-lg" />
-            </section>
-            <section className="mb-6">
-              <h3 className="m-0 mb-3 text-base font-normal">
-                Foto-foto Laporan Temuan
-              </h3>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                <Skeleton className="aspect-square w-full rounded-lg" />
-                <Skeleton className="aspect-square w-full rounded-lg" />
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-8">
+              <div className="space-y-6">
+                <section>
+                  <h3 className="m-0 mb-3 text-base font-normal">
+                    Bagian dan Jenis Kerusakan
+                  </h3>
+                  <Skeleton className="h-20 w-full rounded-lg" />
+                </section>
+                <section>
+                  <h3 className="m-0 mb-3 text-base font-normal">
+                    Narasi Laporan Temuan
+                  </h3>
+                  <Skeleton className="h-24 w-full rounded-lg" />
+                </section>
+                <section>
+                  <h3 className="m-0 mb-3 text-base font-normal">
+                    Foto-foto Laporan Temuan
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    <Skeleton className="aspect-square w-full rounded-lg" />
+                    <Skeleton className="aspect-square w-full rounded-lg" />
+                  </div>
+                </section>
               </div>
-            </section>
-            <section className="mb-7">
-              <h3 className="m-0 mb-3 text-base font-normal">
-                Lokasi kejadian
-              </h3>
-              <Skeleton className="mb-2 h-4 w-64 rounded" />
-              <Skeleton className="h-[320px] w-full rounded-xl" />
-            </section>
+              <div className="space-y-6">
+                <section>
+                  <h3 className="m-0 mb-3 text-base font-normal">
+                    Lokasi kejadian
+                  </h3>
+                  <Skeleton className="mb-2 h-4 w-64 rounded" />
+                  <Skeleton className="h-[320px] w-full rounded-xl" />
+                </section>
+              </div>
+            </div>
           </article>
         ) : (
           <ReportDetail
@@ -110,7 +135,8 @@ export default function ReportDetailPage() {
             onBack={() => router.push(`/${locale}/reports`)}
           />
         )}
-      </div>
+        <ReportFooter />
+      </main>
     </div>
   );
 }

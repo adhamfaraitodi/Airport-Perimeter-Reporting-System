@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import {
   CalendarArrowDown,
   CalendarArrowUp,
+  CheckCircle2,
   ClipboardList,
   ClipboardClock,
   ClipboardPen,
@@ -13,6 +16,8 @@ import {
   MapPin,
   Plus,
   RefreshCw,
+  ShieldAlert,
+  UserRound,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ReportRecord, SessionUser } from "../../../_lib/client-api";
@@ -94,7 +99,7 @@ function ReportCard({
     <button
       type="button"
       onClick={() => onSelect(report.id)}
-      className={`${button} flex w-full items-start gap-3 rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 text-left text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-hover)] sm:p-4`}
+      className={`${button} flex w-full items-start gap-3 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 text-left text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-hover)] sm:p-4`}
       aria-label={`Buka laporan ${report.id}, ${state.label}`}
     >
       <span className="pt-0.5">
@@ -202,6 +207,8 @@ export function ReportList({
   children,
   formOpen = false,
 }: ReporterDashboardProps) {
+  const params = useParams<{ locale?: string }>();
+  const locale = params?.locale || "id";
   const { theme, dark, toggleTheme } = useTheme();
   const [newest, setNewest] = useState(true);
 
@@ -222,19 +229,26 @@ export function ReportList({
         (newest ? 1 : -1)
     );
 
-  const stats: Array<[string, number, string]> = [
-    ["ALL", owned.length, "Total laporan"],
+  const stats: Array<[string, number, string, string]> = [
+    [
+      "ALL",
+      owned.length,
+      "Total laporan",
+      "Seluruh laporan yang telah dikirim",
+    ],
     [
       "OPEN",
       owned.filter(
         (r) => !r.deletedAt && ["OPEN", "IN_PROGRESS"].includes(r.status)
       ).length,
       "Perlu Tindak Lanjut",
+      "Laporan baru & sedang ditangani",
     ],
     [
       "RESOLVED",
       owned.filter((r) => !r.deletedAt && r.status === "RESOLVED").length,
       "Selesai",
+      "Penanganan perimeter tuntas",
     ],
   ];
 
@@ -247,7 +261,7 @@ export function ReportList({
 
   return (
     <div
-      className="reporter-dashboard min-h-dvh bg-[var(--rd-bg)] text-[var(--rd-text)]"
+      className="reporter-dashboard flex min-h-dvh flex-col bg-[var(--rd-bg)] text-[var(--rd-text)]"
       data-theme={theme}
     >
       <AppHeader
@@ -255,9 +269,9 @@ export function ReportList({
         dark={dark}
         onToggleTheme={toggleTheme}
         roleLabel="Reporter perimeter"
-        containerClassName="max-w-5xl"
+        containerClassName="max-w-[1700px] min-[1100px]:px-[5%]"
       />
-      <main className="mx-auto max-w-5xl px-[26px] pt-6 pb-6 sm:px-8 sm:pt-8">
+      <main className="mx-auto flex w-full max-w-[1700px] flex-1 flex-col px-3 pt-4 pb-6 md:px-[3%] md:pt-6 min-[1100px]:px-[5%]">
         <nav
           aria-label="Breadcrumb"
           className="mb-3 flex flex-wrap items-center gap-2 text-xs md:text-[13px]"
@@ -284,17 +298,18 @@ export function ReportList({
             </span>
           )}
         </nav>
-        <div className="sm:flex sm:items-end sm:justify-between sm:gap-10">
+
+        <div className="mb-[18px] sm:flex sm:items-end sm:justify-between sm:gap-10 md:mb-[26px]">
           <div>
             <h1 className="m-0 mb-2 text-xl leading-tight font-normal tracking-normal sm:text-3xl">
               Laporan Saya,
             </h1>
-            <p className="m-0 max-w-sm text-xs leading-snug sm:text-sm">
+            <p className="m-0 max-w-md text-xs leading-snug text-[var(--rd-muted)] sm:text-sm">
               Mulai laporkan kerusakan atau kejadian pelanggaran pembatas
               perimeter bandara.
             </p>
           </div>
-          <div className="mt-5 flex gap-[14px] sm:mt-0 sm:w-80 sm:shrink-0">
+          <div className="mt-4 flex gap-[14px] sm:mt-0 sm:w-80 sm:shrink-0">
             <button
               type="button"
               disabled={loading || !!error || formOpen || !user}
@@ -322,10 +337,11 @@ export function ReportList({
             </button>
           </div>
         </div>
+
         {notice && (
           <p
             role="status"
-            className="mt-5 rounded-lg bg-[var(--rd-active)] p-3 text-sm text-[var(--rd-link)]"
+            className="mb-5 rounded-lg bg-[var(--rd-active)] p-3 text-sm text-[var(--rd-link)]"
           >
             {notice}
           </p>
@@ -333,7 +349,7 @@ export function ReportList({
         {error && (
           <div
             role="alert"
-            className="mt-5 rounded-lg border border-[var(--rd-border)] bg-[var(--rd-surface)] p-4 text-sm text-[var(--rd-coral)]"
+            className="mb-5 rounded-lg border border-[var(--rd-border)] bg-[var(--rd-surface)] p-4 text-sm text-[var(--rd-coral)]"
           >
             {error}
             <p className="m-0 mt-1 text-xs">
@@ -344,7 +360,7 @@ export function ReportList({
         {abandonedSubmissionId && (
           <div
             role="status"
-            className="mt-5 rounded-lg border border-[var(--rd-border)] p-3 text-xs leading-relaxed"
+            className="mb-5 rounded-lg border border-[var(--rd-border)] p-3 text-xs leading-relaxed"
           >
             <strong>Pengiriman sebelumnya belum pasti.</strong>
             <p className="my-2 break-all">
@@ -361,44 +377,127 @@ export function ReportList({
             </button>
           </div>
         )}
+
         {children ? (
-          <div className="mt-6">{children}</div>
+          <div>{children}</div>
         ) : (
-          <>
-            <section
-              aria-label="Ringkasan laporan"
-              className="mt-6 grid grid-cols-3 gap-2.5 sm:gap-5"
-            >
-              {stats.map(([status, count, label]) => (
-                <div
-                  key={status}
-                  className="rounded-xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] px-2 py-2.5 sm:flex sm:items-center sm:gap-4 sm:p-5"
-                  title={
-                    status === "OPEN"
-                      ? "Laporan baru dan sedang ditangani, tidak termasuk laporan ditutup"
-                      : label
-                  }
-                >
-                  <StateIcon status={status} />
-                  <div>
+          <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[350px_minmax(0,1fr)] xl:grid-cols-[380px_minmax(0,1fr)] xl:gap-6">
+            {/* LEFT SIDEBAR: Summary Stats & Field Reporter Guide */}
+            <aside className="space-y-5 lg:sticky lg:top-6">
+              <section
+                aria-label="Ringkasan laporan"
+                className="grid grid-cols-3 gap-2.5 sm:gap-4 lg:grid-cols-1 lg:gap-3 lg:rounded-2xl lg:border-2 lg:border-[var(--rd-border)] lg:bg-[var(--rd-surface)] lg:p-5"
+              >
+                <div className="hidden lg:block lg:pb-1">
+                  <h2 className="m-0 text-base font-normal text-[var(--rd-text)]">
+                    Ringkasan Laporan
+                  </h2>
+                  <p className="m-0 mt-0.5 text-xs text-[var(--rd-muted)]">
+                    Rekapitulasi status laporan Anda saat ini
+                  </p>
+                </div>
+                {stats.map(([status, count, label, desc]) => (
+                  <div
+                    key={status}
+                    className="rounded-xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] px-2 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:p-4 lg:border lg:bg-[var(--rd-bg)]/50 lg:px-4 lg:py-3.5"
+                    title={
+                      status === "OPEN"
+                        ? "Laporan baru dan sedang ditangani, tidak termasuk laporan ditutup"
+                        : label
+                    }
+                  >
+                    <StateIcon status={status} />
+                    <div className="min-w-0 flex-1">
+                      <span className="mt-2 block text-[10px] min-[390px]:text-[11px] sm:mt-0 sm:text-xs lg:font-semibold">
+                        {label}
+                      </span>
+                      <span className="hidden text-[11px] text-[var(--rd-muted)] lg:block">
+                        {desc}
+                      </span>
+                    </div>
                     {loading ? (
-                      <Skeleton className="mt-2 h-7 w-10 rounded-md sm:mt-0 sm:h-9 sm:w-12" />
+                      <Skeleton className="mt-2 h-7 w-10 rounded-md sm:mt-0 sm:h-8 sm:w-10" />
                     ) : (
-                      <span className="mt-2 block px-1 text-xl leading-tight sm:mt-0 sm:text-3xl">
+                      <span className="mt-2 block px-1 text-xl leading-tight sm:mt-0 sm:text-2xl lg:font-bold">
                         {count}
                       </span>
                     )}
-                    <span className="mt-2 block text-[10px] min-[390px]:text-[11px] sm:text-sm">
-                      {label}
-                    </span>
                   </div>
+                ))}
+              </section>
+
+              {/* Desktop Field Guidelines & Reporter Card */}
+              <section
+                aria-label="Panduan Pelaporan Lapangan"
+                className="hidden rounded-2xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] p-5 lg:block"
+              >
+                <div className="mb-4 flex items-center gap-3 border-b border-[var(--rd-border)] pb-3.5">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--rd-active)] text-[var(--rd-link)]">
+                    <UserRound size={20} strokeWidth={1.8} aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="m-0 truncate text-sm font-bold text-[var(--rd-text)]">
+                      {user?.name || "Petugas Pelapor"}
+                    </p>
+                    <p className="m-0 text-xs text-[var(--rd-muted)]">
+                      Yogyakarta International Airport
+                    </p>
+                  </div>
+                  <Link
+                    href={`/${locale}/profile`}
+                    className="rounded-lg border border-[var(--rd-border)] bg-[var(--rd-bg)] px-2.5 py-1 text-xs font-semibold text-[var(--rd-link)] transition-colors hover:bg-[var(--rd-active)]"
+                  >
+                    Profil
+                  </Link>
                 </div>
-              ))}
-            </section>
+
+                <h3 className="m-0 mb-3 flex items-center gap-1.5 text-xs font-bold tracking-wide text-[var(--rd-muted)] uppercase">
+                  <ShieldAlert size={14} className="text-[var(--rd-link)]" aria-hidden="true" />
+                  <span>Panduan Pelaporan</span>
+                </h3>
+                <ul className="m-0 list-none space-y-2.5 p-0 text-xs leading-relaxed text-[var(--rd-muted)]">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2
+                      size={14}
+                      className="mt-0.5 shrink-0 text-[var(--rd-link)]"
+                      aria-hidden="true"
+                    />
+                    <span>
+                      Lampirkan foto bukti kerusakan pagar yang jelas (maksimal 8
+                      foto, maks 3 MB/foto).
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2
+                      size={14}
+                      className="mt-0.5 shrink-0 text-[var(--rd-link)]"
+                      aria-hidden="true"
+                    />
+                    <span>
+                      Pastikan pin lokasi GPS pada peta sesuai dengan segmen
+                      pagar perimeter yang diperiksa.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2
+                      size={14}
+                      className="mt-0.5 shrink-0 text-[var(--rd-link)]"
+                      aria-hidden="true"
+                    />
+                    <span>
+                      Pilih bagian pagar serta tingkat kerusakan secara spesifik
+                      untuk mempercepat tindak lanjut teknisi.
+                    </span>
+                  </li>
+                </ul>
+              </section>
+            </aside>
+
+            {/* RIGHT MAIN AREA: Report History List */}
             <section
               aria-labelledby="report-history-title"
               aria-busy={loading}
-              className="mt-6 min-h-[315px] rounded-xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] p-3.5 sm:mt-8 sm:min-h-[360px] sm:p-6"
+              className="min-h-[315px] min-w-0 rounded-2xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] p-3.5 sm:min-h-[420px] sm:p-6"
             >
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h2
@@ -456,7 +555,7 @@ export function ReportList({
                   {[0, 1, 2].map((index) => (
                     <div
                       key={index}
-                      className="flex w-full items-start gap-3 rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 sm:p-4"
+                      className="flex w-full items-start gap-3 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 sm:p-4"
                     >
                       <Skeleton className="mt-0.5 size-8 shrink-0 rounded-lg" />
                       <div className="min-w-0 flex-1 space-y-2.5">
@@ -499,7 +598,7 @@ export function ReportList({
                 </div>
               )}
             </section>
-          </>
+          </div>
         )}
         <ReportFooter />
       </main>

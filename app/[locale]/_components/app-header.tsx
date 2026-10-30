@@ -126,7 +126,7 @@ export interface AppHeaderProps {
   onToggleTheme: () => void;
   /** Optional role caption shown next to the avatar on wide screens. */
   roleLabel?: string;
-  /** Max width of the inner container, e.g. "max-w-5xl". */
+  /** Max width of the inner container, e.g. "max-w-[1700px] min-[1100px]:px-[5%]". */
   containerClassName?: string;
   /** Optional unread notification indicator override. */
   hasNotification?: boolean;
@@ -153,7 +153,7 @@ export function AppHeader({
   dark,
   onToggleTheme,
   roleLabel,
-  containerClassName = "max-w-5xl",
+  containerClassName = "max-w-[1700px] min-[1100px]:px-[5%]",
   hasNotification,
   onNotificationClick,
   onLogout,
@@ -272,7 +272,7 @@ export function AppHeader({
   return (
     <header className="border-b border-[var(--rd-border)] bg-[var(--rd-panel)]">
       <div
-        className={`mx-auto flex h-[72px] items-center justify-between gap-2 px-4 sm:h-[86px] sm:gap-3 sm:px-8 ${containerClassName}`}
+        className={`mx-auto flex h-[72px] items-center justify-between gap-2 px-3 sm:h-[86px] sm:gap-3 md:px-[3%] min-[1100px]:px-[5%] ${containerClassName}`}
       >
         {/* Left: Branding & Desktop Operator Navigation */}
         <div className="flex min-w-0 items-center gap-6">
