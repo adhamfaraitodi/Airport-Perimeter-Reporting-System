@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Info, MoonStar, Sun, X } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { loginAction } from "../_lib/auth.actions";
-import { useAuthStore } from "../_lib/auth.store";
+import { loginSchema } from "../_lib/auth.schema";
 
 const focusClasses =
   "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--login-link)]";
@@ -41,23 +41,17 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
   const [help, setHelp] = useState(false);
   const dialog = useRef<HTMLDialogElement | null>(null);
 
-  const nip = useAuthStore((state) => state.nip);
-  const password = useAuthStore((state) => state.password);
-  const remember = useAuthStore((state) => state.rememberMe);
-  const showPassword = useAuthStore((state) => state.showPassword);
-  const submitting = useAuthStore((state) => state.submitting);
-  const notice = useAuthStore((state) => state.notice);
-  const fieldErrors = useAuthStore((state) => state.fieldErrors);
-
-  const setNip = useAuthStore((state) => state.setNip);
-  const setPassword = useAuthStore((state) => state.setPassword);
-  const setRemember = useAuthStore((state) => state.setRememberMe);
-  const toggleShowPassword = useAuthStore((state) => state.toggleShowPassword);
-  const setSubmitting = useAuthStore((state) => state.setSubmitting);
-  const setNotice = useAuthStore((state) => state.setNotice);
-  const setCurrentUser = useAuthStore((state) => state.setCurrentUser);
-  const validateForm = useAuthStore((state) => state.validateForm);
-  const resetLoginForm = useAuthStore((state) => state.resetLoginForm);
+  // Local component state for login form (validated with Zod)
+  const [nip, setNipState] = useState("");
+  const [password, setPasswordState] = useState("");
+  const [remember, setRemember] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{
+    nip?: string;
+    password?: string;
+  }>({});
 
   const dark = theme === "dark";
   const demoEnabled = process.env.NODE_ENV === "development" && allowDemo;
@@ -80,12 +74,24 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
     if (!help && dialog.current.open) dialog.current.close();
   }, [help]);
 
+  function handleNipChange(raw: string) {
+    // Hanya izinkan karakter angka (0-9) dan maksimal 30 digit
+    setNipState(raw.replace(/\D+/g, "").slice(0, 30));
+    setNotice("");
+    setFieldErrors((prev) => ({ ...prev, nip: undefined }));
+  }
+
+  function handlePasswordChange(val: string) {
+    setPasswordState(val);
+    setNotice("");
+    setFieldErrors((prev) => ({ ...prev, password: undefined }));
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     // Allow instant demo entry in development only when both fields are empty
     if (!nip.trim() && !password && demoEnabled) {
-      resetLoginForm();
       if (onDemo) {
         onDemo();
       } else {
@@ -94,28 +100,39 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
       return;
     }
 
-    // Validate form inputs with Zod via Zustand store
-    const validation = validateForm(locale);
-    if (!validation.valid) {
+    // Validate form inputs with Zod
+    const parsed = loginSchema.safeParse({
+      nip,
+      password,
+      rememberMe: remember,
+      locale,
+    });
+
+    if (!parsed.success) {
+      const flattened = parsed.error.flatten().fieldErrors;
+      const errors = {
+        nip: flattened.nip?.[0],
+        password: flattened.password?.[0],
+      };
+      setFieldErrors(errors);
+      setNotice(errors.nip || errors.password || "Data login tidak valid.");
       return;
     }
 
+    setFieldErrors({});
+    setNotice("");
     setSubmitting(true);
+
     try {
-      const result = await loginAction(validation.data);
+      const result = await loginAction(parsed.data);
 
       if (result.success && result.redirectTo) {
-        if (result.user) {
-          setCurrentUser(result.user);
-        }
-        resetLoginForm();
         router.push(result.redirectTo);
         router.refresh();
         return;
       }
 
       if (result.dbUnavailable && demoEnabled) {
-        resetLoginForm();
         if (onDemo) {
           onDemo();
         } else {
@@ -230,7 +247,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
                   pattern="[0-9]+"
                   title="Masukkan NIP menggunakan angka, termasuk nol di depan."
                   onChange={(event) => {
-                    setNip(event.target.value);
+                    handleNipChange(event.target.value);
                   }}
                 />
               </div>
@@ -249,7 +266,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
                     aria-invalid={!!fieldErrors.password}
                     required={!demoEnabled}
                     onChange={(event) => {
-                      setPassword(event.target.value);
+                      handlePasswordChange(event.target.value);
                     }}
                   />
                   <button
@@ -258,7 +275,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
                     aria-label={showPassword ? "Hide password" : "Show password"}
                     aria-controls="login-password"
                     aria-pressed={showPassword}
-                    onClick={toggleShowPassword}
+                    onClick={() => setShowPassword((prev) => !prev)}
                   >
                     {showPassword ? "Sembunyi" : "Lihat"}
                   </button>

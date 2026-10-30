@@ -1,3 +1,4 @@
+import { authClient } from "@/lib/auth-client";
 import damageCatalog from "../_data/damage-catalog.json";
 
 export type UserRole = "REPORTER" | "OPERATOR" | "TECHNICIAN";
@@ -8,6 +9,9 @@ export interface SessionUser {
   name: string;
   email: string;
   role: UserRole;
+  nip?: string;
+  phone?: string;
+  unit?: string;
 }
 
 export interface DamageItem {
@@ -157,6 +161,29 @@ export async function setMockRole(next: UserRole): Promise<void> {
 
 export const api = {
   getSession: async (): Promise<SessionUser> => {
+    try {
+      const res = await authClient.getSession();
+      const sessionUser = res?.data?.user as Record<string, unknown> | undefined;
+      if (sessionUser && typeof sessionUser.id === "string") {
+        const rawRole = sessionUser.role as string | undefined;
+        const resolvedRole: UserRole =
+          rawRole === "OPERATOR" || rawRole === "TECHNICIAN"
+            ? rawRole
+            : "REPORTER";
+        role = resolvedRole;
+        return {
+          id: sessionUser.id,
+          name: (sessionUser.name as string) || "Pengguna",
+          email: (sessionUser.email as string) || "",
+          role: resolvedRole,
+          nip: (sessionUser.nip as string) || undefined,
+          phone: (sessionUser.phone as string) || undefined,
+          unit: (sessionUser.unit as string) || undefined,
+        };
+      }
+    } catch {
+      /* Fallback to local demo session if Better-Auth endpoint is unavailable */
+    }
     const activeRole = readStoredRole();
     return clone(users[activeRole]);
   },

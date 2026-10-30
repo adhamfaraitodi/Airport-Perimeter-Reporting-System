@@ -125,6 +125,18 @@ export async function signOutWithBetterAuth() {
     // Ignore if session was already expired or DB unreachable
   }
 
-  cookieStore.delete(ROLE_COOKIE_NAME);
+  // Ensure all Better-Auth session/cache cookies and RBAC role cookie are cleared
+  const cookiesToClear = [
+    ROLE_COOKIE_NAME,
+    "better-auth.session_token",
+    "better-auth.session_data",
+    "__Secure-better-auth.session_token",
+    "__Secure-better-auth.session_data",
+  ];
+
+  for (const name of cookiesToClear) {
+    cookieStore.delete(name);
+  }
+
   return { success: true };
 }

@@ -27,6 +27,6 @@ export default defineConfig({
   dbCredentials: {
     url:
       process.env.DATABASE_URL ||
-      "postgresql://postgres@127.0.0.1:5432/airport_perimeter",
+      "postgresql://postgres@127.0.0.1:5432/postgres",
   },
 });

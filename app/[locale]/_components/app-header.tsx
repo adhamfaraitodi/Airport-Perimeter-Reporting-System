@@ -27,6 +27,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
+import { logoutAction } from "../(auth)/login/_lib/auth.actions";
 import { useAccountsStore } from "../_lib/accounts-store";
 import type { SessionUser } from "../_lib/client-api";
 
@@ -260,12 +261,18 @@ export function AppHeader({
     }
   }
 
-  function handleLogout() {
+  async function handleLogout() {
     setProfileOpen(false);
+    try {
+      await logoutAction();
+    } catch {
+      // Proceed with redirect even if server action fails
+    }
     if (onLogout) {
       onLogout();
     } else {
-      router.push(`/${locale}/login`);
+      router.replace(`/${locale}/login`);
+      router.refresh();
     }
   }
 
