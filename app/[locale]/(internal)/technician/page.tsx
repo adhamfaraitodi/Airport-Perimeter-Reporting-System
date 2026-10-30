@@ -38,11 +38,11 @@ import { UpdateStatusDialog } from "../operator/_components/update-status-dialog
 import { DashboardFooter } from "../operator/_components/dashboard-footer";
 
 const filters = [
-  ["ACTIVE", "Perlu Tindakan"],
+  ["ALL", "Semua"],
   ["OPEN", "Baru"],
   ["IN_PROGRESS", "Ditangani"],
   ["RESOLVED", "Selesai"],
-  ["ALL", "Semua"],
+  ["CLOSED", "Ditutup"],
 ] as const;
 
 const statusIcons = {
@@ -67,7 +67,7 @@ export default function TechnicianDashboardPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [action, setAction] = useState<"STATUS" | "DELETE" | null>(null);
   const [locked, setLocked] = useState(false);
-  const [filter, setFilter] = useState("ACTIVE");
+  const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [newest, setNewest] = useState(true);
 
@@ -97,7 +97,7 @@ export default function TechnicianDashboardPage() {
     if (options?.abandonedSubmissionId) {
       setAbandonedSubmissionId(options.abandonedSubmissionId);
       setSelectedId(null);
-      setFilter("ACTIVE");
+      setFilter("ALL");
       setSearch("");
       await load();
     }
@@ -170,17 +170,17 @@ export default function TechnicianDashboardPage() {
           aria-label="Breadcrumb"
           className="mb-3 flex items-center gap-2 text-xs md:text-[13px]"
         >
-          <span className="text-[var(--rd-muted)]">Teknisi</span>
+          <span className="text-[var(--rd-muted)]">Dashboard</span>
           <span className="text-[var(--rd-muted)]/50 select-none">/</span>
           <span className="font-medium text-[var(--rd-link)]">
-            Tugas Perbaikan Perimeter
+            Pantau Perimeter
           </span>
         </nav>
 
         <div className="mb-4 flex items-center justify-between gap-2 px-1.5 md:mb-6 md:gap-5 md:px-0">
           <div>
             <h1 className="m-0 mb-1.5 text-xl leading-tight font-normal sm:text-3xl">
-              Tugas Perbaikan Perimeter,
+              Pantau Kerusakan Perimeter,
             </h1>
             <p className="m-0 hidden text-sm text-[var(--rd-muted)] md:block">
               Pantau lokasi temuan kerusakan pagar perimeter, perbarui progres
@@ -226,7 +226,7 @@ export default function TechnicianDashboardPage() {
                 </strong>
               )}
               <span className="block truncate text-[10px] text-[var(--rd-muted)] sm:text-xs">
-                Menunggu Tindakan (Baru)
+                Baru
               </span>
             </div>
           </div>
@@ -349,8 +349,7 @@ export default function TechnicianDashboardPage() {
               <>
                 <div className="flex items-center justify-between px-[28px] pt-[17px] md:pt-[23px]">
                   <h2 className="m-0 text-base leading-normal font-normal sm:text-lg">
-                    Daftar Tugas Lapangan
-                  </h2>
+                    Riwayat Laporan                  </h2>
                 </div>
                 <div className="px-[15px] pt-3 pb-1.5 md:px-5 md:pt-[18px]">
                   <label className="flex items-center gap-2 rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-3 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--rd-link)]">
@@ -361,7 +360,7 @@ export default function TechnicianDashboardPage() {
                     />
                     <input
                       aria-label="Cari tugas perbaikan"
-                      placeholder="Cari segmen grid, sisi, atau jenis kerusakan…"
+                      placeholder="Cari lokasi atau isi laporan…"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       className="min-w-0 flex-1 border-0 bg-transparent py-3 text-sm text-[var(--rd-text)] outline-none placeholder:text-[var(--rd-muted)]"
@@ -457,25 +456,13 @@ export default function TechnicianDashboardPage() {
                         <span className="text-4xl">⌖</span>
                         <h3 className="mb-3 text-[15px] font-medium text-[var(--rd-text)]">
                           {search || filter !== "ACTIVE"
-                            ? "Tidak ada tugas yang cocok"
+                            ? "Tidak ada tugas yang baru"
                             : "Semua tugas perbaikan telah tertangani"}
                         </h3>
                         <p className="mx-auto mb-5 max-w-[290px] text-xs leading-relaxed">
                           Pilih filter &ldquo;Semua&rdquo; atau &ldquo;Selesai&rdquo; untuk
                           melihat riwayat perbaikan perimeter.
                         </p>
-                        {(search || filter !== "ACTIVE") && (
-                          <button
-                            type="button"
-                            className={btnSecondary}
-                            onClick={() => {
-                              setSearch("");
-                              setFilter("ACTIVE");
-                            }}
-                          >
-                            Tampilkan tugas aktif
-                          </button>
-                        )}
                       </div>
                     )}
                   </>

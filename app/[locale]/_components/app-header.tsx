@@ -283,7 +283,7 @@ export function AppHeader({
             <nav className="hidden items-center gap-1.5 md:flex">
               <Link
                 href={`/${locale}/operator`}
-                className={`inline-flex h-9 items-center gap-2 rounded-xl px-3 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
+                className={`inline-flex h-9 items-center gap-2 rounded-2xl px-3 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
                   isOperatorHomeActive
                     ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
                     : "text-[var(--rd-text)] hover:bg-[var(--rd-active)] hover:text-[var(--rd-link)]"
@@ -306,7 +306,7 @@ export function AppHeader({
                   }}
                   aria-expanded={dataMasterOpen}
                   aria-haspopup="menu"
-                  className={`inline-flex h-9 items-center gap-2 rounded-xl px-3 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
+                  className={`inline-flex h-9 items-center gap-2 rounded-2xl px-3 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
                     dataMasterOpen || isDataMasterActive
                       ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
                       : "text-[var(--rd-text)] hover:bg-[var(--rd-active)] hover:text-[var(--rd-link)]"
@@ -390,7 +390,7 @@ export function AppHeader({
           <button
             type="button"
             onClick={onToggleTheme}
-            className="grid size-9 place-items-center rounded-xl bg-transparent p-0 text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-active)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] sm:size-10"
+            className="grid size-9 place-items-center rounded-full bg-transparent p-0 text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-active)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] sm:size-10"
             aria-label={dark ? "Aktifkan light mode" : "Aktifkan dark mode"}
           >
             {dark ? (
@@ -414,7 +414,7 @@ export function AppHeader({
           >
             <PopoverTrigger
               aria-label="Notifikasi"
-              className={`relative grid size-9 place-items-center rounded-xl p-0 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] sm:size-10 ${
+              className={`relative grid size-9 place-items-center rounded-full p-0 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] sm:size-10 ${
                 notifOpen
                   ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
                   : "bg-transparent text-[var(--rd-text)] hover:bg-[var(--rd-active)]"
@@ -602,7 +602,7 @@ export function AppHeader({
             >
               {user ? (
                 <span
-                  className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-surface)] text-xs font-semibold tracking-wide text-[var(--rd-text)] shadow-xs sm:size-10 sm:rounded-2xl sm:text-sm"
+                  className="grid size-9 shrink-0 place-items-center rounded-2xl bg-[var(--rd-surface)] text-xs font-semibold tracking-wide text-[var(--rd-text)] shadow-xs sm:size-10 sm:rounded-2xl sm:text-sm"
                   title={displayName}
                   aria-label={displayName}
                 >
