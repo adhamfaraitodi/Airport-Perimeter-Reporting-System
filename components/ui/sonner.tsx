@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Toaster as Sonner, toast } from "sonner";
 import { X } from "lucide-react";
 import "sonner/dist/styles.css";
@@ -7,9 +8,22 @@ import "sonner/dist/styles.css";
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
 function Toaster({ ...props }: ToasterProps) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const handleChange = (event: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(event.matches);
+    };
+
+    handleChange(mediaQuery);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
   return (
     <Sonner
-      position="bottom-right"
+      position={isMobile ? "top-center" : "bottom-right"}
       richColors
       closeButton
       icons={{ close: <X className="!w-3 !h-3" strokeWidth={2.5} /> }}
