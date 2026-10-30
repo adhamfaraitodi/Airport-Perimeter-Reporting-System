@@ -266,7 +266,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
         <button
           autoFocus
           type="button"
-          className={`${buttonClasses} absolute top-[10px] right-[10px] grid min-h-[44px] w-[40px] place-items-center rounded-[9px] border-0 bg-transparent p-0 text-[var(--login-muted)]`}
+          className={`${buttonClasses} absolute top-[10px] right-[10px] grid min-h-[44px] w-[40px] place-items-center rounded-[9px] border-0 bg-transparent p-0 text-[var(--login-muted)] transition-colors hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)]`}
           aria-label="Close help"
           onClick={() => setHelp(false)}
         >

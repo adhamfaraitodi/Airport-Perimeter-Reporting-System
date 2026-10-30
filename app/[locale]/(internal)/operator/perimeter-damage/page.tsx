@@ -865,7 +865,7 @@ export default function PerimeterDamageMasterPage() {
               <button
                 type="button"
                 onClick={() => setPartModal(null)}
-                className={btnIcon}
+                className={`${btnIcon} transition-colors hover:!bg-[var(--rd-coral)]/15 hover:!text-[var(--rd-coral)]`}
                 aria-label="Tutup dialog"
               >
                 <X size={18} aria-hidden="true" />
@@ -913,7 +913,7 @@ export default function PerimeterDamageMasterPage() {
                             ),
                           })
                         }
-                        className="rounded p-0.5 text-[var(--rd-muted)] hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)]"
+                        className="rounded p-0.5 text-[var(--rd-muted)] transition-colors hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)]"
                         aria-label={`Hapus ${d.name}`}
                       >
                         <X size={12} aria-hidden="true" />
@@ -1012,7 +1012,7 @@ export default function PerimeterDamageMasterPage() {
               <button
                 type="button"
                 onClick={() => setDamageModal(null)}
-                className={btnIcon}
+                className={`${btnIcon} transition-colors hover:!bg-[var(--rd-coral)]/15 hover:!text-[var(--rd-coral)]`}
                 aria-label="Tutup dialog"
               >
                 <X size={18} aria-hidden="true" />

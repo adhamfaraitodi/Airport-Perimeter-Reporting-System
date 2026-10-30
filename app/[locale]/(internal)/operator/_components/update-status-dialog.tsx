@@ -326,7 +326,7 @@ export function UpdateStatusDialog({
         {!frozen && (
           <button
             type="button"
-            className={btnIcon}
+            className={`${btnIcon} transition-colors hover:!bg-[var(--rd-coral)]/15 hover:!text-[var(--rd-coral)]`}
             aria-label="Tutup formulir"
             onClick={() => onCancel()}
           >
@@ -433,7 +433,7 @@ export function UpdateStatusDialog({
                 <button
                   type="button"
                   aria-label={`Hapus ${item.file.name}`}
-                  className={`absolute top-1 right-1 grid size-8 place-items-center rounded-full bg-white/90 p-0 text-[#384e3d] ${focusRing}`}
+                  className={`absolute top-1 right-1 grid size-8 place-items-center rounded-full bg-[var(--rd-surface)]/90 p-0 text-[var(--rd-muted)] transition-colors hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)] ${focusRing}`}
                   onClick={() => {
                     URL.revokeObjectURL(item.preview);
                     setFiles((old) =>

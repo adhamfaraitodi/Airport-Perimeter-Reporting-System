@@ -704,7 +704,7 @@ export default function ManageAccountsPage() {
               <button
                 type="button"
                 onClick={() => setAccountModal(null)}
-                className={btnIcon}
+                className={`${btnIcon} transition-colors hover:!bg-[var(--rd-coral)]/15 hover:!text-[var(--rd-coral)]`}
                 aria-label="Tutup dialog"
               >
                 <X size={18} aria-hidden="true" />
@@ -870,7 +870,7 @@ export default function ManageAccountsPage() {
               <button
                 type="button"
                 onClick={() => setPasswordModal(null)}
-                className={btnIcon}
+                className={`${btnIcon} transition-colors hover:!bg-[var(--rd-coral)]/15 hover:!text-[var(--rd-coral)]`}
                 aria-label="Tutup dialog"
               >
                 <X size={18} aria-hidden="true" />

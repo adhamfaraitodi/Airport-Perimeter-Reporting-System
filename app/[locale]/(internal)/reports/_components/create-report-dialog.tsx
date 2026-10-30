@@ -418,7 +418,7 @@ function ReporterFormSession({
           aria-label="Tutup formulir"
           disabled={busy}
           onClick={requestCancel}
-          className={`${button} flex min-h-9 items-center justify-center bg-transparent p-1 text-[var(--rd-link)]`}
+          className={`${button} flex min-h-9 items-center justify-center rounded-lg bg-transparent p-1 text-[var(--rd-muted)] transition-colors hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)]`}
         >
           <X size={22} aria-hidden="true" />
         </button>

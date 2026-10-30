@@ -20,6 +20,11 @@
     background: #f7f9fa;
   }
 
+  :root {
+    --rd-coral: #F43F5E;
+    --rd-muted: #6b7280;
+  }
+
   :root,
   body,
   button,
@@ -82,6 +87,8 @@
   --login-stripe-amber: #fbae42;
   --login-stripe-lime: #9fbd3b;
   --login-stripe-teal: #4ec4c6;
+  --rd-coral: #c4402f;
+  --rd-muted: #6b7280;
 }
 
 .login-page[data-theme="dark"] {
@@ -96,6 +103,8 @@
   --login-surface: #1b2124;
   --login-border: #2c3438;
   --login-error: #f58a7b;
+  --rd-coral: #f58a7b;
+  --rd-muted: #9aa3ab;
 }
 
 .login-page .login-help::backdrop {
