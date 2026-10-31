@@ -134,7 +134,7 @@ export default function DashboardPage() {
 
   return (
     <div
-      className="operator-dashboard min-h-dvh bg-[var(--rd-bg)] text-[var(--rd-text)]"
+      className="operator-dashboard flex min-h-dvh flex-col bg-[var(--rd-bg)] text-[var(--rd-text)]"
       data-theme={theme}
     >
       <AppHeader
@@ -144,7 +144,7 @@ export default function DashboardPage() {
         roleLabel="Operator perimeter"
         containerClassName="max-w-[1700px] min-[1100px]:px-[5%]"
       />
-      <main className="mx-auto max-w-[1700px] px-3 pt-4 md:px-[3%] md:pt-6 min-[1100px]:px-[5%]">
+      <main className="mx-auto flex w-full max-w-[1700px] flex-1 flex-col px-3 pt-4 md:px-[3%] md:pt-6 min-[1100px]:px-[5%]">
         <nav
           aria-label="Breadcrumb"
           className="mb-3 flex items-center gap-2 text-xs md:text-[13px]"

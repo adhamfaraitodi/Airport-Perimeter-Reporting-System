@@ -34,7 +34,7 @@ function WibClock() {
 
 export function ReportFooter() {
   return (
-    <footer className="flex items-center justify-between gap-2.5 py-[22px] text-[8px] tracking-[1px] text-[var(--rd-muted)] md:py-[27px] md:text-[9px]">
+    <footer className="mt-auto flex items-center justify-between gap-2.5 pt-6 pb-[22px] text-[8px] tracking-[1px] text-[var(--rd-muted)] md:pt-8 md:pb-[27px] md:text-[9px]">
       <span className="flex min-w-0 items-center gap-1">
         <Copyright size={12} aria-hidden="true" className="shrink-0" />
         <span>2026 Airport Perimeter Reporting System 1.0v</span>
