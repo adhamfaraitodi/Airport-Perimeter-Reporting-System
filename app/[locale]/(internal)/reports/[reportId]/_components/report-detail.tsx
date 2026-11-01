@@ -404,7 +404,7 @@ export function ReportDetail({ report, onBack }: ReportDetailProps) {
             type="button"
             onClick={() => setPhoto(null)}
             aria-label="Tutup foto"
-            className={`${button} grid size-10 place-items-center rounded-full bg-[var(--rd-bg)] p-0 text-[var(--rd-muted)] transition-colors hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)]`}
+            className={`${button} grid size-10 place-items-center rounded-full bg-[var(--rd-bg)] p-0 text-[var(--rd-muted)] transition-all duration-200 hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)] active:bg-[var(--rd-coral)]/20 active:text-[var(--rd-coral)] active:duration-0 max-sm:active:scale-95`}
           >
             <X size={22} />
           </button>

@@ -9,7 +9,7 @@
 export const focusRing =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]";
 
-export const btnBase = `inline-flex items-center justify-center gap-1.5 rounded-lg border border-solid border-transparent font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-55 ${focusRing}`;
+export const btnBase = `inline-flex items-center justify-center gap-1.5 rounded-lg border border-solid border-transparent font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-55 ${focusRing}`;
 
 export const btnPrimary = `${btnBase} min-h-10 bg-[var(--rd-primary)] px-4 py-2 text-sm text-white hover:bg-[var(--rd-primary-hover)]`;
 
@@ -19,9 +19,9 @@ export const btnDanger = `${btnBase} min-h-10 bg-[var(--rd-coral)] px-4 py-2 tex
 
 export const btnDangerGhost = `${btnBase} min-h-10 border-[var(--rd-coral)]/35 bg-[var(--rd-surface)] px-4 py-2 text-sm text-[var(--rd-coral)] hover:bg-[var(--rd-coral)]/10`;
 
-export const btnCancelCoral = `${btnBase} min-h-10 border-[var(--rd-border)] bg-[var(--rd-surface)] px-4 py-2 text-sm text-[var(--rd-text)] hover:border-[var(--rd-coral)]/35 hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)]`;
+export const btnCancelCoral = `${btnBase} min-h-10 border-transparent bg-[var(--rd-surface)] px-4 py-2 text-sm text-[var(--rd-text)] duration-200 hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)] active:bg-[var(--rd-coral)]/20 active:text-[var(--rd-coral)] active:duration-0 max-sm:active:scale-95`;
 
-export const btnCloseCoral = `${btnBase} size-10 min-h-10 bg-[var(--rd-bg)] p-0 text-[var(--rd-muted)] hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)]`;
+export const btnCloseCoral = `${btnBase} size-10 min-h-10 bg-[var(--rd-bg)] p-0 text-[var(--rd-muted)] duration-200 hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)] active:bg-[var(--rd-coral)]/20 active:text-[var(--rd-coral)] active:duration-0 max-sm:active:scale-95`;
 
 export const btnText = `${btnBase} min-h-9 bg-transparent px-0 py-1 text-xs font-normal text-[var(--rd-link)] hover:underline`;
 

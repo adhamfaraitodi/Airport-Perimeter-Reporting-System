@@ -40,7 +40,7 @@ const parts: CatalogPart[] = (catalog as CatalogPart[]).map((part) => ({
 const button =
   "border-0 font-normal shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] disabled:cursor-not-allowed disabled:opacity-50";
 const secondary = `${button} rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-1.5 text-[var(--rd-text)]`;
-const cancelBtn = `${secondary} transition-colors hover:border-[var(--rd-coral)]/35 hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)]`;
+const cancelBtn = `${secondary} transition-all duration-200 hover:border-[var(--rd-coral)]/35 hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)] active:border-[var(--rd-coral)]/35 active:bg-[var(--rd-coral)]/20 active:text-[var(--rd-coral)] active:duration-0 max-sm:active:scale-95`;
 const muted = "text-xs text-[var(--rd-muted)]";
 
 function readBase64(file: File): Promise<string> {
@@ -429,7 +429,7 @@ function ReporterFormSession({
           aria-label="Tutup formulir"
           disabled={busy}
           onClick={requestCancel}
-          className={`${button} flex min-h-9 items-center justify-center rounded-lg bg-transparent p-1 text-[var(--rd-muted)] transition-colors hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)]`}
+          className={`${button} flex min-h-9 items-center justify-center rounded-lg bg-transparent p-1 text-[var(--rd-muted)] transition-all duration-200 hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)] active:bg-[var(--rd-coral)]/20 active:text-[var(--rd-coral)] active:duration-0 max-sm:active:scale-95`}
         >
           <X size={22} aria-hidden="true" />
         </button>
