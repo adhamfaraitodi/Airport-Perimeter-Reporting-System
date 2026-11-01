@@ -6,6 +6,9 @@ import { useRouter, useParams } from "next/navigation";
 import { useTheme } from "../../../_lib/use-theme";
 import { loginAction } from "../_lib/auth.actions";
 import { loginSchema } from "../_lib/auth.schema";
+import {
+  btnCloseCoral,
+} from "../../../_lib/ui-classes";
 
 const focusClasses =
   "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--login-link)]";
@@ -316,7 +319,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
         <button
           autoFocus
           type="button"
-          className={`${buttonClasses} absolute top-[10px] right-[10px] grid min-h-[44px] w-[40px] place-items-center rounded-[9px] border-0 bg-transparent p-0 text-[var(--login-muted)] transition-all duration-200 hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)] active:bg-[var(--rd-coral)]/20 active:text-[var(--rd-coral)] active:duration-0 max-sm:active:scale-95`}
+          className={`${btnCloseCoral} absolute top-[10px] right-[10px]`}
           aria-label="Close help"
           onClick={() => setHelp(false)}
         >
