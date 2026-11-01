@@ -225,3 +225,13 @@ Aturan alur status:
 | `--lime`          | `#9FBD3B`               | `#9FBD3B`                | Status RESOLVED (Selesai)                |
 | `--coral-text`    | `#C4402F`               | `#F58A7B`                | Error message text                       |
 | `--coral-tint`    | `rgba(238,105,86,.12)`  | `rgba(238,105,86,.12)`   | Error message background                 |
+
+# to-do
+- [ ] **Unifikasi & Konsistensi Komponen Riwayat / Daftar Laporan Lintas Role (`REPORTER`, `OPERATOR`, `TECHNICIAN`)**:
+  - Karena ketiga role menggunakan panel/daftar laporan dan detail laporan bersama-sama, ekstrak atau selaraskan menjadi shared component yang 100% konsisten.
+  - **Desain Card Laporan**: Seragamkan struktur visual card (ikon status di kiri, ID laporan `#XXXXXX`, badge `Grid <segmentCode>`, pill status di kanan atas, judul bagian pagar, chips jenis kerusakan, preview narasi satu baris, info waktu/sisi, serta indikator jumlah foto/tindak lanjut).
+  - **Desain Detail Laporan (`ReportDetail` / `ReportDetailSheet`)**: Pastikan tampilan detail laporan (header, bagian pagar & chips kerusakan, narasi, galeri foto + dialog preview, peta/koordinat lokasi, dan timeline riwayat pembaruan) konsisten di ketiga role, dengan aksi spesifik role (`Perbarui Status`, `Tutup Laporan`) dikontrol lewat props.
+  - **Search Bar**: Samakan perilaku pencarian (`Cari lokasi atau isi laporan…` mencakup ID, segmen grid, sisi, narasi, nama pelapor, bagian pagar, dan jenis kerusakan) serta tampilan input-nya.
+  - **Filter Status**: Seragamkan tab/chip filter status (`Semua`, `Baru`, `Ditangani`, `Selesai`, `Ditutup`) beserta perhitungan counter hasil filter.
+  - **Sort by Date**: Konsistenkan tombol pengurutan tanggal (`Terbaru → terlama` / `Terlama → terbaru` menggunakan `CalendarArrowDown` & `CalendarArrowUp`).
+  - **Pagination**: Tambahkan/seragamkan komponen pagination pada daftar riwayat laporan di ketiga role agar tetap ringan dan rapi saat jumlah laporan banyak.
