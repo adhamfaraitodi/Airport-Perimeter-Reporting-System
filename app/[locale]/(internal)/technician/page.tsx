@@ -210,66 +210,68 @@ export default function TechnicianDashboardPage() {
           aria-label="Ringkasan tugas perbaikan"
           className="mb-4 grid grid-cols-3 gap-2.5 sm:gap-4 md:mb-6"
         >
-          <div className="flex items-center gap-3 rounded-[14px] border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 sm:p-4">
+          <div className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-2.5 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:rounded-[14px] sm:p-4">
             <span
               data-status="OPEN"
-              className="rd-status grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-tint)] text-[var(--rd-status)] sm:size-11"
+              className="rd-status grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)] sm:size-11 sm:rounded-xl"
             >
-              <ClipboardClock size={21} strokeWidth={1.8} aria-hidden="true" />
+              <ClipboardClock className="size-[18px] sm:size-[21px]" strokeWidth={1.8} aria-hidden="true" />
             </span>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
+              <span className="mt-2 block text-[10px] min-[390px]:text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
+                Baru
+              </span>
               {loading ? (
-                <Skeleton className="mb-1 h-6 w-10 rounded-md sm:h-7 sm:w-12" />
+                <Skeleton className="mt-2 h-[25px] w-10 rounded-md sm:mt-1 sm:h-7 sm:w-12" />
               ) : (
-                <strong className="block text-lg leading-tight font-semibold text-[var(--rd-text)] sm:text-2xl">
+                <strong className="mt-1.5 block px-0.5 text-xl leading-tight font-semibold text-[var(--rd-text)] sm:mt-0 sm:px-0 sm:text-2xl">
                   {countOpen}
                 </strong>
               )}
-              <span className="block truncate text-[10px] text-[var(--rd-muted)] sm:text-xs">
-                Baru
-              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 rounded-[14px] border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 sm:p-4">
+          <div className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-2.5 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:rounded-[14px] sm:p-4">
             <span
               data-status="IN_PROGRESS"
-              className="rd-status grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-tint)] text-[var(--rd-status)] sm:size-11"
+              className="rd-status grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)] sm:size-11 sm:rounded-xl"
             >
-              <Wrench size={20} strokeWidth={1.8} aria-hidden="true" />
+              <Wrench className="size-[18px] sm:size-[20px]" strokeWidth={1.8} aria-hidden="true" />
             </span>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
+              <span className="mt-2 block text-[10px] min-[390px]:text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
+                <span className="sm:hidden">Dikerjakan</span>
+                <span className="hidden sm:inline">Sedang Dikerjakan</span>
+              </span>
               {loading ? (
-                <Skeleton className="mb-1 h-6 w-10 rounded-md sm:h-7 sm:w-12" />
+                <Skeleton className="mt-2 h-[25px] w-10 rounded-md sm:mt-1 sm:h-7 sm:w-12" />
               ) : (
-                <strong className="block text-lg leading-tight font-semibold text-[var(--rd-text)] sm:text-2xl">
+                <strong className="mt-1.5 block px-0.5 text-xl leading-tight font-semibold text-[var(--rd-text)] sm:mt-0 sm:px-0 sm:text-2xl">
                   {countInProgress}
                 </strong>
               )}
-              <span className="block truncate text-[10px] text-[var(--rd-muted)] sm:text-xs">
-                Sedang Dikerjakan
-              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 rounded-[14px] border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 sm:p-4">
+          <div className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-2.5 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:rounded-[14px] sm:p-4">
             <span
               data-status="RESOLVED"
-              className="rd-status grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-tint)] text-[var(--rd-status)] sm:size-11"
+              className="rd-status grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)] sm:size-11 sm:rounded-xl"
             >
-              <ClipboardCheck size={21} strokeWidth={1.8} aria-hidden="true" />
+              <ClipboardCheck className="size-[18px] sm:size-[21px]" strokeWidth={1.8} aria-hidden="true" />
             </span>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
+              <span className="mt-2 block text-[10px] min-[390px]:text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
+                <span className="sm:hidden">Selesai</span>
+                <span className="hidden sm:inline">Selesai Diperbaiki</span>
+              </span>
               {loading ? (
-                <Skeleton className="mb-1 h-6 w-10 rounded-md sm:h-7 sm:w-12" />
+                <Skeleton className="mt-2 h-[25px] w-10 rounded-md sm:mt-1 sm:h-7 sm:w-12" />
               ) : (
-                <strong className="block text-lg leading-tight font-semibold text-[var(--rd-text)] sm:text-2xl">
+                <strong className="mt-1.5 block px-0.5 text-xl leading-tight font-semibold text-[var(--rd-text)] sm:mt-0 sm:px-0 sm:text-2xl">
                   {countResolved}
                 </strong>
               )}
-              <span className="block truncate text-[10px] text-[var(--rd-muted)] sm:text-xs">
-                Selesai Diperbaiki
-              </span>
             </div>
           </div>
         </section>
