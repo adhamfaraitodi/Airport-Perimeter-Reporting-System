@@ -40,6 +40,7 @@ const parts: CatalogPart[] = (catalog as CatalogPart[]).map((part) => ({
 const button =
   "border-0 font-normal shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] disabled:cursor-not-allowed disabled:opacity-50";
 const secondary = `${button} rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-1.5 text-[var(--rd-text)]`;
+const cancelBtn = `${secondary} transition-colors hover:border-[var(--rd-coral)]/35 hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)]`;
 const muted = "text-xs text-[var(--rd-muted)]";
 
 function readBase64(file: File): Promise<string> {
@@ -285,7 +286,12 @@ function ReporterFormSession({
   function requestCancel() {
     if (inFlight.current || completed.current) return;
     if (attemptRef.current) setConfirmation("attempt");
-    else if (filesRef.current.length || point || gps)
+    else if (
+      Object.keys(selection).length > 0 ||
+      narrative.trim() !== "" ||
+      filesRef.current.length > 0 ||
+      manualRevision.current > 0
+    )
       setConfirmation("evidence");
     else onCancel?.();
   }
@@ -702,7 +708,7 @@ function ReporterFormSession({
           type="button"
           disabled={busy || !!confirmation}
           onClick={requestCancel}
-          className={secondary}
+          className={cancelBtn}
         >
           {attempt ? "Tinggalkan percobaan" : "Batal"}
         </button>

@@ -19,6 +19,10 @@ export const btnDanger = `${btnBase} min-h-10 bg-[var(--rd-coral)] px-4 py-2 tex
 
 export const btnDangerGhost = `${btnBase} min-h-10 border-[var(--rd-coral)]/35 bg-[var(--rd-surface)] px-4 py-2 text-sm text-[var(--rd-coral)] hover:bg-[var(--rd-coral)]/10`;
 
+export const btnCancelCoral = `${btnBase} min-h-10 border-[var(--rd-border)] bg-[var(--rd-surface)] px-4 py-2 text-sm text-[var(--rd-text)] hover:border-[var(--rd-coral)]/35 hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)]`;
+
+export const btnCloseCoral = `${btnBase} size-10 min-h-10 bg-[var(--rd-bg)] p-0 text-[var(--rd-muted)] hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)]`;
+
 export const btnText = `${btnBase} min-h-9 bg-transparent px-0 py-1 text-xs font-normal text-[var(--rd-link)] hover:underline`;
 
 export const btnIcon = `${btnBase} size-10 min-h-10 bg-[var(--rd-bg)] p-0 text-[var(--rd-muted)] hover:bg-[var(--rd-active)] hover:text-[var(--rd-link)]`;

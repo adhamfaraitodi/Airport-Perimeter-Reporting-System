@@ -6,10 +6,8 @@ import { useParams } from "next/navigation";
 import {
   AlertTriangle,
   Fence,
-  Layers,
   Pencil,
   Plus,
-  RotateCcw,
   Search,
   ShieldAlert,
   Trash2,
@@ -30,6 +28,9 @@ import {
 } from "../../../_lib/damage-catalog-store";
 import { message } from "../../../_lib/draft-store";
 import {
+  btnBase,
+  btnCancelCoral,
+  btnCloseCoral,
   btnDanger,
   btnIcon,
   btnPrimary,
@@ -102,7 +103,11 @@ export default function PerimeterDamageMasterPage() {
   const [partFilter, setPartFilter] = useState("ALL");
 
   const [partModal, setPartModal] = useState<PartModalState | null>(null);
+  const [confirmDiscardPart, setConfirmDiscardPart] = useState(false);
+
   const [damageModal, setDamageModal] = useState<DamageModalState | null>(null);
+  const [confirmDiscardDamage, setConfirmDiscardDamage] = useState(false);
+
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
 
@@ -128,7 +133,7 @@ export default function PerimeterDamageMasterPage() {
   const totalParts = parts.length;
   const totalDamages = parts.reduce((sum, p) => sum + p.damages.length, 0);
   const totalExclusive = parts.reduce(
-    (sum, p) => sum + p.damages.filter((d) => !!d.exclusiveGroup).length,
+    (sum, p) => sum + p.damages.filter((d) => Boolean(d.exclusiveGroup)).length,
     0
   );
 
@@ -165,6 +170,7 @@ export default function PerimeterDamageMasterPage() {
   });
 
   function openCreatePartModal() {
+    setConfirmDiscardPart(false);
     setPartModal({
       mode: "CREATE",
       name: "",
@@ -175,6 +181,7 @@ export default function PerimeterDamageMasterPage() {
   }
 
   function openEditPartModal(part: CatalogPart) {
+    setConfirmDiscardPart(false);
     setPartModal({
       mode: "EDIT",
       partId: part.id,
@@ -183,6 +190,47 @@ export default function PerimeterDamageMasterPage() {
       newDamageName: "",
       newDamageExclusive: false,
     });
+  }
+
+  function isPartModalDirty(): boolean {
+    if (!partModal) return false;
+    if (partModal.mode === "CREATE") {
+      const defaultDamagesOnly =
+        partModal.damages.length === 1 && partModal.damages[0]?.id === "lainnya";
+      return (
+        partModal.name.trim() !== "" ||
+        partModal.newDamageName.trim() !== "" ||
+        partModal.newDamageExclusive ||
+        !defaultDamagesOnly
+      );
+    }
+    const original = parts.find((p) => p.id === partModal.partId);
+    if (!original) return false;
+    const damagesChanged =
+      partModal.damages.length !== original.damages.length ||
+      partModal.damages.some((d, idx) => {
+        const orig = original.damages[idx];
+        return (
+          !orig ||
+          d.id !== orig.id ||
+          d.name !== orig.name ||
+          (d.exclusiveGroup || "") !== (orig.exclusiveGroup || "")
+        );
+      });
+    return (
+      partModal.name.trim() !== original.name.trim() ||
+      partModal.newDamageName.trim() !== "" ||
+      damagesChanged
+    );
+  }
+
+  function requestClosePartModal() {
+    if (isPartModalDirty() && !confirmDiscardPart) {
+      setConfirmDiscardPart(true);
+      return;
+    }
+    setConfirmDiscardPart(false);
+    setPartModal(null);
   }
 
   function addDraftDamageInPartModal() {
@@ -200,6 +248,7 @@ export default function PerimeterDamageMasterPage() {
       toast.error("Jenis kerusakan sudah ada pada bagian ini.");
       return;
     }
+    setConfirmDiscardPart(false);
     setPartModal({
       ...partModal,
       damages: [
@@ -245,6 +294,7 @@ export default function PerimeterDamageMasterPage() {
           description: `Perubahan pada "${cleanedName}" berhasil disimpan.`,
         });
       }
+      setConfirmDiscardPart(false);
       setPartModal(null);
     } catch (err) {
       toast.error(message(err));
@@ -259,6 +309,7 @@ export default function PerimeterDamageMasterPage() {
       toast.error("Buat bagian pagar terlebih dahulu.");
       return;
     }
+    setConfirmDiscardDamage(false);
     setDamageModal({
       mode: "CREATE",
       partId: targetPartId,
@@ -268,6 +319,7 @@ export default function PerimeterDamageMasterPage() {
   }
 
   function openEditDamageModal(partId: string, damage: DamageItem) {
+    setConfirmDiscardDamage(false);
     setDamageModal({
       mode: "EDIT",
       partId,
@@ -275,6 +327,29 @@ export default function PerimeterDamageMasterPage() {
       name: damage.name,
       exclusiveKorosi: damage.exclusiveGroup === "korosi",
     });
+  }
+
+  function isDamageModalDirty(): boolean {
+    if (!damageModal) return false;
+    if (damageModal.mode === "CREATE") {
+      return damageModal.name.trim() !== "" || damageModal.exclusiveKorosi;
+    }
+    const part = parts.find((p) => p.id === damageModal.partId);
+    const original = part?.damages.find((d) => d.id === damageModal.damageId);
+    if (!original) return false;
+    return (
+      damageModal.name.trim() !== original.name.trim() ||
+      damageModal.exclusiveKorosi !== (original.exclusiveGroup === "korosi")
+    );
+  }
+
+  function requestCloseDamageModal() {
+    if (isDamageModalDirty() && !confirmDiscardDamage) {
+      setConfirmDiscardDamage(true);
+      return;
+    }
+    setConfirmDiscardDamage(false);
+    setDamageModal(null);
   }
 
   function handleSaveDamageModal(e: FormEvent) {
@@ -316,6 +391,7 @@ export default function PerimeterDamageMasterPage() {
           description: `"${cleanedName}" pada ${targetPart?.name || ""} berhasil diperbarui.`,
         });
       }
+      setConfirmDiscardDamage(false);
       setDamageModal(null);
     } catch (err) {
       toast.error(message(err));
@@ -384,15 +460,6 @@ export default function PerimeterDamageMasterPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {/*<button
-              type="button"
-              onClick={() => setConfirmReset(true)}
-              className={btnSecondary}
-              title="Kembalikan ke data bawaan"
-            >
-              <RotateCcw size={16} aria-hidden="true" />
-              <span>Reset Bawaan</span>
-            </button>*/}
             <button
               type="button"
               onClick={() => openCreateDamageModal()}
@@ -413,21 +480,22 @@ export default function PerimeterDamageMasterPage() {
         </div>
 
         {/* Summary Cards */}
-        <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3 md:mb-6">
-          <div className="flex items-center gap-3.5 rounded-[14px] border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4">
-            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--rd-active)] text-[var(--rd-link)]">
-              <Fence size={22} strokeWidth={1.8} aria-hidden="true" />
+        <div className="mb-5 grid grid-cols-3 gap-2.5 sm:gap-4 md:mb-6">
+          <div className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-2.5 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:rounded-[14px] sm:p-4">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--rd-active)] text-[var(--rd-link)] sm:size-11 sm:rounded-xl">
+              <Fence className="size-[18px] sm:size-[22px]" strokeWidth={1.8} aria-hidden="true" />
             </span>
-            <div>
-              <span className="block text-xs text-[var(--rd-muted)]">
-                Bagian Pagar Perimeter
+            <div className="min-w-0 flex-1">
+              <span className="mt-2 block text-[10px] min-[390px]:text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
+                <span className="sm:hidden">Bagian Pagar</span>
+                <span className="hidden sm:inline">Bagian Pagar Perimeter</span>
               </span>
               {loading ? (
-                <Skeleton className="mt-1 h-6 w-20 rounded-md" />
+                <Skeleton className="mt-2 h-[25px] w-10 rounded-md sm:mt-1 sm:h-6 sm:w-20" />
               ) : (
-                <strong className="text-xl font-semibold text-[var(--rd-text)]">
+                <strong className="mt-2 block px-0.5 text-xl font-semibold leading-tight text-[var(--rd-text)] sm:mt-0 sm:px-0">
                   {totalParts}{" "}
-                  <span className="text-xs font-normal text-[var(--rd-muted)]">
+                  <span className="hidden text-xs font-normal text-[var(--rd-muted)] sm:inline">
                     bagian
                   </span>
                 </strong>
@@ -435,20 +503,21 @@ export default function PerimeterDamageMasterPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3.5 rounded-[14px] border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4">
-            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--rd-active)] text-[var(--rd-link)]">
-              <Wrench size={21} strokeWidth={1.8} aria-hidden="true" />
+          <div className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-2.5 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:rounded-[14px] sm:p-4">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--rd-active)] text-[var(--rd-link)] sm:size-11 sm:rounded-xl">
+              <Wrench className="size-[18px] sm:size-[21px]" strokeWidth={1.8} aria-hidden="true" />
             </span>
-            <div>
-              <span className="block text-xs text-[var(--rd-muted)]">
-                Total Jenis Kerusakan
+            <div className="min-w-0 flex-1">
+              <span className="mt-2 block text-[10px] min-[390px]:text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
+                <span className="sm:hidden">Jenis Kerusakan</span>
+                <span className="hidden sm:inline">Total Jenis Kerusakan</span>
               </span>
               {loading ? (
-                <Skeleton className="mt-1 h-6 w-24 rounded-md" />
+                <Skeleton className="mt-2 h-[25px] w-10 rounded-md sm:mt-1 sm:h-6 sm:w-24" />
               ) : (
-                <strong className="text-xl font-semibold text-[var(--rd-text)]">
+                <strong className="mt-2 block px-0.5 text-xl font-semibold leading-tight text-[var(--rd-text)] sm:mt-0 sm:px-0">
                   {totalDamages}{" "}
-                  <span className="text-xs font-normal text-[var(--rd-muted)]">
+                  <span className="hidden text-xs font-normal text-[var(--rd-muted)] sm:inline">
                     klasifikasi
                   </span>
                 </strong>
@@ -456,20 +525,21 @@ export default function PerimeterDamageMasterPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3.5 rounded-[14px] border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4">
-            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--rd-brown)]/15 text-[var(--rd-brown)]">
-              <ShieldAlert size={21} strokeWidth={1.8} aria-hidden="true" />
+          <div className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-2.5 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:rounded-[14px] sm:p-4">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--rd-brown)]/15 text-[var(--rd-brown)] sm:size-11 sm:rounded-xl">
+              <ShieldAlert className="size-[18px] sm:size-[21px]" strokeWidth={1.8} aria-hidden="true" />
             </span>
-            <div>
-              <span className="block text-xs text-[var(--rd-muted)]">
-                Opsi Grup Eksklusif (Korosi)
+            <div className="min-w-0 flex-1">
+              <span className="mt-2 block text-[10px] min-[390px]:text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
+                <span className="sm:hidden">Grup Eksklusif</span>
+                <span className="hidden sm:inline">Opsi Grup Eksklusif (Korosi)</span>
               </span>
               {loading ? (
-                <Skeleton className="mt-1 h-6 w-28 rounded-md" />
+                <Skeleton className="mt-2 h-[25px] w-10 rounded-md sm:mt-1 sm:h-6 sm:w-28" />
               ) : (
-                <strong className="text-xl font-semibold text-[var(--rd-text)]">
+                <strong className="mt-2 block px-0.5 text-xl font-semibold leading-tight text-[var(--rd-text)] sm:mt-0 sm:px-0">
                   {totalExclusive}{" "}
-                  <span className="text-xs font-normal text-[var(--rd-muted)]">
+                  <span className="hidden text-xs font-normal text-[var(--rd-muted)] sm:inline">
                     opsi tingkat korosi
                   </span>
                 </strong>
@@ -853,9 +923,12 @@ export default function PerimeterDamageMasterPage() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="part-modal-title"
-          className="fixed inset-0 z-[700] grid place-items-center bg-black/50 p-4 backdrop-blur-[2px]"
+          className="fixed inset-0 z-[700] grid place-items-center overflow-y-auto bg-black/50 p-4 backdrop-blur-[2px]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) requestClosePartModal();
+          }}
         >
-          <div className="w-full max-w-lg rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-5 text-[var(--rd-text)] shadow-xl sm:p-6">
+          <div className="my-auto w-full max-w-lg rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-5 text-[var(--rd-text)] shadow-xl sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-2">
               <h2 id="part-modal-title" className="m-0 text-lg font-semibold">
                 {partModal.mode === "CREATE"
@@ -864,8 +937,8 @@ export default function PerimeterDamageMasterPage() {
               </h2>
               <button
                 type="button"
-                onClick={() => setPartModal(null)}
-                className={`${btnIcon} transition-colors hover:!bg-[var(--rd-coral)]/15 hover:!text-[var(--rd-coral)]`}
+                onClick={requestClosePartModal}
+                className={btnCloseCoral}
                 aria-label="Tutup dialog"
               >
                 <X size={18} aria-hidden="true" />
@@ -880,9 +953,10 @@ export default function PerimeterDamageMasterPage() {
                   required
                   placeholder="Contoh: Pintu Darurat / Gate Perimeter"
                   value={partModal.name}
-                  onChange={(e) =>
-                    setPartModal({ ...partModal, name: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setConfirmDiscardPart(false);
+                    setPartModal({ ...partModal, name: e.target.value });
+                  }}
                   className={fieldControl}
                 />
               </label>
@@ -905,14 +979,15 @@ export default function PerimeterDamageMasterPage() {
                       )}
                       <button
                         type="button"
-                        onClick={() =>
+                        onClick={() => {
+                          setConfirmDiscardPart(false);
                           setPartModal({
                             ...partModal,
                             damages: partModal.damages.filter(
                               (item) => item.id !== d.id
                             ),
-                          })
-                        }
+                          });
+                        }}
                         className="rounded p-0.5 text-[var(--rd-muted)] transition-colors hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)]"
                         aria-label={`Hapus ${d.name}`}
                       >
@@ -934,12 +1009,13 @@ export default function PerimeterDamageMasterPage() {
                       type="text"
                       placeholder="Ketik jenis kerusakan baru (mis. Engsel patah)…"
                       value={partModal.newDamageName}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        setConfirmDiscardPart(false);
                         setPartModal({
                           ...partModal,
                           newDamageName: e.target.value,
-                        })
-                      }
+                        });
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
@@ -961,12 +1037,13 @@ export default function PerimeterDamageMasterPage() {
                     <input
                       type="checkbox"
                       checked={partModal.newDamageExclusive}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        setConfirmDiscardPart(false);
                         setPartModal({
                           ...partModal,
                           newDamageExclusive: e.target.checked,
-                        })
-                      }
+                        });
+                      }}
                       className="size-4 accent-[var(--rd-primary)]"
                     />
                     <span>
@@ -977,11 +1054,45 @@ export default function PerimeterDamageMasterPage() {
                 </div>
               </div>
 
+              {confirmDiscardPart && (
+                <div
+                  role="alert"
+                  className="mb-4 rounded-xl border border-solid border-[var(--rd-coral)]/40 bg-[var(--rd-coral)]/10 p-3 text-xs leading-relaxed text-[var(--rd-text)]"
+                >
+                  <strong className="block font-semibold text-[var(--rd-coral)]">
+                    Batalkan perubahan bagian pagar?
+                  </strong>
+                  <span className="text-[var(--rd-muted)]">
+                    Data yang sudah Anda isi belum disimpan dan akan hilang
+                    jika dialog ditutup.
+                  </span>
+                  <div className="mt-2.5 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDiscardPart(false)}
+                      className={`${btnBase} min-h-8 rounded-lg border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-1 text-xs text-[var(--rd-text)] hover:bg-[var(--rd-hover)]`}
+                    >
+                      Lanjut Mengisi
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setConfirmDiscardPart(false);
+                        setPartModal(null);
+                      }}
+                      className={`${btnBase} min-h-8 rounded-lg bg-[var(--rd-coral)] px-3 py-1 text-xs text-white hover:brightness-95`}
+                    >
+                      Ya, Batalkan
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-end gap-2.5 pt-2">
                 <button
                   type="button"
-                  onClick={() => setPartModal(null)}
-                  className={btnSecondary}
+                  onClick={requestClosePartModal}
+                  className={btnCancelCoral}
                 >
                   Batal
                 </button>
@@ -1000,9 +1111,12 @@ export default function PerimeterDamageMasterPage() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="damage-modal-title"
-          className="fixed inset-0 z-[700] grid place-items-center bg-black/50 p-4 backdrop-blur-[2px]"
+          className="fixed inset-0 z-[700] grid place-items-center overflow-y-auto bg-black/50 p-4 backdrop-blur-[2px]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) requestCloseDamageModal();
+          }}
         >
-          <div className="w-full max-w-md rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-5 text-[var(--rd-text)] shadow-xl sm:p-6">
+          <div className="my-auto w-full max-w-md rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-5 text-[var(--rd-text)] shadow-xl sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-2">
               <h2 id="damage-modal-title" className="m-0 text-lg font-semibold">
                 {damageModal.mode === "CREATE"
@@ -1011,8 +1125,8 @@ export default function PerimeterDamageMasterPage() {
               </h2>
               <button
                 type="button"
-                onClick={() => setDamageModal(null)}
-                className={`${btnIcon} transition-colors hover:!bg-[var(--rd-coral)]/15 hover:!text-[var(--rd-coral)]`}
+                onClick={requestCloseDamageModal}
+                className={btnCloseCoral}
                 aria-label="Tutup dialog"
               >
                 <X size={18} aria-hidden="true" />
@@ -1025,9 +1139,10 @@ export default function PerimeterDamageMasterPage() {
                 <select
                   value={damageModal.partId}
                   disabled={damageModal.mode === "EDIT"}
-                  onChange={(e) =>
-                    setDamageModal({ ...damageModal, partId: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setConfirmDiscardDamage(false);
+                    setDamageModal({ ...damageModal, partId: e.target.value });
+                  }}
                   className={`${fieldControl} disabled:opacity-60`}
                 >
                   {parts.map((part) => (
@@ -1045,9 +1160,10 @@ export default function PerimeterDamageMasterPage() {
                   required
                   placeholder="Contoh: Berlubang / Miring / Klem terlepas"
                   value={damageModal.name}
-                  onChange={(e) =>
-                    setDamageModal({ ...damageModal, name: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setConfirmDiscardDamage(false);
+                    setDamageModal({ ...damageModal, name: e.target.value });
+                  }}
                   className={fieldControl}
                 />
               </label>
@@ -1056,12 +1172,13 @@ export default function PerimeterDamageMasterPage() {
                 <input
                   type="checkbox"
                   checked={damageModal.exclusiveKorosi}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    setConfirmDiscardDamage(false);
                     setDamageModal({
                       ...damageModal,
                       exclusiveKorosi: e.target.checked,
-                    })
-                  }
+                    });
+                  }}
                   className="mt-0.5 size-4 shrink-0 accent-[var(--rd-primary)]"
                 />
                 <span>
@@ -1076,11 +1193,45 @@ export default function PerimeterDamageMasterPage() {
                 </span>
               </label>
 
+              {confirmDiscardDamage && (
+                <div
+                  role="alert"
+                  className="mb-4 rounded-xl border border-solid border-[var(--rd-coral)]/40 bg-[var(--rd-coral)]/10 p-3 text-xs leading-relaxed text-[var(--rd-text)]"
+                >
+                  <strong className="block font-semibold text-[var(--rd-coral)]">
+                    Batalkan pengisian jenis kerusakan?
+                  </strong>
+                  <span className="text-[var(--rd-muted)]">
+                    Data yang sudah Anda isi belum disimpan dan akan hilang
+                    jika dialog ditutup.
+                  </span>
+                  <div className="mt-2.5 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDiscardDamage(false)}
+                      className={`${btnBase} min-h-8 rounded-lg border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-1 text-xs text-[var(--rd-text)] hover:bg-[var(--rd-hover)]`}
+                    >
+                      Lanjut Mengisi
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setConfirmDiscardDamage(false);
+                        setDamageModal(null);
+                      }}
+                      className={`${btnBase} min-h-8 rounded-lg bg-[var(--rd-coral)] px-3 py-1 text-xs text-white hover:brightness-95`}
+                    >
+                      Ya, Batalkan
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-end gap-2.5">
                 <button
                   type="button"
-                  onClick={() => setDamageModal(null)}
-                  className={btnSecondary}
+                  onClick={requestCloseDamageModal}
+                  className={btnCancelCoral}
                 >
                   Batal
                 </button>
@@ -1100,17 +1251,30 @@ export default function PerimeterDamageMasterPage() {
           aria-modal="true"
           aria-labelledby="delete-modal-title"
           className="fixed inset-0 z-[700] grid place-items-center bg-black/50 p-4 backdrop-blur-[2px]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setDeleteTarget(null);
+          }}
         >
           <div className="w-full max-w-md rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-5 text-[var(--rd-text)] shadow-xl sm:p-6">
-            <div className="mb-3 flex items-center gap-3 text-[var(--rd-coral)]">
-              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--rd-coral)]/15">
-                <AlertTriangle size={20} aria-hidden="true" />
-              </span>
-              <h2 id="delete-modal-title" className="m-0 text-base font-semibold">
-                {deleteTarget.type === "PART"
-                  ? "Hapus Bagian Pagar?"
-                  : "Hapus Jenis Kerusakan?"}
-              </h2>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-3 text-[var(--rd-coral)]">
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--rd-coral)]/15">
+                  <AlertTriangle size={20} aria-hidden="true" />
+                </span>
+                <h2 id="delete-modal-title" className="m-0 text-base font-semibold">
+                  {deleteTarget.type === "PART"
+                    ? "Hapus Bagian Pagar?"
+                    : "Hapus Jenis Kerusakan?"}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className={btnCloseCoral}
+                aria-label="Tutup dialog"
+              >
+                <X size={18} aria-hidden="true" />
+              </button>
             </div>
             <p className="m-0 mb-5 text-xs leading-relaxed text-[var(--rd-muted)] sm:text-sm">
               {deleteTarget.type === "PART" ? (
@@ -1140,7 +1304,7 @@ export default function PerimeterDamageMasterPage() {
               <button
                 type="button"
                 onClick={() => setDeleteTarget(null)}
-                className={btnSecondary}
+                className={btnCancelCoral}
               >
                 Batal
               </button>
@@ -1163,11 +1327,24 @@ export default function PerimeterDamageMasterPage() {
           aria-modal="true"
           aria-labelledby="reset-modal-title"
           className="fixed inset-0 z-[700] grid place-items-center bg-black/50 p-4 backdrop-blur-[2px]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setConfirmReset(false);
+          }}
         >
           <div className="w-full max-w-md rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-5 text-[var(--rd-text)] shadow-xl sm:p-6">
-            <h2 id="reset-modal-title" className="m-0 mb-2 text-base font-semibold">
-              Kembalikan Data Master Bawaan?
-            </h2>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <h2 id="reset-modal-title" className="m-0 text-base font-semibold">
+                Kembalikan Data Master Bawaan?
+              </h2>
+              <button
+                type="button"
+                onClick={() => setConfirmReset(false)}
+                className={btnCloseCoral}
+                aria-label="Tutup dialog"
+              >
+                <X size={18} aria-hidden="true" />
+              </button>
+            </div>
             <p className="m-0 mb-5 text-xs leading-relaxed text-[var(--rd-muted)] sm:text-sm">
               Seluruh bagian pagar perimeter dan jenis kerusakan akan
               dikembalikan ke konfigurasi awal sistem.
@@ -1176,7 +1353,7 @@ export default function PerimeterDamageMasterPage() {
               <button
                 type="button"
                 onClick={() => setConfirmReset(false)}
-                className={btnSecondary}
+                className={btnCancelCoral}
               >
                 Batal
               </button>

@@ -35,113 +35,107 @@ function timestamp(value?: string | null) {
 }
 
 function Status({ status }: { status: string }) {
+  const item = states[status] || states.OPEN;
   return (
     <span
-      data-status={status}
-      className="rd-status inline-flex items-center gap-1 rounded-full bg-[var(--rd-tint)] px-2 py-0.5 text-[10px] text-[var(--rd-status)]"
+      data-status={states[status] ? status : "OPEN"}
+      className="rd-status inline-flex items-center gap-1 rounded-full bg-[var(--rd-tint)] px-2 py-0.5 text-xs text-[var(--rd-status)]"
     >
       <span className="size-1.5 rounded-full bg-current" />
-      {states[status]?.label || status || "Status tidak tersedia"}
+      {item.label}
     </span>
   );
 }
 
-function Photo({
-  image,
-  index,
-  onOpen,
-}: {
+interface PhotoItemProps {
   image: ImageRef;
-  index: number;
-  onOpen: (item: { url: string; label: string }) => void;
-}) {
-  const host = useRef<HTMLDivElement | null>(null);
+  label: string;
+  onOpen: (photo: { url: string; label: string }) => void;
+}
+
+function PhotoItem({ image, label, onOpen }: PhotoItemProps) {
+  const ref = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
-  const [url, setUrl] = useState<string | null>(null);
+  const [url, setUrl] = useState<string | null | undefined>(image.url);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !window.IntersectionObserver) {
+    if (!ref.current) return;
+    if (typeof IntersectionObserver === "undefined") {
       setVisible(true);
       return;
     }
-    if (!host.current) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          setVisible(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "100px" }
-    );
-    observer.observe(host.current);
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        setVisible(true);
+        observer.disconnect();
+      }
+    });
+    observer.observe(ref.current);
     return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
-    if (!visible) return;
     let active = true;
-    setUrl(null);
-    setError("");
-    const request = image.url
-      ? Promise.resolve({ url: image.url })
-      : api.getImage({ imageId: image.id });
-    request
-      .then((result) => {
-        if (
-          !result?.url ||
-          !/^(data:image\/(jpeg|png|webp);base64,|blob:|https:\/\/)/i.test(
-            result.url
-          )
-        ) {
-          throw new Error("Foto tidak tersedia.");
-        }
-        if (active) setUrl(result.url);
-      })
-      .catch((e) => {
-        if (active) setError(message(e));
-      });
+    if (visible && !url) {
+      setError("");
+      api
+        .getImage({ imageId: image.id })
+        .then((result) => {
+          if (!active) return;
+          if (!result.url) throw new Error("Foto belum tersedia.");
+          setUrl(result.url);
+        })
+        .catch((err) => {
+          if (active) setError(message(err));
+        });
+    }
     return () => {
       active = false;
     };
-  }, [image.id, image.url, visible, retry]);
+  }, [visible, image.id, url, retry]);
 
   return (
     <div
-      ref={host}
-      className="aspect-square overflow-hidden rounded-lg border border-[var(--rd-border)] bg-[var(--rd-bg)]"
+      ref={ref}
+      className="relative aspect-square min-h-24 overflow-hidden rounded-lg border border-[var(--rd-border)] bg-[var(--rd-bg)]"
     >
       {error ? (
         <button
           type="button"
-          className={`${button} h-full w-full bg-transparent p-3 text-xs font-normal text-[var(--rd-coral)]`}
-          onClick={() => setRetry((value) => value + 1)}
+          onClick={() => {
+            setUrl(null);
+            setError("");
+            setRetry((value) => value + 1);
+          }}
+          className={`${button} flex h-full w-full items-center justify-center bg-transparent p-2 text-center text-xs text-[var(--rd-coral)]`}
         >
-          {error}
-          <span className="mt-2 block underline">Coba lagi</span>
+          {error} · Coba lagi
         </button>
       ) : url ? (
         <button
           type="button"
-          className={`${button} group relative block h-full w-full rounded-none bg-transparent p-0`}
-          aria-label={`Perbesar foto bukti ${index + 1}`}
-          onClick={() => onOpen({ url, label: `Foto bukti ${index + 1}` })}
+          onClick={() => onOpen({ url, label })}
+          aria-label={`Perbesar ${label}`}
+          className={`${button} group relative block h-full w-full bg-transparent p-0`}
         >
           <img
             src={url}
-            alt={`Foto bukti ${index + 1}`}
+            alt={label}
             loading="lazy"
-            onError={() => setError("Foto gagal dimuat.")}
-            className="h-full w-full object-cover"
+            onError={() => setError("Foto gagal dimuat")}
+            className="block h-full w-full object-cover"
           />
-          <span className="absolute right-2 bottom-2 rounded-full bg-black/50 p-1.5 text-white">
-            <ZoomIn size={15} aria-hidden="true" />
+          <span
+            aria-hidden="true"
+            className="absolute right-1.5 bottom-1.5 grid size-7 place-items-center rounded-full bg-black/55 text-white opacity-85 transition-opacity group-hover:opacity-100"
+          >
+            <ZoomIn size={15} />
           </span>
         </button>
       ) : (
-        <Skeleton className="h-full w-full rounded-lg" />
+        <Skeleton className="h-full w-full rounded-none" />
       )}
     </div>
   );
@@ -152,26 +146,25 @@ function Photos({
   onOpen,
 }: {
   images?: ImageRef[];
-  onOpen: (item: { url: string; label: string }) => void;
+  onOpen: (photo: { url: string; label: string }) => void;
 }) {
-  return images.length ? (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+  if (!images.length) return <p className={small}>Tidak ada foto.</p>;
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
       {images.map((image, index) => (
-        <Photo
-          key={image.id || image.url || index}
+        <PhotoItem
+          key={image.id}
           image={image}
-          index={index}
+          label={image.name || `Foto bukti ${index + 1}`}
           onOpen={onOpen}
         />
       ))}
     </div>
-  ) : (
-    <p className={small}>Belum ada foto.</p>
   );
 }
 
 export interface ReportDetailProps {
-  report: ReportRecord | null;
+  report: ReportRecord;
   onBack?: () => void;
 }
 
@@ -187,178 +180,172 @@ export function ReportDetail({ report, onBack }: ReportDetailProps) {
     if (!photo && dialog.current.open) dialog.current.close();
   }, [photo]);
 
-  if (!report) {
-    return (
-      <div className="rounded-xl border border-[var(--rd-border)] bg-[var(--rd-surface)] p-6 text-sm text-[var(--rd-muted)]">
-        Laporan tidak ditemukan.
-      </div>
-    );
-  }
-
   const status = report.deletedAt ? "CLOSED" : report.status;
-  const Icon = states[status]?.icon || ClipboardClock;
+  const state = states[status] || states.OPEN;
+  const Icon = state.icon;
   const findings = Array.isArray(report.findings) ? report.findings : [];
+  const history = [...(report.history || [])].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
   const hasPoint =
     Number.isFinite(report.latitude) && Number.isFinite(report.longitude);
-  const history = [...(report.history || [])].reverse();
 
   return (
-    <article
-      aria-labelledby="report-detail-title"
-      className="rounded-2xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] p-3.5 text-[var(--rd-text)] sm:p-6"
-    >
+    <article className="rounded-2xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] p-3.5 text-[var(--rd-text)] sm:p-6">
       {onBack && (
-        <button
-          type="button"
-          onClick={onBack}
-          className={`${button} mb-5 inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-transparent px-0 py-1 text-xs text-[var(--rd-muted)] hover:text-[var(--rd-link)]`}
-        >
-          <ArrowLeft
-            size={18}
-            className="text-[var(--rd-link)]"
-            aria-hidden="true"
-          />
-          Daftar Laporan
-        </button>
-      )}
-      <div className="mb-7 flex items-center gap-4 border-b border-[var(--rd-border)] pb-5">
-        <span
-          data-status={status}
-          className="rd-status grid size-10 shrink-0 place-items-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)]"
-        >
-          <Icon size={29} strokeWidth={1.8} aria-hidden="true" />
-        </span>
-        <div className="min-w-0">
-          <h2
-            id="report-detail-title"
-            className="m-0 mb-1 flex flex-wrap gap-x-2 text-base font-normal tracking-normal sm:text-lg"
+        <div className="mb-4 border-b border-[var(--rd-border)] pb-3 lg:hidden">
+          <button
+            type="button"
+            onClick={onBack}
+            className={`${button} inline-flex min-h-9 items-center gap-1.5 bg-transparent px-0 py-1 text-xs font-semibold text-[var(--rd-link)]`}
           >
-            Detail laporan{" "}
-            <span className="text-[var(--rd-link)]" title={report.id}>
-              #{String(report.id).slice(-6).toUpperCase()}
-            </span>
-          </h2>
-          <div className="flex flex-wrap items-center gap-2">
-            <Status status={status} />
-            <time dateTime={report.createdAt} className="text-[10px]">
-              {timestamp(report.createdAt)}
-            </time>
+            <ArrowLeft size={16} aria-hidden="true" /> Kembali ke daftar laporan
+          </button>
+        </div>
+      )}
+
+      {/* Header bar */}
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-4 border-b border-[var(--rd-border)] pb-4">
+        <div className="flex items-start gap-3">
+          <span
+            data-status={states[status] ? status : "OPEN"}
+            className="rd-status flex size-10 shrink-0 items-center justify-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)]"
+          >
+            <Icon size={24} strokeWidth={1.9} aria-hidden="true" />
+          </span>
+          <div>
+            <div className="mb-1 flex flex-wrap items-center gap-2">
+              <span className={small}>
+                #{String(report.id).slice(-6).toUpperCase()}
+              </span>
+              <Status status={status} />
+            </div>
+            <h2 className="m-0 text-base font-normal tracking-normal sm:text-lg">
+              {findings.map((item) => item.partName).join(", ") ||
+                "Laporan Perimeter"}
+            </h2>
+            <p className={`${small} m-0 mt-1`}>
+              Dilaporkan {timestamp(report.createdAt)} · Diperbarui{" "}
+              {timestamp(report.updatedAt)}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* 2-Column Split on Desktop to prevent wide horizontal stretching */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start lg:gap-8">
+      {/* 2-Column Split on Desktop so detail view utilizes wide screen cleanly */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start">
         {/* LEFT COLUMN: Findings, Narrative & Photos */}
-        <div className="min-w-0 space-y-6">
+        <div className="space-y-5 lg:col-span-7">
           {report.deletedAt && (
             <section
-              aria-label="Keterangan penutupan"
-              className="rounded-lg border border-[var(--rd-border)] bg-[var(--rd-bg)] p-4"
+              aria-labelledby="closed-heading"
+              className="rounded-lg border border-[var(--rd-border)] bg-[var(--rd-bg)] p-3"
             >
-              <h3 className={heading}>Laporan ditutup</h3>
-              <p className={`${small} mb-2`}>
-                {timestamp(report.deletedAt)} · Status terakhir:{" "}
-                {states[report.status]?.label || report.status}
+              <h3 id="closed-heading" className={heading}>
+                Laporan ditutup
+              </h3>
+              <p className={`${small} m-0 mb-2`}>
+                Penutupan menyembunyikan laporan dari tampilan aktif tanpa
+                menghapus riwayat dan bukti.
               </p>
-              <p className="m-0 whitespace-pre-wrap text-sm [overflow-wrap:anywhere]">
-                {report.deletionReason || "Keterangan penutupan belum tersedia."}
-              </p>
-              <p className={`${small} mt-2 mb-0`}>
-                Penutupan administratif tidak berarti masalah sudah selesai
-                ditangani. Foto bukti penutupan tersedia pada riwayat jika
-                dilampirkan.
+              <p className="m-0 text-sm whitespace-pre-wrap [overflow-wrap:anywhere]">
+                {report.deleteReason || "Alasan penutupan tidak tercatat."}
               </p>
             </section>
           )}
 
-          <section>
-            <h3 className={heading}>Bagian dan Jenis Kerusakan</h3>
-            <div className="space-y-3">
-              {findings.length ? (
-                findings.map((finding, index) => (
+          <section aria-labelledby="findings-heading">
+            <h3 id="findings-heading" className={heading}>
+              Bagian Pagar & Jenis Kerusakan
+            </h3>
+            {findings.length ? (
+              <div className="space-y-3">
+                {findings.map((finding) => (
                   <div
-                    key={finding.partId || index}
+                    key={finding.partId || finding.partName}
                     className="rounded-lg border border-[var(--rd-border)] p-3"
                   >
-                    <h4 className="m-0 mb-3 text-sm font-normal">
-                      {finding.partName || "Bagian tidak tersedia"}
-                    </h4>
+                    <p className="m-0 mb-2 text-xs text-[var(--rd-muted)]">
+                      {finding.partName}
+                    </p>
                     <div className="flex flex-wrap gap-2">
-                      {(finding.damages || []).map((damage, i) => (
-                        <span
-                          key={
-                            typeof damage === "string" ? damage : damage.id || i
-                          }
-                          className="inline-flex items-center gap-1 rounded-lg bg-[var(--rd-active)] px-2 py-1 text-xs text-[var(--rd-link)]"
-                        >
-                          <Check size={15} aria-hidden="true" />
-                          {typeof damage === "string" ? damage : damage.name}
-                        </span>
-                      ))}
+                      {(finding.damages || []).map((damage) => {
+                        const name =
+                          typeof damage === "string" ? damage : damage.name;
+                        const key =
+                          typeof damage === "string" ? damage : damage.id;
+                        return (
+                          <span
+                            key={key}
+                            className="inline-flex min-h-7 items-center gap-1 rounded-lg bg-[var(--rd-active)] px-2 py-1 text-xs text-[var(--rd-link)]"
+                          >
+                            <Check size={14} aria-hidden="true" />
+                            {name}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
-                ))
-              ) : (
-                <p className={small}>
-                  Data bagian dan jenis kerusakan belum tersedia pada laporan
-                  ini.
-                </p>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className={small}>Tidak ada bagian pagar tercatat.</p>
+            )}
           </section>
 
-          <section>
-            <h3 className={heading}>Narasi Laporan Temuan</h3>
-            <p className="m-0 min-h-24 rounded-lg border border-[var(--rd-border)] p-3 text-sm leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">
+          <section aria-labelledby="narrative-heading">
+            <h3 id="narrative-heading" className={heading}>
+              Narasi Laporan Temuan
+            </h3>
+            <p className="m-0 rounded-lg border border-[var(--rd-border)] bg-[var(--rd-bg)]/50 p-3.5 text-sm leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">
               {report.narrative || "Tidak ada narasi."}
             </p>
           </section>
 
-          <section>
-            <h3 className={heading}>Foto-foto Laporan Temuan</h3>
+          <section aria-labelledby="photos-heading">
+            <h3 id="photos-heading" className={heading}>
+              Foto-foto Laporan Temuan
+            </h3>
             <Photos images={report.images} onOpen={setPhoto} />
           </section>
         </div>
 
-        {/* RIGHT COLUMN: Location Map & Status History */}
-        <div className="min-w-0 space-y-6">
-          <section>
-            <h3 className={heading}>Lokasi kejadian</h3>
-            <p className={`${small} mb-2`}>
-              {report.segmentCode
-                ? `Segmen ${report.segmentCode}`
-                : "Segmen belum dipetakan"}
-              {report.side ? ` · Sisi ${report.side}` : ""}
-              {hasPoint
-                ? ` · ${report.latitude.toFixed(6)}, ${report.longitude.toFixed(6)}`
-                : ""}{" "}
-              ·{" "}
-              {report.locationSource === "GPS"
-                ? "GPS"
-                : report.locationSource === "MANUAL"
-                  ? "Pin manual"
-                  : "Sumber lokasi tidak tersedia"}
-            </p>
+        {/* RIGHT COLUMN: Map Location & Status History */}
+        <div className="space-y-5 lg:col-span-5">
+          <section aria-labelledby="location-heading">
+            <h3 id="location-heading" className={heading}>
+              Lokasi kejadian
+            </h3>
             {hasPoint ? (
-              <MapView
-                point={{
-                  latitude: report.latitude,
-                  longitude: report.longitude,
-                }}
-              />
+              <>
+                <MapView
+                  editable={false}
+                  point={{
+                    latitude: report.latitude,
+                    longitude: report.longitude,
+                  }}
+                />
+                <p className={`${small} mt-2 mb-0`}>
+                  {report.latitude.toFixed(6)}, {report.longitude.toFixed(6)} ·{" "}
+                  {report.locationSource === "GPS" ? "GPS" : "Pin manual"}
+                </p>
+                {report.gps && (
+                  <p className={`${small} mt-1 mb-0`}>
+                    GPS asli: {report.gps.latitude.toFixed(6)},{" "}
+                    {report.gps.longitude.toFixed(6)} · akurasi ±
+                    {Math.round(report.gps.accuracy)} m
+                  </p>
+                )}
+              </>
             ) : (
-              <p className={small}>Koordinat laporan belum tersedia.</p>
-            )}
-            {Number.isFinite(report.gps?.accuracy) && (
-              <p className={`${small} mt-2 mb-0`}>
-                Akurasi GPS awal ±{Math.round(report.gps!.accuracy)} meter.
-              </p>
+              <p className={small}>Lokasi tidak tersedia.</p>
             )}
           </section>
 
-          <section className="border-t border-[var(--rd-border)] pt-5">
-            <h3 className={heading}>Riwayat penanganan</h3>
+          <section aria-labelledby="history-heading">
+            <h3 id="history-heading" className={heading}>
+              Riwayat pembaruan
+            </h3>
             <ol className="m-0 list-none space-y-4 p-0">
               {history.map((item) => (
                 <li

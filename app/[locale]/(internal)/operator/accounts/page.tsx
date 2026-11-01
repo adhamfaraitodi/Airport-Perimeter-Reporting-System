@@ -33,10 +33,12 @@ import {
 } from "../../../_lib/accounts-store";
 import { dateText, message } from "../../../_lib/draft-store";
 import {
+  btnBase,
+  btnCancelCoral,
+  btnCloseCoral,
   btnDanger,
   btnIcon,
   btnPrimary,
-  btnSecondary,
   fieldControl,
   fieldLabel,
   focusRing,
@@ -113,8 +115,12 @@ export default function ManageAccountsPage() {
   const [accountModal, setAccountModal] = useState<AccountModalState | null>(
     null
   );
+  const [confirmDiscardAccount, setConfirmDiscardAccount] = useState(false);
+
   const [passwordModal, setPasswordModal] =
     useState<PasswordModalState | null>(null);
+  const [confirmDiscardPassword, setConfirmDiscardPassword] = useState(false);
+
   const [deleteTarget, setDeleteTarget] = useState<ManagedAccount | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
 
@@ -161,6 +167,7 @@ export default function ManageAccountsPage() {
   });
 
   function openCreateAccountModal() {
+    setConfirmDiscardAccount(false);
     setAccountModal({
       mode: "CREATE",
       nip: "",
@@ -175,6 +182,7 @@ export default function ManageAccountsPage() {
   }
 
   function openEditAccountModal(account: ManagedAccount) {
+    setConfirmDiscardAccount(false);
     setAccountModal({
       mode: "EDIT",
       accountId: account.id,
@@ -187,6 +195,57 @@ export default function ManageAccountsPage() {
       status: account.status,
       password: "",
     });
+  }
+
+  function isAccountModalDirty(): boolean {
+    if (!accountModal) return false;
+    if (accountModal.mode === "CREATE") {
+      return (
+        accountModal.name.trim() !== "" ||
+        accountModal.nip.trim() !== "" ||
+        accountModal.phone.trim() !== "" ||
+        accountModal.password.trim() !== "" ||
+        accountModal.role !== "REPORTER" ||
+        accountModal.status !== "ACTIVE" ||
+        accountModal.unit.trim() !== "Airport Security (AVSEC)"
+      );
+    }
+    const original = accounts.find((a) => a.id === accountModal.accountId);
+    if (!original) return false;
+    return (
+      accountModal.name.trim() !== original.name.trim() ||
+      accountModal.nip.trim() !== original.nip.trim() ||
+      accountModal.phone.trim() !== (original.phone || "").trim() ||
+      accountModal.role !== original.role ||
+      accountModal.unit.trim() !== original.unit.trim() ||
+      accountModal.status !== original.status
+    );
+  }
+
+  function requestCloseAccountModal() {
+    if (isAccountModalDirty() && !confirmDiscardAccount) {
+      setConfirmDiscardAccount(true);
+      return;
+    }
+    setConfirmDiscardAccount(false);
+    setAccountModal(null);
+  }
+
+  function isPasswordModalDirty(): boolean {
+    if (!passwordModal) return false;
+    return (
+      passwordModal.newPassword.trim() !== "" ||
+      passwordModal.confirmPassword.trim() !== ""
+    );
+  }
+
+  function requestClosePasswordModal() {
+    if (isPasswordModalDirty() && !confirmDiscardPassword) {
+      setConfirmDiscardPassword(true);
+      return;
+    }
+    setConfirmDiscardPassword(false);
+    setPasswordModal(null);
   }
 
   function handleSaveAccountModal(e: FormEvent) {
@@ -229,6 +288,7 @@ export default function ManageAccountsPage() {
           description: `Perubahan pada akun "${accountModal.name}" telah disimpan.`,
         });
       }
+      setConfirmDiscardAccount(false);
       setAccountModal(null);
     } catch (err) {
       toast.error(message(err));
@@ -251,6 +311,7 @@ export default function ManageAccountsPage() {
     toast.success("Password berhasil direset", {
       description: `Kredensial login untuk ${passwordModal.account.name} (${passwordModal.account.nip}) telah diperbarui.`,
     });
+    setConfirmDiscardPassword(false);
     setPasswordModal(null);
   }
 
@@ -316,21 +377,21 @@ export default function ManageAccountsPage() {
         </div>
 
         {/* Summary Cards */}
-        <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 md:mb-6">
-          <div className="flex items-center gap-3.5 rounded-[14px] border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4">
-            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--rd-active)] text-[var(--rd-link)]">
-              <Users size={22} strokeWidth={1.8} aria-hidden="true" />
+        <div className="mb-5 grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4 md:mb-6">
+          <div className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:rounded-[14px] sm:p-4">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--rd-active)] text-[var(--rd-link)] sm:size-11 sm:rounded-xl">
+              <Users className="size-[18px] sm:size-[22px]" strokeWidth={1.8} aria-hidden="true" />
             </span>
-            <div>
-              <span className="block text-xs text-[var(--rd-muted)]">
+            <div className="min-w-0 flex-1">
+              <span className="mt-2 block text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
                 Total Akun Terdaftar
               </span>
               {loading ? (
-                <Skeleton className="mt-1 h-6 w-20 rounded-md" />
+                <Skeleton className="mt-2 h-[25px] w-14 rounded-md sm:mt-1 sm:h-6 sm:w-20" />
               ) : (
-                <strong className="text-xl font-semibold text-[var(--rd-text)]">
+                <strong className="mt-1.5 block text-xl font-semibold leading-tight text-[var(--rd-text)] sm:mt-0">
                   {totalAccounts}{" "}
-                  <span className="text-xs font-normal text-[var(--rd-muted)]">
+                  <span className="text-[11px] font-normal text-[var(--rd-muted)] sm:text-xs">
                     pengguna
                   </span>
                 </strong>
@@ -338,20 +399,20 @@ export default function ManageAccountsPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3.5 rounded-[14px] border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4">
-            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--rd-active)] text-[var(--rd-link)]">
-              <ShieldCheck size={22} strokeWidth={1.8} aria-hidden="true" />
+          <div className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:rounded-[14px] sm:p-4">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--rd-active)] text-[var(--rd-link)] sm:size-11 sm:rounded-xl">
+              <ShieldCheck className="size-[18px] sm:size-[22px]" strokeWidth={1.8} aria-hidden="true" />
             </span>
-            <div>
-              <span className="block text-xs text-[var(--rd-muted)]">
+            <div className="min-w-0 flex-1">
+              <span className="mt-2 block text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
                 Operator Perimeter
               </span>
               {loading ? (
-                <Skeleton className="mt-1 h-6 w-20 rounded-md" />
+                <Skeleton className="mt-2 h-[25px] w-14 rounded-md sm:mt-1 sm:h-6 sm:w-20" />
               ) : (
-                <strong className="text-xl font-semibold text-[var(--rd-text)]">
+                <strong className="mt-1.5 block text-xl font-semibold leading-tight text-[var(--rd-text)] sm:mt-0">
                   {totalOperators}{" "}
-                  <span className="text-xs font-normal text-[var(--rd-muted)]">
+                  <span className="text-[11px] font-normal text-[var(--rd-muted)] sm:text-xs">
                     operator
                   </span>
                 </strong>
@@ -359,41 +420,41 @@ export default function ManageAccountsPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3.5 rounded-[14px] border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4">
-            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--rd-brown)]/15 text-[var(--rd-brown)]">
-              <Wrench size={21} strokeWidth={1.8} aria-hidden="true" />
+          <div className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:rounded-[14px] sm:p-4">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--rd-brown)]/15 text-[var(--rd-brown)] sm:size-11 sm:rounded-xl">
+              <Wrench className="size-[18px] sm:size-[21px]" strokeWidth={1.8} aria-hidden="true" />
             </span>
-            <div>
-              <span className="block text-xs text-[var(--rd-muted)]">
+            <div className="min-w-0 flex-1">
+              <span className="mt-2 block text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
                 Pelapor & Teknisi
               </span>
               {loading ? (
-                <Skeleton className="mt-1 h-6 w-24 rounded-md" />
+                <Skeleton className="mt-2 h-[25px] w-16 rounded-md sm:mt-1 sm:h-6 sm:w-24" />
               ) : (
-                <strong className="text-xl font-semibold text-[var(--rd-text)]">
+                <strong className="mt-1.5 block text-xl font-semibold leading-tight text-[var(--rd-text)] sm:mt-0">
                   {totalFieldStaff}{" "}
-                  <span className="text-xs font-normal text-[var(--rd-muted)]">
-                    personel lapangan
+                  <span className="text-[11px] font-normal text-[var(--rd-muted)] sm:text-xs">
+                    personel
                   </span>
                 </strong>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-3.5 rounded-[14px] border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4">
-            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--rd-lime)]/15 text-[var(--rd-lime)]">
-              <UserCheck size={22} strokeWidth={1.8} aria-hidden="true" />
+          <div className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:rounded-[14px] sm:p-4">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--rd-lime)]/15 text-[var(--rd-lime)] sm:size-11 sm:rounded-xl">
+              <UserCheck className="size-[18px] sm:size-[22px]" strokeWidth={1.8} aria-hidden="true" />
             </span>
-            <div>
-              <span className="block text-xs text-[var(--rd-muted)]">
+            <div className="min-w-0 flex-1">
+              <span className="mt-2 block text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
                 Status Akun Aktif
               </span>
               {loading ? (
-                <Skeleton className="mt-1 h-6 w-24 rounded-md" />
+                <Skeleton className="mt-2 h-[25px] w-16 rounded-md sm:mt-1 sm:h-6 sm:w-24" />
               ) : (
-                <strong className="text-xl font-semibold text-[var(--rd-text)]">
+                <strong className="mt-1.5 block text-xl font-semibold leading-tight text-[var(--rd-text)] sm:mt-0">
                   {totalActive}{" "}
-                  <span className="text-xs font-normal text-[var(--rd-muted)]">
+                  <span className="text-[11px] font-normal text-[var(--rd-muted)] sm:text-xs">
                     dari {totalAccounts} akun
                   </span>
                 </strong>
@@ -637,13 +698,14 @@ export default function ManageAccountsPage() {
                             </button>
                             <button
                               type="button"
-                              onClick={() =>
+                              onClick={() => {
+                                setConfirmDiscardPassword(false);
                                 setPasswordModal({
                                   account,
                                   newPassword: "",
                                   confirmPassword: "",
-                                })
-                              }
+                                });
+                              }}
                               className={btnIcon}
                               title={`Reset password ${account.name}`}
                               aria-label={`Reset password ${account.name}`}
@@ -689,9 +751,12 @@ export default function ManageAccountsPage() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="account-modal-title"
-          className="fixed inset-0 z-[700] grid place-items-center bg-black/50 p-4 backdrop-blur-[2px]"
+          className="fixed inset-0 z-[700] grid place-items-center overflow-y-auto bg-black/50 p-4 backdrop-blur-[2px]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) requestCloseAccountModal();
+          }}
         >
-          <div className="w-full max-w-lg rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-5 text-[var(--rd-text)] shadow-xl sm:p-6">
+          <div className="my-auto w-full max-w-lg rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-5 text-[var(--rd-text)] shadow-xl sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-2">
               <h2
                 id="account-modal-title"
@@ -703,8 +768,8 @@ export default function ManageAccountsPage() {
               </h2>
               <button
                 type="button"
-                onClick={() => setAccountModal(null)}
-                className={`${btnIcon} transition-colors hover:!bg-[var(--rd-coral)]/15 hover:!text-[var(--rd-coral)]`}
+                onClick={requestCloseAccountModal}
+                className={btnCloseCoral}
                 aria-label="Tutup dialog"
               >
                 <X size={18} aria-hidden="true" />
@@ -720,9 +785,10 @@ export default function ManageAccountsPage() {
                     required
                     placeholder="Contoh: Budi Santoso"
                     value={accountModal.name}
-                    onChange={(e) =>
-                      setAccountModal({ ...accountModal, name: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setConfirmDiscardAccount(false);
+                      setAccountModal({ ...accountModal, name: e.target.value });
+                    }}
                     className={fieldControl}
                   />
                 </label>
@@ -734,9 +800,10 @@ export default function ManageAccountsPage() {
                     required
                     placeholder="Contoh: 19950412202101"
                     value={accountModal.nip}
-                    onChange={(e) =>
-                      setAccountModal({ ...accountModal, nip: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setConfirmDiscardAccount(false);
+                      setAccountModal({ ...accountModal, nip: e.target.value });
+                    }}
                     className={fieldControl}
                   />
                 </label>
@@ -750,12 +817,13 @@ export default function ManageAccountsPage() {
                     required
                     placeholder="Contoh: 0812-3456-7890"
                     value={accountModal.phone}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      setConfirmDiscardAccount(false);
                       setAccountModal({
                         ...accountModal,
                         phone: e.target.value,
-                      })
-                    }
+                      });
+                    }}
                     className={fieldControl}
                   />
                 </label>
@@ -764,12 +832,13 @@ export default function ManageAccountsPage() {
                   Peran Akses (Role)
                   <select
                     value={accountModal.role}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      setConfirmDiscardAccount(false);
                       setAccountModal({
                         ...accountModal,
                         role: e.target.value as UserRole,
-                      })
-                    }
+                      });
+                    }}
                     className={fieldControl}
                   >
                     <option value="REPORTER">Pelapor Lapangan</option>
@@ -787,9 +856,10 @@ export default function ManageAccountsPage() {
                     required
                     placeholder="Contoh: Airport Security (AVSEC)"
                     value={accountModal.unit}
-                    onChange={(e) =>
-                      setAccountModal({ ...accountModal, unit: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setConfirmDiscardAccount(false);
+                      setAccountModal({ ...accountModal, unit: e.target.value });
+                    }}
                     className={fieldControl}
                   />
                 </label>
@@ -798,12 +868,13 @@ export default function ManageAccountsPage() {
                   Status Akun
                   <select
                     value={accountModal.status}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      setConfirmDiscardAccount(false);
                       setAccountModal({
                         ...accountModal,
                         status: e.target.value as AccountStatus,
-                      })
-                    }
+                      });
+                    }}
                     className={fieldControl}
                   >
                     <option value="ACTIVE">Aktif</option>
@@ -821,22 +892,57 @@ export default function ManageAccountsPage() {
                     minLength={6}
                     placeholder="Minimal 6 karakter"
                     value={accountModal.password}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      setConfirmDiscardAccount(false);
                       setAccountModal({
                         ...accountModal,
                         password: e.target.value,
-                      })
-                    }
+                      });
+                    }}
                     className={fieldControl}
                   />
                 </label>
               )}
 
+              {confirmDiscardAccount && (
+                <div
+                  role="alert"
+                  className="mb-4 rounded-xl border border-solid border-[var(--rd-coral)]/40 bg-[var(--rd-coral)]/10 p-3 text-xs leading-relaxed text-[var(--rd-text)]"
+                >
+                  <strong className="block font-semibold text-[var(--rd-coral)]">
+                    Batalkan pengisian data akun?
+                  </strong>
+                  <span className="text-[var(--rd-muted)]">
+                    Data yang sudah Anda ketik belum disimpan dan akan hilang
+                    jika dialog ditutup.
+                  </span>
+                  <div className="mt-2.5 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDiscardAccount(false)}
+                      className={`${btnBase} min-h-8 rounded-lg border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-1 text-xs text-[var(--rd-text)] hover:bg-[var(--rd-hover)]`}
+                    >
+                      Lanjut Mengisi
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setConfirmDiscardAccount(false);
+                        setAccountModal(null);
+                      }}
+                      className={`${btnBase} min-h-8 rounded-lg bg-[var(--rd-coral)] px-3 py-1 text-xs text-white hover:brightness-95`}
+                    >
+                      Ya, Batalkan
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-end gap-2.5 pt-2">
                 <button
                   type="button"
-                  onClick={() => setAccountModal(null)}
-                  className={btnSecondary}
+                  onClick={requestCloseAccountModal}
+                  className={btnCancelCoral}
                 >
                   Batal
                 </button>
@@ -857,9 +963,12 @@ export default function ManageAccountsPage() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="password-modal-title"
-          className="fixed inset-0 z-[700] grid place-items-center bg-black/50 p-4 backdrop-blur-[2px]"
+          className="fixed inset-0 z-[700] grid place-items-center overflow-y-auto bg-black/50 p-4 backdrop-blur-[2px]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) requestClosePasswordModal();
+          }}
         >
-          <div className="w-full max-w-md rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-5 text-[var(--rd-text)] shadow-xl sm:p-6">
+          <div className="my-auto w-full max-w-md rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-5 text-[var(--rd-text)] shadow-xl sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-2">
               <h2
                 id="password-modal-title"
@@ -869,8 +978,8 @@ export default function ManageAccountsPage() {
               </h2>
               <button
                 type="button"
-                onClick={() => setPasswordModal(null)}
-                className={`${btnIcon} transition-colors hover:!bg-[var(--rd-coral)]/15 hover:!text-[var(--rd-coral)]`}
+                onClick={requestClosePasswordModal}
+                className={btnCloseCoral}
                 aria-label="Tutup dialog"
               >
                 <X size={18} aria-hidden="true" />
@@ -894,12 +1003,13 @@ export default function ManageAccountsPage() {
                   minLength={6}
                   placeholder="Minimal 6 karakter"
                   value={passwordModal.newPassword}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    setConfirmDiscardPassword(false);
                     setPasswordModal({
                       ...passwordModal,
                       newPassword: e.target.value,
-                    })
-                  }
+                    });
+                  }}
                   className={fieldControl}
                 />
               </label>
@@ -912,21 +1022,56 @@ export default function ManageAccountsPage() {
                   minLength={6}
                   placeholder="Ketik ulang password baru"
                   value={passwordModal.confirmPassword}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    setConfirmDiscardPassword(false);
                     setPasswordModal({
                       ...passwordModal,
                       confirmPassword: e.target.value,
-                    })
-                  }
+                    });
+                  }}
                   className={fieldControl}
                 />
               </label>
 
+              {confirmDiscardPassword && (
+                <div
+                  role="alert"
+                  className="mb-4 rounded-xl border border-solid border-[var(--rd-coral)]/40 bg-[var(--rd-coral)]/10 p-3 text-xs leading-relaxed text-[var(--rd-text)]"
+                >
+                  <strong className="block font-semibold text-[var(--rd-coral)]">
+                    Batalkan reset password?
+                  </strong>
+                  <span className="text-[var(--rd-muted)]">
+                    Password baru yang sudah diketik belum disimpan dan akan
+                    hilang.
+                  </span>
+                  <div className="mt-2.5 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDiscardPassword(false)}
+                      className={`${btnBase} min-h-8 rounded-lg border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-1 text-xs text-[var(--rd-text)] hover:bg-[var(--rd-hover)]`}
+                    >
+                      Lanjut Mengisi
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setConfirmDiscardPassword(false);
+                        setPasswordModal(null);
+                      }}
+                      className={`${btnBase} min-h-8 rounded-lg bg-[var(--rd-coral)] px-3 py-1 text-xs text-white hover:brightness-95`}
+                    >
+                      Ya, Batalkan
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-end gap-2.5 pt-2">
                 <button
                   type="button"
-                  onClick={() => setPasswordModal(null)}
-                  className={btnSecondary}
+                  onClick={requestClosePasswordModal}
+                  className={btnCancelCoral}
                 >
                   Batal
                 </button>
@@ -946,18 +1091,31 @@ export default function ManageAccountsPage() {
           aria-modal="true"
           aria-labelledby="delete-account-modal-title"
           className="fixed inset-0 z-[700] grid place-items-center bg-black/50 p-4 backdrop-blur-[2px]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setDeleteTarget(null);
+          }}
         >
           <div className="w-full max-w-md rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-5 text-[var(--rd-text)] shadow-xl sm:p-6">
-            <div className="mb-3 flex items-center gap-3 text-[var(--rd-coral)]">
-              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--rd-coral)]/15">
-                <AlertTriangle size={20} aria-hidden="true" />
-              </span>
-              <h2
-                id="delete-account-modal-title"
-                className="m-0 text-base font-semibold"
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-3 text-[var(--rd-coral)]">
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--rd-coral)]/15">
+                  <AlertTriangle size={20} aria-hidden="true" />
+                </span>
+                <h2
+                  id="delete-account-modal-title"
+                  className="m-0 text-base font-semibold"
+                >
+                  Hapus Akun Pengguna?
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className={btnCloseCoral}
+                aria-label="Tutup dialog"
               >
-                Hapus Akun Pengguna?
-              </h2>
+                <X size={18} aria-hidden="true" />
+              </button>
             </div>
             <p className="m-0 mb-5 text-xs leading-relaxed text-[var(--rd-muted)] sm:text-sm">
               Akun{" "}
@@ -970,7 +1128,7 @@ export default function ManageAccountsPage() {
               <button
                 type="button"
                 onClick={() => setDeleteTarget(null)}
-                className={btnSecondary}
+                className={btnCancelCoral}
               >
                 Batal
               </button>
@@ -993,14 +1151,27 @@ export default function ManageAccountsPage() {
           aria-modal="true"
           aria-labelledby="reset-account-modal-title"
           className="fixed inset-0 z-[700] grid place-items-center bg-black/50 p-4 backdrop-blur-[2px]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setConfirmReset(false);
+          }}
         >
           <div className="w-full max-w-md rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-5 text-[var(--rd-text)] shadow-xl sm:p-6">
-            <h2
-              id="reset-account-modal-title"
-              className="m-0 mb-2 text-base font-semibold"
-            >
-              Kembalikan Daftar Akun Bawaan?
-            </h2>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <h2
+                id="reset-account-modal-title"
+                className="m-0 text-base font-semibold"
+              >
+                Kembalikan Daftar Akun Bawaan?
+              </h2>
+              <button
+                type="button"
+                onClick={() => setConfirmReset(false)}
+                className={btnCloseCoral}
+                aria-label="Tutup dialog"
+              >
+                <X size={18} aria-hidden="true" />
+              </button>
+            </div>
             <p className="m-0 mb-5 text-xs leading-relaxed text-[var(--rd-muted)] sm:text-sm">
               Seluruh perubahan daftar akun akan dikembalikan ke data awal
               sistem.
@@ -1009,7 +1180,7 @@ export default function ManageAccountsPage() {
               <button
                 type="button"
                 onClick={() => setConfirmReset(false)}
-                className={btnSecondary}
+                className={btnCancelCoral}
               >
                 Batal
               </button>

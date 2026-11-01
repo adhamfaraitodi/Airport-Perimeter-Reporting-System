@@ -29,9 +29,10 @@ import MapView, {
 } from "../../../_components/perimeter-map-view";
 import {
   alertBox,
+  btnCancelCoral,
+  btnCloseCoral,
   btnDanger,
   btnDangerGhost,
-  btnIcon,
   btnPrimary,
   btnSecondary,
   btnText,
@@ -100,13 +101,14 @@ export function UpdateStatusDialog({
   const narrative = draft?.narrative || "";
   const side = draft?.side || "";
 
-  const [status, setStatus] = useState<LifecycleStatus>(
+  const defaultStatus: LifecycleStatus =
     report?.status === "RESOLVED"
       ? "OPEN"
       : report?.status === "OPEN"
         ? "IN_PROGRESS"
-        : "RESOLVED"
-  );
+        : "RESOLVED";
+
+  const [status, setStatus] = useState<LifecycleStatus>(defaultStatus);
   const [files, setFiles] = useState<PendingFile[]>([]);
   const [point, setPoint] = useState<LatLngPoint | null>(null);
   const [gps, setGps] = useState<GpsPoint | null>(null);
@@ -117,6 +119,7 @@ export function UpdateStatusDialog({
   const [attempt, setAttempt] = useState<BeginSubmissionPayload | null>(null);
   const [progress, setProgress] = useState<Record<string, string>>({});
   const [confirmAbandon, setConfirmAbandon] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   const filesRef = useRef<PendingFile[]>([]);
   const lock = useRef(false);
@@ -214,9 +217,29 @@ export function UpdateStatusDialog({
       }
       accepted.push({ id: newId(), file, preview: URL.createObjectURL(file) });
     }
+    setConfirmDiscard(false);
     setFiles((old) => [...old, ...accepted]);
     setError(errors.join(" "));
     event.target.value = "";
+  }
+
+  function isFormDirty() {
+    return (
+      narrative.trim() !== "" ||
+      files.length > 0 ||
+      (action === "CREATE" && (side !== "" || manual.current)) ||
+      (action === "STATUS" && status !== defaultStatus)
+    );
+  }
+
+  function requestClose() {
+    if (frozen || inFlight.current) return;
+    if (isFormDirty()) {
+      setConfirmDiscard(true);
+      return;
+    }
+    setConfirmDiscard(false);
+    onCancel();
   }
 
   function abandon() {
@@ -326,9 +349,9 @@ export function UpdateStatusDialog({
         {!frozen && (
           <button
             type="button"
-            className={`${btnIcon} transition-colors hover:!bg-[var(--rd-coral)]/15 hover:!text-[var(--rd-coral)]`}
+            className={btnCloseCoral}
             aria-label="Tutup formulir"
-            onClick={() => onCancel()}
+            onClick={requestClose}
           >
             <X size={20} aria-hidden="true" />
           </button>
@@ -349,7 +372,10 @@ export function UpdateStatusDialog({
             <select
               className={fieldControl}
               value={status}
-              onChange={(e) => setStatus(e.target.value as LifecycleStatus)}
+              onChange={(e) => {
+                setConfirmDiscard(false);
+                setStatus(e.target.value as LifecycleStatus);
+              }}
             >
               {(report.status === "RESOLVED"
                 ? (["OPEN"] as const)
@@ -370,7 +396,10 @@ export function UpdateStatusDialog({
             <select
               className={fieldControl}
               value={side}
-              onChange={(e) => update(key, { side: e.target.value })}
+              onChange={(e) => {
+                setConfirmDiscard(false);
+                update(key, { side: e.target.value });
+              }}
             >
               <option value="">Pilih sisi lokasi</option>
               {sides.map((value) => (
@@ -387,7 +416,10 @@ export function UpdateStatusDialog({
             rows={5}
             className={`${fieldControl} leading-[1.65]`}
             value={narrative}
-            onChange={(e) => update(key, { narrative: e.target.value })}
+            onChange={(e) => {
+              setConfirmDiscard(false);
+              update(key, { narrative: e.target.value });
+            }}
             placeholder="Jelaskan kondisi, titik patokan, dan tindakan yang diperlukan."
             aria-describedby="narrative-count"
           />
@@ -474,6 +506,7 @@ export function UpdateStatusDialog({
               onPoint={(value) => {
                 if (lock.current) return;
                 manual.current = true;
+                setConfirmDiscard(false);
                 setPoint(value);
                 setSource("MANUAL");
               }}
@@ -503,6 +536,34 @@ export function UpdateStatusDialog({
             </p>
           )}
         </div>
+      )}
+      {!frozen && confirmDiscard && (
+        <section className={alertBox} aria-label="Konfirmasi batalkan formulir">
+          <strong>Batalkan pengisian formulir?</strong>
+          <p className="mt-1 mb-3">
+            Data atau foto yang sudah Anda isi belum dikirim.
+          </p>
+          <div className={formActions}>
+            <button
+              type="button"
+              className={btnSecondary}
+              onClick={() => setConfirmDiscard(false)}
+            >
+              Lanjut mengisi
+            </button>
+            <button
+              type="button"
+              className={btnDangerGhost}
+              onClick={() => {
+                clear(key);
+                setConfirmDiscard(false);
+                onCancel();
+              }}
+            >
+              Ya, batalkan
+            </button>
+          </div>
+        </section>
       )}
       {attempt && !busy && confirmAbandon && (
         <section
@@ -548,8 +609,8 @@ export function UpdateStatusDialog({
         {!frozen && (
           <button
             type="button"
-            className={btnSecondary}
-            onClick={() => onCancel()}
+            className={btnCancelCoral}
+            onClick={requestClose}
           >
             Batal
           </button>
@@ -557,7 +618,7 @@ export function UpdateStatusDialog({
         {attempt && !busy && !confirmAbandon && (
           <button
             type="button"
-            className={btnSecondary}
+            className={btnCancelCoral}
             onClick={() => setConfirmAbandon(true)}
           >
             Tinggalkan percobaan
