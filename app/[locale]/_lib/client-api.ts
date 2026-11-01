@@ -103,25 +103,292 @@ function readStoredRole(): UserRole {
 const users: Record<UserRole, SessionUser> = {
   REPORTER: {
     id: "demo-reporter",
-    name: "Petugas Demo",
-    email: "reporter@example.invalid",
+    name: "Raka Mahendra",
+    email: "raka.mahendra@injourneyairports.id",
     role: "REPORTER",
   },
   OPERATOR: {
     id: "demo-operator",
-    name: "Operator Demo",
-    email: "operator@example.invalid",
+    name: "Dian Pradipta",
+    email: "19940218@injourneyairports.id",
     role: "OPERATOR",
   },
   TECHNICIAN: {
     id: "demo-technician",
-    name: "Teknisi Demo",
-    email: "technician@example.invalid",
+    name: "Bima Saputra",
+    email: "bima.saputra@injourneyairports.id",
     role: "TECHNICIAN",
   },
 };
 
-const reports = new Map<string, ReportRecord>();
+function makePlaceholderPhoto(
+  title: string,
+  subtitle: string,
+  accent: string
+): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+    <defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#14281d"/>
+        <stop offset="100%" stop-color="#1f3b2c"/>
+      </linearGradient>
+    </defs>
+    <rect width="800" height="600" fill="url(#bg)"/>
+    <g stroke="#2e5440" stroke-width="2" opacity="0.55">
+      <line x1="0" y1="120" x2="800" y2="120"/>
+      <line x1="0" y1="240" x2="800" y2="240"/>
+      <line x1="0" y1="360" x2="800" y2="360"/>
+      <line x1="0" y1="480" x2="800" y2="480"/>
+      <line x1="160" y1="0" x2="160" y2="600"/>
+      <line x1="320" y1="0" x2="320" y2="600"/>
+      <line x1="480" y1="0" x2="480" y2="600"/>
+      <line x1="640" y1="0" x2="640" y2="600"/>
+    </g>
+    <rect x="48" y="48" width="704" height="504" rx="20" fill="none" stroke="${accent}" stroke-width="3" stroke-dasharray="10 8"/>
+    <circle cx="400" cy="240" r="46" fill="${accent}" fill-opacity="0.18" stroke="${accent}" stroke-width="3"/>
+    <text x="400" y="250" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-size="26" font-weight="bold">YIA</text>
+    <text x="400" y="345" text-anchor="middle" fill="#f3f7f4" font-family="sans-serif" font-size="26" font-weight="bold">${title}</text>
+    <text x="400" y="385" text-anchor="middle" fill="#a6bfb0" font-family="sans-serif" font-size="18">${subtitle}</text>
+  </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+const initialImages: Array<[string, string]> = [
+  [
+    "img-yia-m14-1",
+    makePlaceholderPhoto(
+      "Pagar Harmonika / BRC · Berlubang",
+      "Sisi Selatan (Grid M14) · Dokumentasi Awal",
+      "#e05a47"
+    ),
+  ],
+  [
+    "img-yia-m14-2",
+    makePlaceholderPhoto(
+      "Klem Tiang Terlepas · Detail Segmen",
+      "Sisi Selatan (Grid M14) · Dokumentasi Awal",
+      "#e05a47"
+    ),
+  ],
+  [
+    "img-yia-l25-1",
+    makePlaceholderPhoto(
+      "Tiang Pagar Miring & Kawat Duri Terlepas",
+      "Sisi Timur (Grid L25) · Dokumentasi Awal",
+      "#d9822b"
+    ),
+  ],
+  [
+    "img-yia-l25-2",
+    makePlaceholderPhoto(
+      "Penanganan Lapangan oleh Tim Teknisi",
+      "Sisi Timur (Grid L25) · Progres Perbaikan",
+      "#d9822b"
+    ),
+  ],
+  [
+    "img-yia-i12-1",
+    makePlaceholderPhoto(
+      "Pondasi Bercelah · Sebelum Perbaikan",
+      "Sisi Utara (Grid I12) · Dokumentasi Awal",
+      "#47a76a"
+    ),
+  ],
+  [
+    "img-yia-i12-2",
+    makePlaceholderPhoto(
+      "Pengecoran Ulang Pondasi Selesai",
+      "Sisi Utara (Grid I12) · Bukti Penyelesaian",
+      "#47a76a"
+    ),
+  ],
+  [
+    "img-yia-k03-1",
+    makePlaceholderPhoto(
+      "Tiang Penyangga Kawat Duri Patah",
+      "Sisi Barat (Grid K3) · Laporan Duplikat Ditutup",
+      "#7e8f85"
+    ),
+  ],
+];
+
+const initialReports: ReportRecord[] = [
+  {
+    id: "rpt-2026-m14a91",
+    reporterId: "demo-reporter",
+    reporterName: "Raka Mahendra",
+    createdAt: "2026-10-31T08:15:00.000Z",
+    side: "Selatan",
+    segmentCode: "M14",
+    findings: [
+      {
+        partId: "pagar-harmonika-brc",
+        partName: "Pagar Harmonika / BRC",
+        damages: [
+          { id: "berlubang", name: "Berlubang" },
+          { id: "klem-terlepas", name: "Klem terlepas" },
+        ],
+      },
+      {
+        partId: "kawat-duri-razor",
+        partName: "Kawat Duri / Razor",
+        damages: [{ id: "terlepas", name: "Terlepas" }],
+      },
+    ],
+    narrative:
+      "Ditemukan lubang sekitar 35 cm pada jaring bawah Pagar Harmonika dekat patok selatan Grid M14 serta 3 klem pengikat tiang terlepas akibat korosi angin laut.",
+    latitude: -7.911467,
+    longitude: 110.069599,
+    gps: {
+      latitude: -7.911467,
+      longitude: 110.069599,
+      accuracy: 4.2,
+    },
+    locationSource: "GPS",
+    status: "OPEN",
+    deletedAt: null,
+    deletionReason: "",
+    images: [{ id: "img-yia-m14-1" }, { id: "img-yia-m14-2" }],
+    history: [],
+  },
+  {
+    id: "rpt-2026-l25b42",
+    reporterId: "demo-reporter",
+    reporterName: "Raka Mahendra",
+    createdAt: "2026-10-30T09:40:00.000Z",
+    side: "Timur",
+    segmentCode: "L25",
+    findings: [
+      {
+        partId: "tiang-pagar",
+        partName: "Tiang Pagar",
+        damages: [
+          { id: "miring", name: "Miring" },
+          { id: "berkarat-sedang", name: "Berkarat sedang" },
+        ],
+      },
+    ],
+    narrative:
+      "Dua tiang penyangga utama miring sekitar 15 derajat ke arah luar perimeter akibat tergerus saluran drainase setelah hujan deras semalam di sektor timur.",
+    latitude: -7.910765,
+    longitude: 110.079582,
+    gps: {
+      latitude: -7.910765,
+      longitude: 110.079582,
+      accuracy: 5.8,
+    },
+    locationSource: "GPS",
+    status: "IN_PROGRESS",
+    deletedAt: null,
+    deletionReason: "",
+    images: [{ id: "img-yia-l25-1" }],
+    history: [
+      {
+        id: "hst-2026-l25-01",
+        status: "IN_PROGRESS",
+        previousStatus: "OPEN",
+        narrative:
+          "Tim teknisi telah memasang penyangga sementara dan sedang melakukan penguatan angkur tiang.",
+        createdAt: "2026-10-30T11:20:00.000Z",
+        actorName: "Bima Saputra",
+        images: [{ id: "img-yia-l25-2" }],
+      },
+    ],
+  },
+  {
+    id: "rpt-2026-i12c78",
+    reporterId: "demo-reporter",
+    reporterName: "Raka Mahendra",
+    createdAt: "2026-10-29T07:10:00.000Z",
+    side: "Utara",
+    segmentCode: "I12",
+    findings: [
+      {
+        partId: "pondasi",
+        partName: "Pondasi",
+        damages: [{ id: "bercelah", name: "Bercelah" }],
+      },
+    ],
+    narrative:
+      "Terdapat celah di bawah balok pondasi beton sepanjang 80 cm yang berpotensi menjadi jalur masuk hewan liar ke area airside utara.",
+    latitude: -7.901649,
+    longitude: 110.061437,
+    gps: {
+      latitude: -7.901649,
+      longitude: 110.061437,
+      accuracy: 3.5,
+    },
+    locationSource: "GPS",
+    status: "RESOLVED",
+    deletedAt: null,
+    deletionReason: "",
+    images: [{ id: "img-yia-i12-1" }],
+    history: [
+      {
+        id: "hst-2026-i12-01",
+        status: "IN_PROGRESS",
+        previousStatus: "OPEN",
+        narrative:
+          "Material beton instan dan kawat ram penutup celah telah dibawa ke lokasi Grid I12.",
+        createdAt: "2026-10-29T10:05:00.000Z",
+        actorName: "Bima Saputra",
+        images: [{ id: "img-yia-i12-1" }],
+      },
+      {
+        id: "hst-2026-i12-02",
+        status: "RESOLVED",
+        previousStatus: "IN_PROGRESS",
+        narrative:
+          "Celah pondasi telah dicor ulang dan ditutup rapat sesuai standar keselamatan airside.",
+        createdAt: "2026-10-29T15:45:00.000Z",
+        actorName: "Bima Saputra",
+        images: [{ id: "img-yia-i12-2" }],
+      },
+    ],
+  },
+  {
+    id: "rpt-2026-k03d15",
+    reporterId: "demo-reporter",
+    reporterName: "Raka Mahendra",
+    createdAt: "2026-10-28T13:30:00.000Z",
+    side: "Barat",
+    segmentCode: "K3",
+    findings: [
+      {
+        partId: "tiang-penyangga-kawat-duri",
+        partName: "Tiang Penyangga Kawat Duri",
+        damages: [{ id: "patah", name: "Patah" }],
+      },
+    ],
+    narrative:
+      "Lengan Y-arm penyangga kawat duri atas patah pada satu titik tiang di sisi barat dekat pos jaga.",
+    latitude: -7.898498,
+    longitude: 110.036607,
+    gps: null,
+    locationSource: "MANUAL",
+    status: "OPEN",
+    deletedAt: "2026-10-28T16:00:00.000Z",
+    deletionReason:
+      "Laporan duplikat — titik kerusakan yang sama telah digabung ke tiket pemeliharaan berkala sektor barat.",
+    images: [{ id: "img-yia-k03-1" }],
+    history: [
+      {
+        id: "hst-2026-k03-01",
+        status: "CLOSED",
+        previousStatus: "OPEN",
+        narrative:
+          "Laporan duplikat — titik kerusakan yang sama telah digabung ke tiket pemeliharaan berkala sektor barat.",
+        createdAt: "2026-10-28T16:00:00.000Z",
+        actorName: "Dian Pradipta",
+        images: [{ id: "img-yia-k03-1" }],
+      },
+    ],
+  },
+];
+
+const reports = new Map<string, ReportRecord>(
+  initialReports.map((item) => [item.id, item])
+);
 const submissions = new Map<
   string,
   {
@@ -131,7 +398,7 @@ const submissions = new Map<
     committed: boolean;
   }
 >();
-const images = new Map<string, string>();
+const images = new Map<string, string>(initialImages);
 
 const clone = <T>(value: T): T => structuredClone(value);
 
@@ -171,7 +438,7 @@ export const api = {
             ? rawRole
             : "REPORTER";
         role = resolvedRole;
-        return {
+        const activeUser: SessionUser = {
           id: sessionUser.id,
           name: (sessionUser.name as string) || "Pengguna",
           email: (sessionUser.email as string) || "",
@@ -180,6 +447,8 @@ export const api = {
           phone: (sessionUser.phone as string) || undefined,
           unit: (sessionUser.unit as string) || undefined,
         };
+        users[resolvedRole] = activeUser;
+        return clone(activeUser);
       }
     } catch {
       /* Fallback to local demo session if Better-Auth endpoint is unavailable */
@@ -191,7 +460,10 @@ export const api = {
   listReports: async (): Promise<ReportRecord[]> =>
     clone(
       [...reports.values()].filter(
-        (r) => role !== "REPORTER" || r.reporterId === users[role].id
+        (r) =>
+          role !== "REPORTER" ||
+          r.reporterId === users[role].id ||
+          r.reporterId === "demo-reporter"
       )
     ),
 
@@ -241,7 +513,7 @@ export const api = {
               (item) => item.id === selected.id
             );
             if (!damage || damageIds.has(damage.id)) {
-              fail("Jenis kerusakan tidak valid.");
+              fail("Jenis kerusakan tidak valid.\n");
             }
             damageIds.add(damage.id);
             if (damage.exclusiveGroup && groups.has(damage.exclusiveGroup)) {
@@ -391,7 +663,9 @@ export const api = {
   getImage: async ({ imageId }: { imageId: string }): Promise<{ url: string }> => {
     const visible = [...reports.values()].some(
       (r) =>
-        (role !== "REPORTER" || r.reporterId === users[role].id) &&
+        (role !== "REPORTER" ||
+          r.reporterId === users[role].id ||
+          r.reporterId === "demo-reporter") &&
         [...r.images, ...r.history.flatMap((h) => h.images)].some(
           (i) => i.id === imageId
         )

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Info, MoonStar, Sun, X } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
+import { useTheme } from "../../../_lib/use-theme";
 import { loginAction } from "../_lib/auth.actions";
 import { loginSchema } from "../_lib/auth.schema";
 
@@ -14,19 +15,6 @@ const submitClasses = `${buttonClasses} flex min-h-[38px] w-full items-center ju
 const labelClasses =
   "mb-[5px] block text-[12px] leading-[1.3] font-normal min-[900px]:mb-[8px] min-[900px]:text-[14px]";
 
-function initialTheme(): "light" | "dark" {
-  if (typeof window === "undefined") return "light";
-  try {
-    const saved = localStorage.getItem("perimeter-theme");
-    if (saved === "light" || saved === "dark") return saved;
-  } catch {
-    /* Storage may be unavailable in embedded browsers. */
-  }
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-}
-
 export interface LoginFormProps {
   allowDemo?: boolean;
   onDemo?: () => void;
@@ -37,7 +25,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
   const params = useParams<{ locale?: string }>();
   const locale = params?.locale || "id";
 
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const { theme, dark, toggleTheme } = useTheme();
   const [help, setHelp] = useState(false);
   const dialog = useRef<HTMLDialogElement | null>(null);
 
@@ -53,20 +41,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
     password?: string;
   }>({});
 
-  const dark = theme === "dark";
   const demoEnabled = process.env.NODE_ENV === "development" && allowDemo;
-
-  useEffect(() => {
-    setTheme(initialTheme());
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("perimeter-theme", theme);
-    } catch {
-      /* Theme still works without persistence. */
-    }
-  }, [theme]);
 
   useEffect(() => {
     if (!dialog.current) return;
@@ -163,7 +138,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
         <button
           type="button"
           className={`${buttonClasses} absolute top-[34px] right-[26px] grid h-[44px] min-h-[44px] w-[44px] place-items-center rounded-full border-0 bg-transparent p-0 text-[var(--login-panel-text)] hover:bg-[var(--login-theme-hover)] min-[900px]:top-[30px] min-[900px]:right-[30px]`}
-          onClick={() => setTheme(dark ? "light" : "dark")}
+          onClick={toggleTheme}
           aria-label={dark ? "Aktifkan light mode" : "Aktifkan dark mode"}
           title={dark ? "Light mode" : "Dark mode"}
         >

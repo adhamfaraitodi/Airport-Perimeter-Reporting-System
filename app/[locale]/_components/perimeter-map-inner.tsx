@@ -1,9 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import L from "leaflet";
 import "leaflet-rotate";
-import { Grid2x2 } from "lucide-react";
+import {
+  ClipboardCheck,
+  ClipboardClock,
+  ClipboardPen,
+  Grid2x2,
+  MapPin,
+  LocateFixed,
+} from "lucide-react";
 import perimeter from "../_data/new_perimeter.json";
 import { labels } from "../_lib/draft-store";
 import type { ReportRecord } from "../_lib/client-api";
@@ -45,23 +53,31 @@ const pinClass =
 const pinSelectedClass =
   "outline-3 outline-offset-3 outline-solid outline-[var(--rd-text)]";
 
+const pinIcons = {
+  RESOLVED: renderToStaticMarkup(
+    <ClipboardCheck size={14} strokeWidth={2.2} aria-hidden="true" />
+  ),
+  IN_PROGRESS: renderToStaticMarkup(
+    <ClipboardPen size={14} strokeWidth={2.2} aria-hidden="true" />
+  ),
+  LOCATION: renderToStaticMarkup(
+    <MapPin size={14} strokeWidth={2.2} aria-hidden="true" />
+  ),
+  OPEN: renderToStaticMarkup(
+    <ClipboardClock size={14} strokeWidth={2.2} aria-hidden="true" />
+  ),
+} as const;
+
 const icon = (status: string, selected = false) => {
-  const safeStatus = ["OPEN", "IN_PROGRESS", "RESOLVED"].includes(status)
-    ? status
-    : "LOCATION";
-  const symbol =
-    safeStatus === "RESOLVED"
-      ? "✓"
-      : safeStatus === "IN_PROGRESS"
-        ? "…"
-        : safeStatus === "LOCATION"
-          ? "•"
-          : "!";
+  const safeStatus = (
+    ["OPEN", "IN_PROGRESS", "RESOLVED"].includes(status) ? status : "LOCATION"
+  ) as keyof typeof pinIcons;
+  const symbol = pinIcons[safeStatus] || pinIcons.OPEN;
   return L.divIcon({
     className: "",
     html: `<span data-status="${safeStatus}" class="${pinClass} ${
       selected ? pinSelectedClass : ""
-    }"><span class="rotate-45 leading-none">${symbol}</span></span>`,
+    }"><span class="flex rotate-45 items-center justify-center leading-none">${symbol}</span></span>`,
     iconSize: [32, 38],
     iconAnchor: [16, 35],
   });
@@ -303,7 +319,7 @@ export default function PerimeterMapInner({
           })
         }
       >
-        ⌖ Perimeter
+        <LocateFixed className="w-5 h-5"/> Perimeter
       </button>
       {(tileError || pointOutsideBounds) && (
         <div

@@ -213,7 +213,10 @@ export function ReportList({
   const [newest, setNewest] = useState(true);
 
   const owned = user
-    ? reports.filter((report) => report.reporterId === user.id)
+    ? reports.filter(
+        (report) =>
+          report.reporterId === user.id || report.reporterId === "demo-reporter"
+      )
     : [];
   const visible = owned
     .filter(
@@ -416,7 +419,7 @@ export function ReportList({
                       </span>
                     </div>
                     {loading ? (
-                      <Skeleton className="mt-2 h-7 w-10 rounded-md sm:mt-0 sm:h-8 sm:w-10" />
+                      <Skeleton className="mt-2 h-[25px] w-10 rounded-md sm:mt-0 sm:h-[30px] sm:w-10" />
                     ) : (
                       <span className="mt-2 block px-1 text-xl leading-tight sm:mt-0 sm:text-2xl lg:font-bold">
                         {count}
@@ -497,7 +500,7 @@ export function ReportList({
             <section
               aria-labelledby="report-history-title"
               aria-busy={loading}
-              className="min-h-[315px] min-w-0 rounded-2xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] p-3.5 sm:min-h-[420px] sm:p-6"
+              className="flex min-w-0 flex-col rounded-2xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] p-3.5 sm:p-6"
             >
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h2
@@ -551,7 +554,7 @@ export function ReportList({
                 )}
               </div>
               {loading ? (
-                <div className="grid gap-3">
+                <div className="grid min-h-[408px] gap-3 sm:min-h-[450px]">
                   {[0, 1, 2].map((index) => (
                     <div
                       key={index}
@@ -577,8 +580,8 @@ export function ReportList({
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="grid gap-3">
+              ) : visible.length > 0 ? (
+                <div className="grid min-h-[408px] content-start gap-3 sm:min-h-[450px]">
                   {visible.map((report) => (
                     <ReportCard
                       key={report.id}
@@ -587,9 +590,8 @@ export function ReportList({
                     />
                   ))}
                 </div>
-              )}
-              {!visible.length && !loading && (
-                <div className="flex min-h-40 items-center justify-center px-3 text-center text-base text-[var(--rd-muted)]">
+              ) : (
+                <div className="flex min-h-[408px] items-center justify-center px-3 text-center text-base text-[var(--rd-muted)] sm:min-h-[450px]">
                   {error
                     ? "Daftar laporan belum dapat dimuat"
                     : filter === "ALL"
