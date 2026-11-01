@@ -316,16 +316,18 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
           if (event.target === event.currentTarget) setHelp(false);
         }}
       >
-        <button
-          autoFocus
-          type="button"
-          className={`${btnCloseCoral} absolute top-[10px] right-[10px]`}
-          aria-label="Close help"
-          onClick={() => setHelp(false)}
-        >
-          <X size={20} />
-        </button>
-        <Info size={26} className="text-[var(--login-link)]" aria-hidden="true" />
+        <div className="flex items-center justify-between">
+          <Info size={26} className="text-[var(--login-link)]" aria-hidden="true" />
+          <button
+            autoFocus
+            type="button"
+            className={btnCloseCoral}
+            aria-label="Close help"
+            onClick={() => setHelp(false)}
+          >
+            <X size={20} />
+          </button>
+        </div>
         <h2
           id="login-help-title"
           className="mt-[14px] mb-[10px] font-[inherit] text-[24px] leading-[1.35] font-bold tracking-normal"
