@@ -131,7 +131,7 @@ export default function ReportDetailPage() {
           </article>
         ) : (
           <ReportDetail
-            report={report}
+            report={report!}
             onBack={() => router.push(`/${locale}/reports`)}
           />
         )}

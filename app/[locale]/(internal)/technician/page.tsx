@@ -1,18 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import {
-  CalendarArrowDown,
-  CalendarArrowUp,
-  ClipboardCheck,
-  ClipboardClock,
-  ClipboardPen,
-  Images,
-  MapPin,
-  RefreshCw,
-  Search,
-  Wrench,
-} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   api,
@@ -20,40 +8,18 @@ import {
   type ReportRecord,
   type SessionUser,
 } from "../../_lib/client-api";
-import { dateText, message } from "../../_lib/draft-store";
+import { message } from "../../_lib/draft-store";
 import { useTheme } from "../../_lib/use-theme";
-import {
-  alertBox,
-  btnSecondary,
-  focusRing,
-} from "../../_lib/ui-classes";
+import { alertBox, focusRing } from "../../_lib/ui-classes";
 import { AppHeader } from "../../_components/app-header";
 import { toast } from "@/components/ui/sonner";
 import { PerimeterMap } from "../operator/_components/perimeter-map";
-import {
-  ReportDetailSheet,
-  ReportStatusBadge,
-} from "../operator/_components/report-detail-sheet";
+import { ReportDetailSheet } from "../operator/_components/report-detail-sheet";
 import { UpdateStatusDialog } from "../operator/_components/update-status-dialog";
 import { DashboardFooter } from "../operator/_components/dashboard-footer";
-
-const filters = [
-  ["ALL", "Semua"],
-  ["OPEN", "Baru"],
-  ["IN_PROGRESS", "Ditangani"],
-  ["RESOLVED", "Selesai"],
-  ["CLOSED", "Ditutup"],
-] as const;
-
-const statusIcons = {
-  OPEN: ClipboardClock,
-  IN_PROGRESS: ClipboardPen,
-  RESOLVED: ClipboardCheck,
-} as const;
+import { ReportHistoryPanel } from "../../_components/report-history-panel";
 
 const inlineAlertButton = `ml-2.5 rounded-md bg-[var(--rd-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--rd-coral)] disabled:cursor-not-allowed disabled:opacity-55 ${focusRing}`;
-
-const button = `transition-colors ${focusRing}`;
 
 export default function TechnicianDashboardPage() {
   const { theme, dark, toggleTheme } = useTheme();
@@ -65,7 +31,7 @@ export default function TechnicianDashboardPage() {
     string | null
   >(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [action, setAction] = useState<"STATUS" | "DELETE" | null>(null);
+  const [action, setAction] = useState<"STATUS" | null>(null);
   const [locked, setLocked] = useState(false);
   const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
@@ -151,8 +117,6 @@ export default function TechnicianDashboardPage() {
   const selected =
     activeReports.find((report) => report.id === selectedId) || null;
 
-  const SortIcon = newest ? CalendarArrowDown : CalendarArrowUp;
-
   return (
     <div
       className="operator-dashboard flex min-h-dvh flex-col bg-[var(--rd-bg)] text-[var(--rd-text)]"
@@ -162,7 +126,7 @@ export default function TechnicianDashboardPage() {
         user={user}
         dark={dark}
         onToggleTheme={toggleTheme}
-        roleLabel="Teknisi perimeter"
+        roleLabel="Teknisi pemeliharaan"
         containerClassName="max-w-[1700px] min-[1100px]:px-[5%]"
       />
       <main className="mx-auto flex w-full max-w-[1700px] flex-1 flex-col px-3 pt-4 md:px-[3%] md:pt-6 min-[1100px]:px-[5%]">
@@ -177,121 +141,96 @@ export default function TechnicianDashboardPage() {
           </span>
         </nav>
 
-        <div className="mb-4 flex items-center justify-between gap-2 px-1.5 md:mb-6 md:gap-5 md:px-0">
-          <div>
-            <h1 className="m-0 mb-1.5 text-xl leading-tight font-normal sm:text-3xl">
-              Pantau Kerusakan Perimeter,
-            </h1>
-            <p className="m-0 hidden text-sm text-[var(--rd-muted)] md:block">
-              Pantau lokasi temuan kerusakan pagar perimeter, perbarui progres
-              perbaikan, dan unggah foto bukti penyelesaian di lapangan.
-            </p>
-          </div>
-          <button
-            type="button"
-            disabled={locked || !!action || loading}
-            onClick={load}
-            aria-label="Segarkan daftar tugas"
-            title="Segarkan daftar tugas"
-            className="grid min-h-10 w-12 place-items-center rounded-[10px] border-2 border-solid border-[var(--rd-primary)] bg-[var(--rd-active)] p-0 text-[var(--rd-link)] transition-colors disabled:cursor-not-allowed disabled:opacity-55 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
-          >
-            <RefreshCw
-              size={21}
-              aria-hidden="true"
-              className={
-                loading ? "animate-spin motion-reduce:animate-none" : ""
-              }
-            />
-          </button>
-        </div>
-
-        {/* Summary Cards for Technician */}
-        <section
-          aria-label="Ringkasan tugas perbaikan"
-          className="mb-4 grid grid-cols-3 gap-2.5 sm:gap-4 md:mb-6"
-        >
-          <div className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-2.5 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:rounded-[14px] sm:p-4">
-            <span
-              data-status="OPEN"
-              className="rd-status grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)] sm:size-11 sm:rounded-xl"
-            >
-              <ClipboardClock className="size-[18px] sm:size-[21px]" strokeWidth={1.8} aria-hidden="true" />
+        {/* Task Summary Badges for Technician */}
+        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+          <div className="flex items-center gap-3 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 shadow-xs">
+            <span className="rd-status flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)]">
+              🔧
             </span>
             <div className="min-w-0 flex-1">
-              <span className="mt-2 block text-[10px] min-[390px]:text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
-                Baru
+              <span className="block text-[10px] text-[var(--rd-muted)] sm:text-xs">
+                Perlu Ditangani
               </span>
               {loading ? (
-                <Skeleton className="mt-2 h-[25px] w-10 rounded-md sm:mt-1 sm:h-7 sm:w-12" />
+                <Skeleton className="mt-1 h-5 w-10 rounded" />
               ) : (
-                <strong className="mt-1.5 block px-0.5 text-xl leading-tight font-semibold text-[var(--rd-text)] sm:mt-0 sm:px-0 sm:text-2xl">
+                <span className="text-base font-bold sm:text-lg">
                   {countOpen}
-                </strong>
+                </span>
               )}
             </div>
           </div>
-
-          <div className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-2.5 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:rounded-[14px] sm:p-4">
+          <div className="flex items-center gap-3 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 shadow-xs">
             <span
               data-status="IN_PROGRESS"
-              className="rd-status grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)] sm:size-11 sm:rounded-xl"
+              className="rd-status flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)]"
             >
-              <Wrench className="size-[18px] sm:size-[20px]" strokeWidth={1.8} aria-hidden="true" />
+              ⏳
             </span>
             <div className="min-w-0 flex-1">
-              <span className="mt-2 block text-[10px] min-[390px]:text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
-                <span className="sm:hidden">Dikerjakan</span>
-                <span className="hidden sm:inline">Sedang Dikerjakan</span>
+              <span className="block text-[10px] text-[var(--rd-muted)] sm:text-xs">
+                Sedang Dikerjakan
               </span>
               {loading ? (
-                <Skeleton className="mt-2 h-[25px] w-10 rounded-md sm:mt-1 sm:h-7 sm:w-12" />
+                <Skeleton className="mt-1 h-5 w-10 rounded" />
               ) : (
-                <strong className="mt-1.5 block px-0.5 text-xl leading-tight font-semibold text-[var(--rd-text)] sm:mt-0 sm:px-0 sm:text-2xl">
+                <span className="text-base font-bold sm:text-lg">
                   {countInProgress}
-                </strong>
+                </span>
               )}
             </div>
           </div>
-
-          <div className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-2.5 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:rounded-[14px] sm:p-4">
+          <div className="flex items-center gap-3 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 shadow-xs">
             <span
               data-status="RESOLVED"
-              className="rd-status grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)] sm:size-11 sm:rounded-xl"
+              className="rd-status flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)]"
             >
-              <ClipboardCheck className="size-[18px] sm:size-[21px]" strokeWidth={1.8} aria-hidden="true" />
+              ✓
             </span>
             <div className="min-w-0 flex-1">
-              <span className="mt-2 block text-[10px] min-[390px]:text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
-                <span className="sm:hidden">Selesai</span>
-                <span className="hidden sm:inline">Selesai Diperbaiki</span>
+              <span className="block text-[10px] text-[var(--rd-muted)] sm:text-xs">
+                Selesai Diperbaiki
               </span>
               {loading ? (
-                <Skeleton className="mt-2 h-[25px] w-10 rounded-md sm:mt-1 sm:h-7 sm:w-12" />
+                <Skeleton className="mt-1 h-5 w-10 rounded" />
               ) : (
-                <strong className="mt-1.5 block px-0.5 text-xl leading-tight font-semibold text-[var(--rd-text)] sm:mt-0 sm:px-0 sm:text-2xl">
+                <span className="text-base font-bold sm:text-lg">
                   {countResolved}
-                </strong>
+                </span>
               )}
             </div>
           </div>
-        </section>
+          <div className="flex items-center gap-3 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 shadow-xs">
+            <span className="rd-status flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)]">
+              📋
+            </span>
+            <div className="min-w-0 flex-1">
+              <span className="block text-[10px] text-[var(--rd-muted)] sm:text-xs">
+                Total Tugas Aktif
+              </span>
+              {loading ? (
+                <Skeleton className="mt-1 h-5 w-10 rounded" />
+              ) : (
+                <span className="text-base font-bold sm:text-lg">
+                  {activeReports.length}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
 
         {abandonedSubmissionId && (
           <div className={alertBox} role="status">
-            <strong>
-              Percobaan lokal ditinggalkan, bukan dibatalkan di server.
-            </strong>
-            <p className="mt-2 mb-3">
-              Transaksi: {abandonedSubmissionId}. Draft teks tetap tersimpan.
-              Periksa daftar dan riwayat laporan sebelum mengirim kembali;
-              transaksi sebelumnya mungkin sudah tersimpan.
-            </p>
+            <span>
+              Pembaruan status #{abandonedSubmissionId} sedang diproses. Mohon
+              tunggu sejenak.
+            </span>
             <button
               type="button"
-              className={`${inlineAlertButton} ml-0`}
+              className={inlineAlertButton}
               onClick={() => setAbandonedSubmissionId(null)}
             >
-              Saya sudah memeriksa
+              Tutup
             </button>
           </div>
         )}
@@ -348,211 +287,28 @@ export default function TechnicianDashboardPage() {
                 onBack={() => setSelectedId(null)}
               />
             ) : (
-              <>
-                <div className="flex items-center justify-between px-[28px] pt-[17px] md:pt-[23px]">
-                  <h2 className="m-0 text-base leading-normal font-normal sm:text-lg">
-                    Riwayat Laporan                  </h2>
-                </div>
-                <div className="px-[15px] pt-3 pb-1.5 md:px-5 md:pt-[18px]">
-                  <label className="flex items-center gap-2 rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-3 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--rd-link)]">
-                    <Search
-                      size={18}
-                      className="shrink-0 text-[var(--rd-muted)]"
-                      aria-hidden="true"
-                    />
-                    <input
-                      aria-label="Cari tugas perbaikan"
-                      placeholder="Cari lokasi atau isi laporan…"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      className="min-w-0 flex-1 border-0 bg-transparent py-3 text-sm text-[var(--rd-text)] outline-none placeholder:text-[var(--rd-muted)]"
-                    />
-                  </label>
-                  <div className="flex items-center justify-between gap-2 border-[var(--rd-border)] pt-2 pb-3">
-                    <div
-                      role="group"
-                      aria-label="Filter status tugas perbaikan"
-                      className="flex gap-1 overflow-x-auto sm:gap-2"
-                    >
-                      {filters.map(([value, label]) => (
-                        <button
-                          type="button"
-                          key={value}
-                          aria-pressed={filter === value}
-                          onClick={() => setFilter(value)}
-                          className={`${button} min-h-9 shrink-0 rounded-xl px-2 py-1 text-[11px] sm:px-3 sm:text-sm ${
-                            filter === value
-                              ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
-                              : "bg-transparent text-[var(--rd-muted)] hover:bg-[var(--rd-hover)]"
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setNewest((value) => !value)}
-                      aria-label={
-                        newest
-                          ? "Urutan terbaru dahulu. Ubah ke terlama dahulu"
-                          : "Urutan terlama dahulu. Ubah ke terbaru dahulu"
-                      }
-                      title={newest ? "Terbaru → terlama" : "Terlama → terbaru"}
-                      className={`${button} grid size-10 min-h-10 shrink-0 place-items-center rounded-lg bg-transparent p-0 text-[var(--rd-link)] hover:bg-[var(--rd-active)]`}
-                    >
-                      <SortIcon size={21} aria-hidden="true" />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between border-b border-solid border-[var(--rd-border)] px-[15px] py-1.5 text-[9px] text-[var(--rd-muted)] md:px-6 md:text-[10px]">
-                  {loading ? (
-                    <Skeleton className="h-3.5 w-32 rounded" />
-                  ) : (
-                    <span>{visible.length} tugas perbaikan ditemukan</span>
-                  )}
-                </div>
-                {loading ? (
-                  <div>
-                    {[0, 1, 2].map((index) => (
-                      <div
-                        key={index}
-                        className="flex w-full gap-3 border-b border-solid border-[var(--rd-border)] px-[15px] py-[19px] last:border-b-0 md:py-[18px] min-[1100px]:p-5"
-                      >
-                        <Skeleton className="mt-[5px] h-9 w-[30px] shrink-0 rounded-[10px] md:hidden min-[1100px]:block" />
-                        <div className="min-w-0 flex-1 space-y-2.5">
-                          <div className="flex items-center justify-between gap-2">
-                            <Skeleton className="h-3.5 w-24 rounded" />
-                            <Skeleton className="h-5 w-20 rounded-full" />
-                          </div>
-                          <Skeleton className="h-4 w-3/5 rounded" />
-                          <Skeleton className="h-3.5 w-full rounded" />
-                          <div className="flex justify-between gap-2 pt-1">
-                            <Skeleton className="h-3 w-28 rounded" />
-                            <Skeleton className="h-3 w-20 rounded" />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <>
-                    <div>
-                      {[...visible]
-                        .sort(
-                          (a, b) =>
-                            (new Date(b.createdAt).getTime() -
-                              new Date(a.createdAt).getTime()) *
-                            (newest ? 1 : -1)
-                        )
-                        .map((report) => (
-                          <TechnicianTaskCard
-                            key={report.id}
-                            report={report}
-                            onSelect={setSelectedId}
-                          />
-                        ))}
-                    </div>
-                    {!visible.length && (
-                      <div className="px-6 py-[50px] text-center text-[var(--rd-muted)]">
-                        <span className="text-4xl">⌖</span>
-                        <h3 className="mb-3 text-[15px] font-medium text-[var(--rd-text)]">
-                          {search || filter !== "ACTIVE"
-                            ? "Tidak ada tugas yang baru"
-                            : "Semua tugas perbaikan telah tertangani"}
-                        </h3>
-                        <p className="mx-auto mb-5 max-w-[290px] text-xs leading-relaxed">
-                          Pilih filter &ldquo;Semua&rdquo; atau &ldquo;Selesai&rdquo; untuk
-                          melihat riwayat perbaikan perimeter.
-                        </p>
-                      </div>
-                    )}
-                  </>
-                )}
-              </>
+              <ReportHistoryPanel
+                title="Riwayat Laporan"
+                reports={activeReports}
+                loading={loading}
+                selectedId={selectedId}
+                onSelect={(r) => {
+                  if (!action && !locked) setSelectedId(r.id);
+                }}
+                searchQuery={search}
+                onSearchChange={setSearch}
+                activeFilter={filter}
+                onFilterChange={setFilter}
+                isNewestFirst={newest}
+                onToggleSort={() => setNewest((v) => !v)}
+                pageSize={5}
+                className="p-4 sm:p-5"
+              />
             )}
           </section>
         </div>
         <DashboardFooter />
       </main>
     </div>
-  );
-}
-
-function TechnicianTaskCard({
-  report,
-  onSelect,
-}: {
-  report: ReportRecord;
-  onSelect: (id: string) => void;
-}) {
-  const status = report.status;
-  const Icon =
-    statusIcons[status as keyof typeof statusIcons] || ClipboardClock;
-  const titleLabel = report.findings?.length
-    ? report.findings.map((f) => f.partName).join(", ")
-    : `Perimeter sisi ${report.side || "belum ditentukan"}`;
-  const damageChips = (report.findings || []).flatMap((f) =>
-    (f.damages || []).map((d) => (typeof d === "string" ? d : d.name))
-  );
-
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(report.id)}
-      className={`flex w-full gap-3 border-b border-solid border-[var(--rd-border)] bg-transparent px-[15px] py-[19px] text-left text-[var(--rd-text)] transition-colors last:border-b-0 hover:bg-[var(--rd-hover)] md:py-[18px] min-[1100px]:p-5 ${focusRing}`}
-    >
-      <span
-        data-status={status}
-        className="rd-status mt-[5px] grid h-9 w-[30px] shrink-0 place-items-center rounded-[10px] bg-[var(--rd-tint)] text-[var(--rd-status)] md:hidden min-[1100px]:grid"
-      >
-        <Icon size={18} strokeWidth={1.9} aria-hidden="true" />
-      </span>
-      <span className="block min-w-0 flex-1">
-        <span className="mb-[9px] flex flex-wrap items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-2 text-[9px] tracking-[0.9px] text-[var(--rd-muted)] md:text-[10px]">
-            <span>#{String(report.id).slice(-6).toUpperCase()}</span>
-            {report.segmentCode && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-[var(--rd-active)] px-1.5 py-0.5 font-semibold tracking-normal text-[var(--rd-link)]">
-                <MapPin size={10} aria-hidden="true" />
-                Grid {report.segmentCode}
-              </span>
-            )}
-          </span>
-          <ReportStatusBadge report={report} />
-        </span>
-        <span className="mb-1.5 block text-[13px] font-semibold md:text-[15px]">
-          {titleLabel}
-        </span>
-        {damageChips.length > 0 && (
-          <span className="mb-2 flex flex-wrap gap-1">
-            {damageChips.map((chip, idx) => (
-              <span
-                key={`${chip}-${idx}`}
-                className="rounded border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-1.5 py-0.5 text-[10px] text-[var(--rd-muted)]"
-              >
-                {chip}
-              </span>
-            ))}
-          </span>
-        )}
-        <span className="mb-[13px] block truncate text-[11px] text-[var(--rd-muted)] md:text-xs">
-          {report.narrative}
-        </span>
-        <span className="flex justify-between gap-2 text-[9px] text-[var(--rd-muted)]">
-          <span>
-            {report.side ? `Sisi ${report.side} · ` : ""}
-            {dateText(report.createdAt)}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Images size={12} className="text-[var(--rd-link)]" aria-hidden="true" />
-            {report.images?.length || 0} foto{" "}
-            <b className="pl-2 text-xs font-semibold text-[var(--rd-link)]">
-              Tindak lanjuti →
-            </b>
-          </span>
-        </span>
-      </span>
-    </button>
   );
 }

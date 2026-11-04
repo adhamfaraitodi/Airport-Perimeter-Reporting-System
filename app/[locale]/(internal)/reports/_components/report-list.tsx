@@ -12,8 +12,6 @@ import {
   ClipboardPen,
   ClipboardCheck,
   ClipboardX,
-  Images,
-  MapPin,
   Plus,
   RefreshCw,
   ShieldAlert,
@@ -24,14 +22,7 @@ import type { ReportRecord, SessionUser } from "../../../_lib/client-api";
 import { useTheme } from "../../../_lib/use-theme";
 import { AppHeader } from "../../../_components/app-header";
 import { ReportFooter } from "./report-footer";
-
-const filters = [
-  ["ALL", "Semua"],
-  ["OPEN", "Baru"],
-  ["IN_PROGRESS", "Ditangani"],
-  ["RESOLVED", "Selesai"],
-  ["CLOSED", "Ditutup"],
-] as const;
+import { ReportHistoryPanel } from "../../../_components/report-history-panel";
 
 const states: Record<
   string,
@@ -47,23 +38,6 @@ const states: Record<
 const button =
   "border-0 font-normal focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--rd-link)] disabled:cursor-not-allowed disabled:opacity-55";
 
-const dateFormat = new Intl.DateTimeFormat("id-ID", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  timeZone: "Asia/Jakarta",
-});
-
-function dateLabel(value?: string | null) {
-  if (!value) return "Tanggal tidak tersedia";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? "Tanggal tidak tersedia"
-    : `${dateFormat.format(date)} WIB`;
-}
-
 function StateIcon({ status, size = 24 }: { status: string; size?: number }) {
   const Icon = (states[status] || states.OPEN).icon;
   return (
@@ -73,100 +47,6 @@ function StateIcon({ status, size = 24 }: { status: string; size?: number }) {
     >
       <Icon size={size} strokeWidth={1.9} aria-hidden="true" />
     </span>
-  );
-}
-
-function ReportCard({
-  report,
-  onSelect,
-}: {
-  report: ReportRecord;
-  onSelect: (id: string) => void;
-}) {
-  const status = report.deletedAt ? "CLOSED" : report.status;
-  const state = states[status] || states.OPEN;
-  const findings = Array.isArray(report.findings) ? report.findings : [];
-  const chips = findings
-    .flatMap((f) => [
-      f.partName,
-      ...(Array.isArray(f.damages)
-        ? f.damages.map((d) => (typeof d === "string" ? d : d.name))
-        : []),
-    ])
-    .filter((value): value is string => typeof value === "string" && !!value.trim());
-
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(report.id)}
-      className={`${button} flex w-full items-start gap-3 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 text-left text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-hover)] sm:p-4`}
-      aria-label={`Buka laporan ${report.id}, ${state.label}`}
-    >
-      <span className="pt-0.5">
-        <StateIcon status={states[status] ? status : "OPEN"} size={23} />
-      </span>
-      <span className="block min-w-0 flex-1">
-        <span className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] sm:text-xs">
-          <span className="text-[var(--rd-muted)]">
-            #{String(report.id).slice(-6).toUpperCase()}
-          </span>
-          <span
-            data-status={status}
-            className="rd-status inline-flex items-center gap-1 rounded-full bg-[var(--rd-tint)] px-1.5 py-0.5 text-[var(--rd-status)]"
-          >
-            <span className="size-1.5 rounded-full bg-current" />
-            {state.label}
-          </span>
-          <time
-            dateTime={report.createdAt}
-            className="text-[9px] text-[var(--rd-muted)] sm:ml-auto sm:text-[11px]"
-          >
-            {dateLabel(report.createdAt)}
-          </time>
-        </span>
-        {chips.length ? (
-          <span className="mb-1 flex flex-wrap gap-1">
-            {chips.map((label, index) => (
-              <span
-                key={`${label}-${index}`}
-                className="rounded-md bg-[var(--rd-active)] px-1.5 py-0.5 text-xs text-[var(--rd-link)]"
-              >
-                {label}
-              </span>
-            ))}
-          </span>
-        ) : (
-          <span className="mb-1 block text-sm">
-            {report.side
-              ? `Perimeter sisi ${report.side}`
-              : "Laporan temuan perimeter"}
-          </span>
-        )}
-        <span className="mt-1 block truncate text-xs leading-relaxed text-[var(--rd-muted)] sm:text-sm">
-          {report.narrative}
-        </span>
-        <span className="mt-3 flex flex-wrap gap-x-5 gap-y-2 pt-3 text-[10px] sm:text-xs">
-          <span className="inline-flex items-center gap-1.5">
-            <Images
-              size={15}
-              className="text-[var(--rd-link)]"
-              aria-hidden="true"
-            />
-            {report.images?.length || 0} Gambar
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <MapPin
-              size={15}
-              className="text-[var(--rd-link)]"
-              aria-hidden="true"
-            />
-            {report.segmentCode
-              ? `Segmen ${report.segmentCode}`
-              : "Segmen belum dipetakan"}
-          </span>
-        </span>
-      </span>
-    </button>
   );
 }
 
@@ -210,7 +90,6 @@ export function ReportList({
   const params = useParams<{ locale?: string }>();
   const locale = params?.locale || "id";
   const { theme, dark, toggleTheme } = useTheme();
-  const [newest, setNewest] = useState(true);
 
   const owned = user
     ? reports.filter(
@@ -218,19 +97,6 @@ export function ReportList({
           report.reporterId === user.id || report.reporterId === "demo-reporter"
       )
     : [];
-  const visible = owned
-    .filter(
-      (r) =>
-        filter === "ALL" ||
-        (filter === "CLOSED"
-          ? !!r.deletedAt
-          : !r.deletedAt && r.status === filter)
-    )
-    .sort(
-      (a, b) =>
-        (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) *
-        (newest ? 1 : -1)
-    );
 
   const stats: Array<[string, number, string, string]> = [
     [
@@ -251,11 +117,10 @@ export function ReportList({
       "RESOLVED",
       owned.filter((r) => !r.deletedAt && r.status === "RESOLVED").length,
       "Selesai",
-      "Penanganan perimeter tuntas",
+      "Telah diperbaiki oleh teknisi",
     ],
   ];
 
-  const SortIcon = newest ? CalendarArrowDown : CalendarArrowUp;
   const subPageLabel = formOpen
     ? "Buat Laporan"
     : selectedReportId
@@ -271,10 +136,12 @@ export function ReportList({
         user={user}
         dark={dark}
         onToggleTheme={toggleTheme}
-        roleLabel="Reporter perimeter"
+        roleLabel="Pelapor perimeter"
         containerClassName="max-w-[1700px] min-[1100px]:px-[5%]"
       />
+
       <main className="mx-auto flex w-full max-w-[1700px] flex-1 flex-col px-3 pt-4 md:px-[3%] md:pt-6 min-[1100px]:px-[5%]">
+        {/* Breadcrumb Navigation */}
         <nav
           aria-label="Breadcrumb"
           className="mb-3 flex flex-wrap items-center gap-2 text-xs md:text-[13px]"
@@ -302,24 +169,25 @@ export function ReportList({
           )}
         </nav>
 
-        <div className="mb-[18px] sm:flex sm:items-end sm:justify-between sm:gap-10 md:mb-[26px]">
+        {/* Top Header Section with Actions */}
+        <div className="mb-4 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h1 className="m-0 mb-2 text-xl leading-tight font-normal tracking-normal sm:text-3xl">
-              Laporan Saya,
+            <h1 className="m-0 text-xl font-normal tracking-tight sm:text-2xl">
+              Laporan Saya
             </h1>
-            <p className="m-0 max-w-md text-xs leading-snug text-[var(--rd-muted)] sm:text-sm">
+            <p className="m-0 mt-1 text-xs text-[var(--rd-muted)] sm:text-sm">
               Mulai laporkan kerusakan atau kejadian pelanggaran pembatas
               perimeter bandara.
             </p>
           </div>
-          <div className="mt-4 flex gap-[14px] sm:mt-0 sm:w-80 sm:shrink-0">
+          <div className="flex gap-2.5 sm:shrink-0">
             <button
               type="button"
               disabled={loading || !!error || formOpen || !user}
               onClick={onCreate}
-              className={`${button} flex min-h-10 flex-1 items-center justify-center gap-1 rounded-[10px] bg-[var(--rd-primary)] px-3 py-2 text-sm font-bold text-white hover:bg-[var(--rd-primary-hover)]`}
+              className={`${button} flex min-h-10 items-center justify-center gap-1.5 rounded-[10px] bg-[var(--rd-primary)] px-4 py-2 text-xs font-semibold text-white hover:bg-[var(--rd-primary-hover)] sm:text-sm`}
             >
-              <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
+              <Plus size={16} strokeWidth={2.4} aria-hidden="true" />
               Buat Laporan
             </button>
             <button
@@ -328,13 +196,11 @@ export function ReportList({
               onClick={onRefresh}
               aria-label="Segarkan laporan"
               title="Segarkan laporan"
-              className={`${button} grid min-h-10 w-12 place-items-center rounded-[10px] border-2 border-solid border-[var(--rd-primary)] bg-[var(--rd-active)] p-0 text-[var(--rd-link)]`}
+              className={`${button} grid min-h-10 w-11 place-items-center rounded-[10px] border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-0 text-[var(--rd-link)] hover:bg-[var(--rd-hover)]`}
             >
               <RefreshCw
-                size={21}
-                className={
-                  loading ? "animate-spin motion-reduce:animate-none" : ""
-                }
+                size={18}
+                className={loading ? "animate-spin motion-reduce:animate-none" : ""}
                 aria-hidden="true"
               />
             </button>
@@ -496,109 +362,20 @@ export function ReportList({
               </section>
             </aside>
 
-            {/* RIGHT MAIN AREA: Report History List */}
+            {/* RIGHT MAIN AREA: Unified Report History List */}
             <section
               aria-labelledby="report-history-title"
               aria-busy={loading}
               className="flex min-w-0 flex-col rounded-2xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] p-3.5 sm:p-6"
             >
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <h2
-                  id="report-history-title"
-                  className="m-0 text-base leading-normal font-normal tracking-normal sm:text-lg"
-                >
-                  Riwayat Laporan
-                </h2>
-              </div>
-              <div className="flex items-center justify-between gap-2 border-b border-[var(--rd-border)] pb-3">
-                <div
-                  role="group"
-                  aria-label="Filter status laporan"
-                  className="flex gap-1 overflow-x-auto sm:gap-2"
-                >
-                  {filters.map(([value, label]) => (
-                    <button
-                      type="button"
-                      key={value}
-                      aria-pressed={filter === value}
-                      onClick={() => onFilter(value)}
-                      className={`${button} min-h-9 shrink-0 rounded-xl px-2 py-1 text-[11px] sm:px-4 sm:text-sm ${
-                        filter === value
-                          ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
-                          : "bg-transparent text-[var(--rd-muted)] hover:bg-[var(--rd-hover)]"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setNewest((value) => !value)}
-                  aria-label={
-                    newest
-                      ? "Urutan terbaru dahulu. Ubah ke terlama dahulu"
-                      : "Urutan terlama dahulu. Ubah ke terbaru dahulu"
-                  }
-                  title={newest ? "Terbaru → terlama" : "Terlama → terbaru"}
-                  className={`${button} grid size-10 min-h-10 shrink-0 place-items-center rounded-lg bg-transparent p-0 text-[var(--rd-link)] hover:bg-[var(--rd-active)]`}
-                >
-                  <SortIcon size={21} aria-hidden="true" />
-                </button>
-              </div>
-              <div role="status" className="my-3 text-xs text-[var(--rd-muted)]">
-                {loading ? (
-                  <Skeleton className="h-4 w-32 rounded-md" />
-                ) : (
-                  `${visible.length} laporan ditemukan`
-                )}
-              </div>
-              {loading ? (
-                <div className="grid min-h-[408px] gap-3 sm:min-h-[450px]">
-                  {[0, 1, 2].map((index) => (
-                    <div
-                      key={index}
-                      className="flex w-full items-start gap-3 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 sm:p-4"
-                    >
-                      <Skeleton className="mt-0.5 size-8 shrink-0 rounded-lg" />
-                      <div className="min-w-0 flex-1 space-y-2.5">
-                        <div className="flex flex-wrap items-center gap-3">
-                          <Skeleton className="h-4 w-16 rounded" />
-                          <Skeleton className="h-5 w-20 rounded-full" />
-                          <Skeleton className="ml-auto h-3.5 w-28 rounded" />
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          <Skeleton className="h-5 w-36 rounded-md" />
-                          <Skeleton className="h-5 w-28 rounded-md" />
-                        </div>
-                        <Skeleton className="h-4 w-4/5 rounded" />
-                        <div className="flex gap-5 pt-2">
-                          <Skeleton className="h-3.5 w-20 rounded" />
-                          <Skeleton className="h-3.5 w-28 rounded" />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : visible.length > 0 ? (
-                <div className="grid min-h-[408px] content-start gap-3 sm:min-h-[450px]">
-                  {visible.map((report) => (
-                    <ReportCard
-                      key={report.id}
-                      report={report}
-                      onSelect={onSelect}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex min-h-[408px] items-center justify-center px-3 text-center text-base text-[var(--rd-muted)] sm:min-h-[450px]">
-                  {error
-                    ? "Daftar laporan belum dapat dimuat"
-                    : filter === "ALL"
-                      ? "Belum ada laporan"
-                      : "Belum ada laporan dengan status ini"}
-                </div>
-              )}
+              <ReportHistoryPanel
+                title="Riwayat Laporan"
+                reports={owned}
+                loading={loading}
+                selectedId={selectedReportId}
+                onSelect={(report) => onSelect(report.id)}
+                pageSize={5}
+              />
             </section>
           </div>
         )}

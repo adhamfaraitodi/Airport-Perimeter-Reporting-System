@@ -155,7 +155,7 @@ function Photos({
         <PhotoItem
           key={image.id}
           image={image}
-          label={image.name || `Foto bukti ${index + 1}`}
+          label={(image as any).name || `Foto bukti ${index + 1}`}
           onOpen={onOpen}
         />
       ))}
@@ -226,7 +226,7 @@ export function ReportDetail({ report, onBack }: ReportDetailProps) {
             </h2>
             <p className={`${small} m-0 mt-1`}>
               Dilaporkan {timestamp(report.createdAt)} · Diperbarui{" "}
-              {timestamp(report.updatedAt)}
+              {timestamp((report as any).updatedAt || report.createdAt)}
             </p>
           </div>
         </div>
@@ -249,7 +249,7 @@ export function ReportDetail({ report, onBack }: ReportDetailProps) {
                 menghapus riwayat dan bukti.
               </p>
               <p className="m-0 text-sm whitespace-pre-wrap [overflow-wrap:anywhere]">
-                {report.deleteReason || "Alasan penutupan tidak tercatat."}
+                {(report as any).deleteReason || report.deletionReason || "Alasan penutupan tidak tercatat."}
               </p>
             </section>
           )}
