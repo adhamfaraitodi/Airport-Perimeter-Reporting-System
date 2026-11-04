@@ -280,6 +280,7 @@ export default function TechnicianDashboardPage() {
                 report={selected}
                 operator
                 canDelete={false}
+                canUpdateStatus
                 statusActionLabel={
                   selected.status === "OPEN"
                     ? "Mulai / Perbarui Status Perbaikan"

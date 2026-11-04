@@ -1,14 +1,16 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { ArrowLeft, Check, MapPin } from "lucide-react";
+import { ArrowLeft, Check, Download, MapPin } from "lucide-react";
 import Gallery from "../../../_components/photo-gallery";
 import MapView from "../../../_components/perimeter-map-view";
 import type { ReportRecord } from "../../../_lib/client-api";
 import { dateText, labels } from "../../../_lib/draft-store";
+import { downloadReportDocument } from "../../../_lib/report-document";
 import {
   btnDangerGhost,
   btnPrimary,
+  btnSecondary,
   btnText,
   mutedText,
   statusPill,
@@ -28,8 +30,9 @@ export interface ReportDetailSheetProps {
   report: ReportRecord;
   operator: boolean;
   canDelete?: boolean;
+  canUpdateStatus?: boolean;
   statusActionLabel?: string;
-  onAction: (action: "STATUS" | "DELETE") => void;
+  onAction?: (action: "STATUS" | "DELETE") => void;
   onBack: () => void;
 }
 
@@ -41,6 +44,7 @@ export function ReportDetailSheet({
   report,
   operator,
   canDelete = true,
+  canUpdateStatus = false,
   statusActionLabel = "Perbarui status",
   onAction,
   onBack,
@@ -129,14 +133,24 @@ export function ReportDetailSheet({
       )}
       {operator && !report.deletedAt && (
         <div className="my-5 flex flex-wrap gap-2">
+          {canUpdateStatus && onAction && (
+            <button
+              type="button"
+              className={`${btnPrimary} flex-1 text-xs`}
+              onClick={() => onAction("STATUS")}
+            >
+              {statusActionLabel}
+            </button>
+          )}
           <button
             type="button"
-            className={`${btnPrimary} flex-1 text-xs`}
-            onClick={() => onAction("STATUS")}
+            className={`${canUpdateStatus ? btnSecondary : btnPrimary} flex-1 text-xs`}
+            onClick={() => downloadReportDocument(report)}
           >
-            {statusActionLabel}
+            <Download size={14} className="mr-1.5" aria-hidden="true" />
+            Unduh Laporan
           </button>
-          {canDelete && (
+          {canDelete && onAction && (
             <button
               type="button"
               className={`${btnDangerGhost} flex-1 text-xs`}
@@ -145,6 +159,18 @@ export function ReportDetailSheet({
               Tutup laporan
             </button>
           )}
+        </div>
+      )}
+      {operator && report.deletedAt && (
+        <div className="my-5 flex flex-wrap gap-2">
+          <button
+            type="button"
+            className={`${btnPrimary} flex-1 text-xs`}
+            onClick={() => downloadReportDocument(report)}
+          >
+            <Download size={14} className="mr-1.5" aria-hidden="true" />
+            Unduh Arsip Laporan
+          </button>
         </div>
       )}
       <section className="mt-7 border-t border-solid border-[var(--rd-border)] pt-[22px]">
@@ -167,8 +193,8 @@ export function ReportDetailSheet({
                   Sebelumnya: {labels[item.previousStatus] || item.previousStatus}
                 </span>
               )}
-              <p className={narrative}>{item.narrative}</p>
-              <Gallery images={item.images} />
+              {item.narrative && <p className={narrative}>{item.narrative}</p>}
+              {item.images?.length > 0 && <Gallery images={item.images} />}
             </HistoryItem>
           ))}
           <HistoryItem>
