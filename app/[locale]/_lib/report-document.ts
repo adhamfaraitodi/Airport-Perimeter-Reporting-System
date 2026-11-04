@@ -31,6 +31,26 @@ async function loadImageDataUrl(url: string): Promise<string | null> {
 }
 
 /**
+ * Fetches user's private wet signature from internal API if available.
+ */
+async function tryFetchSignature(userId?: string): Promise<string | null> {
+  if (!userId || typeof window === "undefined") return null;
+  try {
+    const res = await fetch(`/api/profile/signature/${userId}`);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Generates and downloads a clean, official InJourney Airports PDF report.
  */
 export async function downloadReportPdf(report: ReportRecord): Promise<void> {
@@ -306,9 +326,23 @@ export async function downloadReportPdf(report: ReportRecord): Promise<void> {
       "Teknisi Penanganan",
       "Operator Pengendali",
     ];
+
+    // Find technician who handled this report
+    const technicianEntry = report.history
+      ?.slice()
+      .reverse()
+      .find((h) => h.status === "RESOLVED" || h.status === "IN_PROGRESS");
+    const technicianName = technicianEntry?.actorName;
+    const technicianId = technicianEntry?.actorId;
+
+    const [reporterSign, technicianSign] = await Promise.all([
+      tryFetchSignature(report.reporterId),
+      tryFetchSignature(technicianId),
+    ]);
+
     const signNames = [
       report.reporterName || "Petugas Lapangan",
-      "( ........................................ )",
+      technicianName || "( ........................................ )",
       "( ........................................ )",
     ];
     const signRoles = [
@@ -316,6 +350,7 @@ export async function downloadReportPdf(report: ReportRecord): Promise<void> {
       "Unit Pemeliharaan Fasilitas",
       "Airport Operation Center",
     ];
+    const signImages = [reporterSign, technicianSign, null];
 
     for (let i = 0; i < 3; i++) {
       const boxX = margin + i * boxWidth;
@@ -325,6 +360,25 @@ export async function downloadReportPdf(report: ReportRecord): Promise<void> {
       doc.setFontSize(8);
       doc.setTextColor(71, 85, 105);
       doc.text(signTitles[i], centerX, currentY + 3, { align: "center" });
+
+      // Embed signature if available
+      const signImg = signImages[i];
+      if (signImg) {
+        try {
+          const signW = 32;
+          const signH = 15;
+          doc.addImage(
+            signImg,
+            "PNG",
+            centerX - signW / 2,
+            currentY + 5.5,
+            signW,
+            signH
+          );
+        } catch {
+          // ignore
+        }
+      }
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8);

@@ -64,6 +64,7 @@ export const user = pgTable(
     phone: text("phone"),
     unit: text("unit").notNull().default("Operasional Bandara"),
     status: accountStatusEnum("status").notNull().default("ACTIVE"),
+    signatureUrl: text("signature_url"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

@@ -12,6 +12,8 @@ export interface SessionUser {
   nip?: string;
   phone?: string;
   unit?: string;
+  image?: string;
+  signatureUrl?: string;
 }
 
 export interface DamageItem {
@@ -37,6 +39,7 @@ export interface ReportHistoryItem {
   previousStatus?: LifecycleStatus;
   narrative: string;
   createdAt: string;
+  actorId?: string;
   actorName: string;
   images: ImageRef[];
 }
@@ -255,27 +258,29 @@ const initialReports: ReportRecord[] = [
     id: "rpt-2026-l25b42",
     reporterId: "demo-reporter",
     reporterName: "Raka Mahendra",
-    createdAt: "2026-10-30T09:40:00.000Z",
+    createdAt: "2026-10-30T14:20:00.000Z",
     side: "Timur",
     segmentCode: "L25",
     findings: [
       {
-        partId: "tiang-pagar",
-        partName: "Tiang Pagar",
-        damages: [
-          { id: "miring", name: "Miring" },
-          { id: "berkarat-sedang", name: "Berkarat sedang" },
-        ],
+        partId: "tiang-utama",
+        partName: "Tiang Utama",
+        damages: [{ id: "miring", name: "Miring" }],
+      },
+      {
+        partId: "kawat-duri-razor",
+        partName: "Kawat Duri / Razor",
+        damages: [{ id: "kendur", name: "Kendur" }],
       },
     ],
     narrative:
-      "Dua tiang penyangga utama miring sekitar 15 derajat ke arah luar perimeter akibat tergerus saluran drainase setelah hujan deras semalam di sektor timur.",
-    latitude: -7.910765,
-    longitude: 110.079582,
+      "Bentangan kawat duri bagian atas kendur sepanjang 12 meter dan satu tiang pembagi condong ke arah luar perimeter bandara.",
+    latitude: -7.906782,
+    longitude: 110.074321,
     gps: {
-      latitude: -7.910765,
-      longitude: 110.079582,
-      accuracy: 5.8,
+      latitude: -7.906782,
+      longitude: 110.074321,
+      accuracy: 5.1,
     },
     locationSource: "GPS",
     status: "IN_PROGRESS",
@@ -288,15 +293,16 @@ const initialReports: ReportRecord[] = [
         status: "IN_PROGRESS",
         previousStatus: "OPEN",
         narrative:
-          "Tim teknisi telah memasang penyangga sementara dan sedang melakukan penguatan angkur tiang.",
-        createdAt: "2026-10-30T11:20:00.000Z",
+          "Tim teknisi shift siang telah memasang perancah dan penarik sling kawat baja untuk menegakkan tiang kembali.",
+        createdAt: "2026-10-30T16:00:00.000Z",
+        actorId: "demo-technician",
         actorName: "Bima Saputra",
         images: [{ id: "img-yia-l25-2" }],
       },
     ],
   },
   {
-    id: "rpt-2026-i12c78",
+    id: "rpt-2026-i12c88",
     reporterId: "demo-reporter",
     reporterName: "Raka Mahendra",
     createdAt: "2026-10-29T07:10:00.000Z",
@@ -331,6 +337,7 @@ const initialReports: ReportRecord[] = [
         narrative:
           "Material beton instan dan kawat ram penutup celah telah dibawa ke lokasi Grid I12.",
         createdAt: "2026-10-29T10:05:00.000Z",
+        actorId: "demo-technician",
         actorName: "Bima Saputra",
         images: [{ id: "img-yia-i12-1" }],
       },
@@ -341,6 +348,7 @@ const initialReports: ReportRecord[] = [
         narrative:
           "Celah pondasi telah dicor ulang dan ditutup rapat sesuai standar keselamatan airside.",
         createdAt: "2026-10-29T15:45:00.000Z",
+        actorId: "demo-technician",
         actorName: "Bima Saputra",
         images: [{ id: "img-yia-i12-2" }],
       },
@@ -379,6 +387,7 @@ const initialReports: ReportRecord[] = [
         narrative:
           "Laporan duplikat — titik kerusakan yang sama telah digabung ke tiket pemeliharaan berkala sektor barat.",
         createdAt: "2026-10-28T16:00:00.000Z",
+        actorId: "demo-operator",
         actorName: "Dian Pradipta",
         images: [{ id: "img-yia-k03-1" }],
       },
@@ -446,6 +455,8 @@ export const api = {
           nip: (sessionUser.nip as string) || undefined,
           phone: (sessionUser.phone as string) || undefined,
           unit: (sessionUser.unit as string) || undefined,
+          image: (sessionUser.image as string) || undefined,
+          signatureUrl: (sessionUser.signatureUrl as string) || undefined,
         };
         users[resolvedRole] = activeUser;
         return clone(activeUser);
@@ -555,6 +566,7 @@ export const api = {
   uploadImage: async ({
     submissionId,
     imageId,
+    name,
     mimeType,
     base64,
   }: {
@@ -565,49 +577,31 @@ export const api = {
     base64: string;
   }): Promise<{ id: string }> => {
     const submission = submissions.get(submissionId);
-    if (
-      !submission ||
-      submission.actor.id !== users[role].id ||
-      !submission.payload.expectedImageIds.includes(imageId)
-    ) {
-      fail("Upload tidak diizinkan.");
+    if (!submission || submission.committed) fail("Sesi unggah tidak valid.");
+    if (!submission.payload.expectedImageIds.includes(imageId)) {
+      fail("ID foto tidak terdaftar.");
     }
-    if (
-      !["image/jpeg", "image/png", "image/webp"].includes(mimeType) ||
-      !base64 ||
-      atob(base64).length > 3000000
-    ) {
-      fail("Foto tidak valid atau melebihi 3 MB.");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(mimeType)) {
+      fail("Format foto tidak didukung.");
     }
-    const url = `data:${mimeType};base64,${base64}`;
-    if (images.has(imageId) && images.get(imageId) !== url) {
-      fail("ID foto telah digunakan.");
-    }
-    images.set(imageId, url);
+    images.set(imageId, `data:${mimeType};base64,${base64}`);
     return { id: imageId };
   },
 
-  finalizeSubmission: async ({
+  commitSubmission: async ({
     submissionId,
   }: {
     submissionId: string;
   }): Promise<ReportRecord> => {
     const submission = submissions.get(submissionId);
-    if (!submission || submission.actor.id !== users[role].id) {
-      fail("Transaksi tidak ditemukan.");
-    }
+    if (!submission || submission.committed) fail("Sesi tidak dapat disimpan.");
     const p = submission.payload;
-    if (submission.committed) {
-      const existingReport = reports.get(p.reportId || p.id);
-      if (existingReport) return clone(existingReport);
-    }
-    if (p.expectedImageIds.some((id) => !images.has(id))) {
-      fail("Foto belum lengkap.");
-    }
-    const evidence: ImageRef[] = p.expectedImageIds.map((id) => ({ id }));
     const now = new Date().toISOString();
+    const evidence = p.expectedImageIds.map((id) => ({
+      id,
+      url: images.get(id),
+    }));
     let report: ReportRecord;
-
     if (p.action === "CREATE") {
       report = {
         id: p.id,
@@ -651,6 +645,7 @@ export const api = {
         previousStatus,
         narrative: p.narrative,
         createdAt: now,
+        actorId: submission.actor.id,
         actorName: submission.actor.name,
         images: evidence,
       });
@@ -659,6 +654,8 @@ export const api = {
     submission.committed = true;
     return clone(report);
   },
+
+  finalizeSubmission: async (params: { submissionId: string }): Promise<ReportRecord> => api.commitSubmission(params),
 
   getImage: async ({ imageId }: { imageId: string }): Promise<{ url: string }> => {
     const visible = [...reports.values()].some(

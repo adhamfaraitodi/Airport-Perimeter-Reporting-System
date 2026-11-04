@@ -79,6 +79,11 @@ export const auth = betterAuth({
         defaultValue: "ACTIVE",
         input: true,
       },
+      signatureUrl: {
+        type: "string",
+        required: false,
+        input: true,
+      },
     },
   },
   plugins: [

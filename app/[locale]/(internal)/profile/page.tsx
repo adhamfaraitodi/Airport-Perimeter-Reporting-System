@@ -17,12 +17,14 @@ import {
   ClipboardClock,
   ClipboardPen,
   ClipboardX,
-  Clock,
+  FileSignature,
   IdCard,
+  Loader2,
   Lock,
   MapPin,
   Phone,
   ShieldCheck,
+  Sparkles,
   Trash2,
   Upload,
   UserRound,
@@ -45,19 +47,18 @@ import { useTheme } from "../../_lib/use-theme";
 import { AppHeader } from "../../_components/app-header";
 import { DashboardFooter } from "../operator/_components/dashboard-footer";
 import { toast } from "@/components/ui/sonner";
+import {
+  getProfileAction,
+  updateProfileAction,
+  type ProfileData,
+} from "./_lib/profile.actions";
+import {
+  compressAvatarPhoto,
+  processSignaturePhoto,
+} from "../../_lib/signature-processor";
 
 const readOnlyInput =
   "m-0 block w-full cursor-not-allowed rounded-[10px] border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)]/80 px-3.5 py-2.5 text-sm text-[var(--rd-muted)] opacity-85 select-all";
-
-const statusMeta: Record<
-  string,
-  { label: string; icon: typeof ClipboardClock }
-> = {
-  OPEN: { label: "Baru", icon: ClipboardClock },
-  IN_PROGRESS: { label: "Ditangani", icon: ClipboardPen },
-  RESOLVED: { label: "Selesai", icon: ClipboardCheck },
-  CLOSED: { label: "Ditutup", icon: ClipboardX },
-};
 
 export default function ProfilePage() {
   const params = useParams<{ locale?: string }>();
@@ -65,33 +66,60 @@ export default function ProfilePage() {
   const { theme, dark, toggleTheme } = useTheme();
 
   const [user, setUser] = useState<SessionUser | null>(null);
+  const [dbProfile, setDbProfile] = useState<ProfileData | null>(null);
   const [reports, setReports] = useState<ReportRecord[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const accounts = useAccountsStore((state) => state.accounts);
-  const updateProfile = useAccountsStore((state) => state.updateProfile);
-
-  const account = user
-    ? accounts.find((acc) => acc.id === user.id) || null
-    : null;
+  const [saving, setSaving] = useState(false);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [avatarPayload, setAvatarPayload] = useState<string | null | undefined>(
+    undefined
+  );
+
+  const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
+  const [signaturePayload, setSignaturePayload] = useState<
+    string | null | undefined
+  >(undefined);
+  const [processingSignature, setProcessingSignature] = useState(false);
+
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
+  const signatureInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Sync with local accounts store if available
+  const accounts = useAccountsStore((state) => state.accounts);
+  const updateStoreProfile = useAccountsStore((state) => state.updateProfile);
 
   useEffect(() => {
     let active = true;
     (async () => {
       setLoading(true);
       try {
-        const [session, reportItems] = await Promise.all([
+        const [session, reportItems, profileRes] = await Promise.all([
           api.getSession(),
           api.listReports(),
+          getProfileAction(),
         ]);
-        if (active) {
-          setUser(session);
-          setReports(reportItems);
+
+        if (!active) return;
+
+        setUser(session);
+        setReports(reportItems);
+
+        if (profileRes.success && profileRes.user) {
+          const p = profileRes.user;
+          setDbProfile(p);
+          setName(p.name);
+          setPhone(p.phone || "");
+          setAvatarUrl(p.image || null);
+          setSignatureUrl(p.signatureUrl || null);
+        } else {
+          // Fallback to session
+          setName(session.name);
+          setPhone(session.phone || "");
+          setAvatarUrl(session.image || null);
+          setSignatureUrl(session.signatureUrl || null);
         }
       } catch (e) {
         if (active) toast.error(message(e));
@@ -99,22 +127,14 @@ export default function ProfilePage() {
         if (active) setLoading(false);
       }
     })();
+
     return () => {
       active = false;
     };
   }, []);
 
-  useEffect(() => {
-    if (account) {
-      setName(account.name);
-      setPhone(account.phone || "");
-      setAvatarUrl(account.avatarUrl || null);
-    } else if (user) {
-      setName(user.name);
-    }
-  }, [account, user]);
-
-  function handleSelectAvatar(event: ChangeEvent<HTMLInputElement>) {
+  // Autonomous Avatar handler (Zero-config, WebP < 30KB)
+  async function handleSelectAvatar(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
@@ -123,54 +143,116 @@ export default function ProfilePage() {
       toast.error("Format foto tidak didukung. Gunakan JPG, PNG, atau WebP.");
       return;
     }
-    if (file.size > 2_000_000) {
-      toast.error("Ukuran foto maksimal 2 MB.");
+
+    try {
+      toast.info("Mengompresi foto profil...");
+      const { dataUrl, sizeBytes } = await compressAvatarPhoto(file);
+      setAvatarUrl(dataUrl);
+      setAvatarPayload(dataUrl);
+      const kb = Math.round(sizeBytes / 1024);
+      toast.success("Foto profil siap", {
+        description: `Foto dioptimalkan secara otomatis (~${kb} KB). Simpan untuk menerapkan.`,
+      });
+    } catch (err) {
+      toast.error(message(err) || "Gagal memproses foto profil.");
+    }
+  }
+
+  function handleRemoveAvatar() {
+    setAvatarUrl(null);
+    setAvatarPayload(null);
+  }
+
+  // Autonomous Wet Signature handler (Zero-config, transparent + auto-trim)
+  async function handleSelectSignature(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Format foto tidak didukung. Gunakan JPG atau PNG.");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setAvatarUrl(reader.result);
-      }
-    };
-    reader.onerror = () => {
-      toast.error("Gagal membaca file foto.");
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!user) return;
-
+    setProcessingSignature(true);
     try {
-      const cleanedName = name.trim();
-      const cleanedPhone = phone.trim();
-      if (!cleanedName) {
-        toast.error("Nama lengkap tidak boleh kosong.");
-        return;
-      }
-      if (!cleanedPhone) {
-        toast.error("Nomor kontak telepon wajib diisi.");
-        return;
-      }
-
-      updateProfile(user.id, {
-        name: cleanedName,
-        phone: cleanedPhone,
-        avatarUrl,
-      });
-
-      toast.success("Profil berhasil diperbarui", {
-        description: "Avatar, nama lengkap, dan nomor kontak telah disimpan.",
+      toast.info("Memproses tanda tangan secara otomatis...");
+      const { dataUrl, width, height } = await processSignaturePhoto(file);
+      setSignatureUrl(dataUrl);
+      setSignaturePayload(dataUrl);
+      toast.success("Tanda tangan berhasil diproses", {
+        description: `Background dihapus transparan, tinta dipertajam (${width}x${height}px). Simpan untuk menerapkan ke dokumen PDF.`,
       });
     } catch (err) {
-      toast.error(message(err));
+      toast.error(
+        message(err) ||
+          "Gagal mengekstrak tanda tangan. Pastikan foto tanda tangan di atas kertas putih dan pencahayaan jelas."
+      );
+    } finally {
+      setProcessingSignature(false);
     }
   }
 
-  const role = account?.role || user?.role || "REPORTER";
+  function handleRemoveSignature() {
+    setSignatureUrl(null);
+    setSignaturePayload(null);
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!user) return;
+
+    const cleanedName = name.trim();
+    const cleanedPhone = phone.trim();
+
+    if (!cleanedName) {
+      toast.error("Nama lengkap tidak boleh kosong.");
+      return;
+    }
+    if (!cleanedPhone) {
+      toast.error("Nomor kontak telepon wajib diisi.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await updateProfileAction({
+        name: cleanedName,
+        phone: cleanedPhone,
+        avatarDataUrl: avatarPayload,
+        signatureDataUrl: signaturePayload,
+      });
+
+      if (!res.success || !res.user) {
+        throw new Error(res.errorMessage || "Gagal menyimpan perubahan profil.");
+      }
+
+      setDbProfile(res.user);
+      setName(res.user.name);
+      setPhone(res.user.phone || "");
+      setAvatarUrl(res.user.image || null);
+      setSignatureUrl(res.user.signatureUrl || null);
+      setAvatarPayload(undefined);
+      setSignaturePayload(undefined);
+
+      // Sync local accounts store if available
+      updateStoreProfile(user.id, {
+        name: res.user.name,
+        phone: res.user.phone || "",
+        avatarUrl: res.user.image || undefined,
+      });
+
+      toast.success("Profil berhasil diperbarui", {
+        description: "Data kepegawaian, avatar, dan tanda tangan tersimpan di sistem.",
+      });
+    } catch (err) {
+      toast.error(message(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const role = dbProfile?.role || user?.role || "REPORTER";
   const isOperator = role === "OPERATOR";
   const isTechnician = role === "TECHNICIAN";
 
@@ -201,18 +283,11 @@ export default function ProfilePage() {
     (r) => !r.deletedAt && r.status === "RESOLVED"
   ).length;
 
-  const latestReports = [...scopedReports]
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
-    .slice(0, 3);
-
-  const displayName = name.trim() || account?.name || user?.name || "Pengguna";
-  const displayUnit = account?.unit || "Operasional Bandara";
-  const displayNip = account?.nip || "-";
-  const displayPhone = phone.trim() || account?.phone || "Belum diatur";
-  const isAccountActive = account?.status !== "INACTIVE";
+  const displayName = name.trim() || dbProfile?.name || user?.name || "Pengguna";
+  const displayUnit = dbProfile?.unit || user?.unit || "Operasional Bandara";
+  const displayNip = dbProfile?.nip || user?.nip || "-";
+  const displayPhone = phone.trim() || dbProfile?.phone || user?.phone || "Belum diatur";
+  const isAccountActive = dbProfile?.status !== "INACTIVE";
 
   return (
     <div
@@ -251,11 +326,12 @@ export default function ProfilePage() {
             Profil Saya,
           </h1>
           <p className="m-0 text-xs text-[var(--rd-muted)] sm:text-sm">
-            Perbarui foto profil, nama tampilan, dan nomor kontak telepon Anda.
+            Perbarui foto profil, tanda tangan digital, nama tampilan, dan nomor
+            kontak Anda.
           </p>
         </div>
 
-        {/* 2-Column Desktop Layout (matches reference design & operator container width) */}
+        {/* 2-Column Desktop Layout */}
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[350px_minmax(0,1fr)] xl:grid-cols-[380px_minmax(0,1fr)] xl:gap-6">
           {/* LEFT CARD: Identity, Stats & Contact Metadata */}
           <aside
@@ -407,13 +483,13 @@ export default function ProfilePage() {
                 />
                 <span className="truncate text-[var(--rd-muted)]">
                   Terdaftar{" "}
-                  {account?.createdAt ? dateText(account.createdAt) : "-"}
+                  {dbProfile?.createdAt ? dateText(dbProfile.createdAt) : "-"}
                 </span>
               </li>
             </ul>
           </aside>
 
-          {/* RIGHT COLUMN: Edit Profile Card + Latest Activity Timeline Card */}
+          {/* RIGHT COLUMN: Edit Profile Card + Signature Section */}
           <div className="min-w-0 space-y-5 xl:space-y-6">
             {/* Profile Form Card */}
             <section
@@ -426,8 +502,7 @@ export default function ProfilePage() {
                     Pengaturan Profil
                   </h2>
                   <p className="m-0 mt-0.5 text-xs text-[var(--rd-muted)]">
-                    Perbarui identitas tampilan dan kontak aktif yang tercatat di
-                    sistem.
+                    Perbarui identitas tampilan, foto profil, dan kontak aktif Anda.
                   </p>
                 </div>
               </div>
@@ -456,12 +531,15 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <p className="m-0 mb-2 text-xs font-semibold text-[var(--rd-text)] sm:text-sm">
+                    <p className="m-0 mb-1 text-xs font-semibold text-[var(--rd-text)] sm:text-sm">
                       Foto Profil
+                    </p>
+                    <p className="m-0 mb-2.5 text-[11px] text-[var(--rd-muted)]">
+                      Kompresi otomatis WebP (&lt; 30 KB) agar ringan dan cepat.
                     </p>
                     <div className="flex flex-wrap items-center gap-2.5">
                       <input
-                        ref={fileInputRef}
+                        ref={avatarInputRef}
                         type="file"
                         accept="image/jpeg,image/png,image/webp"
                         onChange={handleSelectAvatar}
@@ -469,19 +547,19 @@ export default function ProfilePage() {
                       />
                       <button
                         type="button"
-                        disabled={loading}
-                        onClick={() => fileInputRef.current?.click()}
+                        disabled={loading || saving}
+                        onClick={() => avatarInputRef.current?.click()}
                         className={`inline-flex min-h-9 items-center gap-2 rounded-lg bg-[var(--rd-primary)] px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--rd-primary-hover)] disabled:cursor-not-allowed disabled:opacity-55 ${focusRing}`}
                       >
                         <Upload size={15} aria-hidden="true" />
-                        <span>Upload image</span>
+                        <span>Upload foto</span>
                       </button>
 
                       {avatarUrl && (
                         <button
                           type="button"
-                          disabled={loading}
-                          onClick={() => setAvatarUrl(null)}
+                          disabled={loading || saving}
+                          onClick={handleRemoveAvatar}
                           className={`${btnSecondary} !min-h-9 !px-3 !py-1.5 !text-xs text-[var(--rd-coral)]`}
                         >
                           <Trash2 size={14} aria-hidden="true" />
@@ -489,11 +567,119 @@ export default function ProfilePage() {
                         </button>
                       )}
                     </div>
-                    <p className="m-0 mt-1.5 text-[11px] text-[var(--rd-muted)]">
-                      Format JPG, PNG, atau WebP · Maksimal 2 MB.
-                    </p>
                   </div>
                 </div>
+
+                {/* SIGNATURE SECTION: ONLY FOR REPORTER AND TECHNICIAN (HIDDEN FOR OPERATOR) */}
+                {!isOperator && (
+                  <div className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)]/50 p-4 sm:p-5">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <FileSignature
+                          size={18}
+                          className="text-[var(--rd-link)]"
+                          aria-hidden="true"
+                        />
+                        <span className="text-xs font-semibold text-[var(--rd-text)] sm:text-sm">
+                          Tanda Tangan Basah Digital
+                        </span>
+                      </div>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--rd-tint)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--rd-link)]">
+                        <Sparkles size={12} aria-hidden="true" />
+                        Autonomous Auto-Trim
+                      </span>
+                    </div>
+
+                    <p className="m-0 mb-3 text-xs leading-relaxed text-[var(--rd-muted)]">
+                      Cukup foto tanda tangan Anda di atas kertas putih dengan HP.
+                      Sistem akan otomatis menghapus bayangan kertas, mengubah
+                      latar belakang menjadi transparan, dan mempertajam tinta
+                      untuk dokumen PDF resmi.
+                    </p>
+
+                    <input
+                      ref={signatureInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handleSelectSignature}
+                      className="hidden"
+                    />
+
+                    {processingSignature ? (
+                      <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--rd-link)] bg-[var(--rd-surface)] py-8 text-center">
+                        <Loader2
+                          size={24}
+                          className="animate-spin text-[var(--rd-link)]"
+                        />
+                        <span className="text-xs font-medium text-[var(--rd-text)]">
+                          Sedang mengekstrak tanda tangan & membuang latar belakang...
+                        </span>
+                      </div>
+                    ) : signatureUrl ? (
+                      <div className="space-y-3">
+                        {/* Signature Preview Canvas Box with subtle checkerboard pattern */}
+                        <div
+                          className="flex min-h-28 w-full items-center justify-center rounded-lg border border-solid border-[var(--rd-border)] p-4 shadow-inner"
+                          style={{
+                            backgroundColor: "#f8fafc",
+                            backgroundImage:
+                              "radial-gradient(#cbd5e1 0.75px, transparent 0.75px)",
+                            backgroundSize: "8px 8px",
+                          }}
+                        >
+                          <img
+                            src={signatureUrl}
+                            alt="Tanda Tangan Digital"
+                            className="max-h-24 max-w-full object-contain filter drop-shadow-sm"
+                          />
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-[11px] font-medium text-[var(--rd-lime)]">
+                            ✓ Latar belakang transparan & siap dicetak pada PDF
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              disabled={loading || saving}
+                              onClick={() => signatureInputRef.current?.click()}
+                              className={`${btnSecondary} !min-h-8 !px-3 !py-1 !text-xs`}
+                            >
+                              <Upload size={13} aria-hidden="true" />
+                              <span>Ganti Foto</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={loading || saving}
+                              onClick={handleRemoveSignature}
+                              className={`${btnSecondary} !min-h-8 !px-3 !py-1 !text-xs text-[var(--rd-coral)]`}
+                            >
+                              <Trash2 size={13} aria-hidden="true" />
+                              <span>Hapus</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => signatureInputRef.current?.click()}
+                        className="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--rd-border)] bg-[var(--rd-surface)] px-4 py-6 text-center transition-colors hover:border-[var(--rd-link)] hover:bg-[var(--rd-link)]/5"
+                      >
+                        <div className="grid size-10 place-items-center rounded-full bg-[var(--rd-bg)] text-[var(--rd-link)] shadow-xs transition-transform group-hover:scale-105">
+                          <Upload size={18} aria-hidden="true" />
+                        </div>
+                        <div>
+                          <p className="m-0 text-xs font-semibold text-[var(--rd-text)]">
+                            Unggah Foto Tanda Tangan
+                          </p>
+                          <p className="m-0 mt-0.5 text-[11px] text-[var(--rd-muted)]">
+                            Ambil foto tanda tangan di kertas putih · Terima beres
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Editable Fields in 2-Column Grid on Desktop */}
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -519,7 +705,7 @@ export default function ProfilePage() {
                       />
                     )}
                     <p className="m-0 mt-1.5 text-xs leading-relaxed text-[var(--rd-muted)]">
-                      Nama tampilan resmi pada laporan dan riwayat penanganan.
+                      Nama tampilan resmi pada laporan dan lembar pengesahan.
                     </p>
                   </div>
 
@@ -581,7 +767,7 @@ export default function ProfilePage() {
                           type="text"
                           disabled
                           readOnly
-                          value={account?.nip || "-"}
+                          value={displayNip}
                           className={`${readOnlyInput} font-mono`}
                         />
                       )}
@@ -603,7 +789,7 @@ export default function ProfilePage() {
                           type="text"
                           disabled
                           readOnly
-                          value={account?.unit || "Operasional Bandara"}
+                          value={displayUnit}
                           className={readOnlyInput}
                         />
                       )}
@@ -647,11 +833,7 @@ export default function ProfilePage() {
                           type="text"
                           disabled
                           readOnly
-                          value={
-                            account?.status === "INACTIVE"
-                              ? "Nonaktif"
-                              : "Aktif"
-                          }
+                          value={isAccountActive ? "Aktif" : "Nonaktif"}
                           className={readOnlyInput}
                         />
                       )}
@@ -674,8 +856,8 @@ export default function ProfilePage() {
                           disabled
                           readOnly
                           value={
-                            account?.createdAt
-                              ? dateText(account.createdAt)
+                            dbProfile?.createdAt
+                              ? dateText(dbProfile.createdAt)
                               : "-"
                           }
                           className={readOnlyInput}
@@ -689,11 +871,20 @@ export default function ProfilePage() {
                 <div className="flex justify-end border-t border-solid border-[var(--rd-border)] pt-4">
                   <button
                     type="submit"
-                    disabled={loading || !user}
+                    disabled={loading || saving || !user}
                     className={`${btnPrimary} !px-5 !py-2.5`}
                   >
-                    <CheckCircle2 size={16} aria-hidden="true" />
-                    <span>Simpan Perubahan</span>
+                    {saving ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        <span>Menyimpan...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 size={16} aria-hidden="true" />
+                        <span>Simpan Perubahan</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </form>
