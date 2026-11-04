@@ -19,6 +19,7 @@ export const loginSchema = z.object({
     .max(128, "Password terlalu panjang."),
   rememberMe: z.boolean().optional().default(true),
   locale: z.string().optional().default("id"),
+  callbackUrl: z.string().optional(),
 });
 
 export const updateProfileSchema = z.object({
@@ -48,7 +49,7 @@ export const resetPasswordSchema = z
     confirmPassword: z.string().min(1, "Konfirmasi password wajib diisi."),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Konfirmasi password tidak cocok.",
+    message: "Konfirmasi password tidak cocok dengan password baru.",
     path: ["confirmPassword"],
   });
 

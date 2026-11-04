@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Info, MoonStar, Sun, X } from "lucide-react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useTheme } from "../../../_lib/use-theme";
 import { loginAction } from "../_lib/auth.actions";
 import { loginSchema } from "../_lib/auth.schema";
@@ -27,6 +27,8 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
   const router = useRouter();
   const params = useParams<{ locale?: string }>();
   const locale = params?.locale || "id";
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || undefined;
 
   const { theme, dark, toggleTheme } = useTheme();
   const [help, setHelp] = useState(false);
@@ -73,7 +75,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
       if (onDemo) {
         onDemo();
       } else {
-        router.push(`/${locale}/reports`);
+        router.push(callbackUrl || `/${locale}/reports`);
       }
       return;
     }
@@ -84,6 +86,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
       password,
       rememberMe: remember,
       locale,
+      callbackUrl,
     });
 
     if (!parsed.success) {
@@ -114,7 +117,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
         if (onDemo) {
           onDemo();
         } else {
-          router.push(`/${locale}/reports`);
+          router.push(callbackUrl || `/${locale}/reports`);
         }
         return;
       }

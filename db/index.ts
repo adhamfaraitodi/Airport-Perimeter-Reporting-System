@@ -4,7 +4,7 @@ import * as schema from "./schema";
 
 const connectionString =
   process.env.DATABASE_URL ||
-  "postgresql://postgres@127.0.0.1:5432/postgres";
+  "postgresql://postgres@127.0.0.1:5432/airport_perimeter";
 
 // Singleton pool for Next.js hot-reloading in development (recreates pool if URL changes)
 const globalForDb = globalThis as unknown as {

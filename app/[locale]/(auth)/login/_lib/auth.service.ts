@@ -22,12 +22,15 @@ export interface AuthenticateResult {
 export async function authenticateWithNip(
   input: LoginInput
 ): Promise<AuthenticateResult> {
-  const { nip, password, rememberMe = true, locale = "id" } = input;
+  const { nip, password, rememberMe = true, locale = "id", callbackUrl } = input;
   const reqHeaders = await headers();
 
   try {
     // 1. Try signing in via Better-Auth username plugin (where username = NIP)
-    let response = await auth.api
+    let response:
+      | Awaited<ReturnType<typeof auth.api.signInUsername>>
+      | Awaited<ReturnType<typeof auth.api.signInEmail>>
+      | null = await auth.api
       .signInUsername({
         body: {
           username: nip,
@@ -40,14 +43,16 @@ export async function authenticateWithNip(
 
     // 2. Fallback: sign in via deterministic NIP email if user was registered via emailAndPassword
     if (!response) {
-      response = await auth.api.signInEmail({
-        body: {
-          email: nipToEmail(nip),
-          password,
-          rememberMe,
-        },
-        headers: reqHeaders,
-      });
+      response = await auth.api
+        .signInEmail({
+          body: {
+            email: nipToEmail(nip),
+            password,
+            rememberMe,
+          },
+          headers: reqHeaders,
+        })
+        .catch(() => null);
     }
 
     if (!response || !response.user) {
@@ -84,15 +89,40 @@ export async function authenticateWithNip(
       maxAge: rememberMe ? 60 * 60 * 24 * 7 : undefined,
     });
 
+    // Check if callbackUrl is safe and permitted for this role
+    let redirectTo = getHomeRouteForRole(locale, role);
+    if (
+      callbackUrl &&
+      callbackUrl.startsWith(`/${locale}/`) &&
+      !callbackUrl.startsWith(`/${locale}/login`)
+    ) {
+      const isOperatorRoute = callbackUrl.startsWith(`/${locale}/operator`);
+      const isTechnicianRoute = callbackUrl.startsWith(`/${locale}/technician`);
+      const isReportsRoute = callbackUrl.startsWith(`/${locale}/reports`);
+
+      if (isOperatorRoute && role === "OPERATOR") {
+        redirectTo = callbackUrl;
+      } else if (
+        isTechnicianRoute &&
+        (role === "TECHNICIAN" || role === "OPERATOR")
+      ) {
+        redirectTo = callbackUrl;
+      } else if (isReportsRoute && role === "REPORTER") {
+        redirectTo = callbackUrl;
+      } else if (!isOperatorRoute && !isTechnicianRoute && !isReportsRoute) {
+        redirectTo = callbackUrl;
+      }
+    }
+
     return {
       success: true,
       user: {
-        id: response.user.id,
+        id: String(response.user.id),
         nip: (userRecord.nip as string) || nip,
         name: response.user.name,
         role,
       },
-      redirectTo: getHomeRouteForRole(locale, role),
+      redirectTo,
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

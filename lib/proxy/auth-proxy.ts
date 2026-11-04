@@ -115,7 +115,9 @@ export async function handleAuthProxy(
     if (isAuthenticated) {
       const callbackUrl = request.nextUrl.searchParams.get("callbackUrl");
       const destination =
-        callbackUrl && callbackUrl.startsWith(`/${locale}/`)
+        callbackUrl &&
+        callbackUrl.startsWith(`/${locale}/`) &&
+        !callbackUrl.startsWith(`/${locale}/login`)
           ? callbackUrl
           : getHomeRouteForRole(locale, role);
       return NextResponse.redirect(new URL(destination, request.url));
