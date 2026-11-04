@@ -3,7 +3,7 @@
  * 1. compressAvatarPhoto: Zero-config auto compression (< 30 KB WebP).
  * 2. processSignaturePhoto: Zero-config autonomous wet signature extractor.
  *    Auto-removes uneven paper lighting/shadows, removes paper background
- *    to pure transparency, darkens ink, and auto-trims whitespace.
+ *    to pure transparency, removes stray specks/dust, darkens ink, and auto-trims whitespace.
  */
 
 export interface ProcessedAvatarResult {
@@ -76,7 +76,8 @@ export async function compressAvatarPhoto(
  * - Adapts to non-uniform paper lighting & phone camera shadows
  * - Completely removes paper background (100% transparent alpha)
  * - Anti-aliases ink strokes with crisp dark ink tone
- * - Auto-crops / trims excess surrounding white paper
+ * - Connected Component Despeckler: filters out stray dust/grain dots
+ * - Auto-crops / trims tightly around the signature strokes
  */
 export async function processSignaturePhoto(
   file: File
@@ -152,14 +153,7 @@ export async function processSignaturePhoto(
         }
 
         // 3. Bilinear paper background estimation & contrast separation
-        let minX = width;
-        let minY = height;
-        let maxX = 0;
-        let maxY = 0;
-        let inkCount = 0;
-
         for (let y = 0; y < height; y++) {
-          // Grid vertical interpolation weight
           const gy = y / blockSize - 0.5;
           const gy0 = Math.max(0, Math.floor(gy));
           const gy1 = Math.min(gridRows - 1, gy0 + 1);
@@ -185,14 +179,14 @@ export async function processSignaturePhoto(
             // Relative darkness ratio (contrast against local paper)
             const contrast = (paperLuma - pxLuma) / paperLuma;
 
-            // Low contrast = paper texture / faint lighting -> transparent
-            if (contrast <= 0.11) {
+            // Faint lighting / paper grain cutoff
+            if (contrast <= 0.13) {
               data[idx + 3] = 0; // Alpha = 0 (Transparent)
             } else {
               // Ink stroke detected: smooth anti-aliased alpha curve
               const alphaNorm = Math.min(
                 1,
-                Math.pow((contrast - 0.11) / (0.42 - 0.11), 0.85)
+                Math.pow((contrast - 0.13) / (0.42 - 0.13), 0.85)
               );
               const alpha = Math.round(alphaNorm * 255);
 
@@ -201,20 +195,90 @@ export async function processSignaturePhoto(
               data[idx + 1] = 23; // G
               data[idx + 2] = 42; // B
               data[idx + 3] = alpha;
-
-              if (alpha > 40) {
-                inkCount++;
-                if (x < minX) minX = x;
-                if (x > maxX) maxX = x;
-                if (y < minY) minY = y;
-                if (y > maxY) maxY = y;
-              }
             }
           }
         }
 
-        // 4. Validate that ink was actually detected
-        if (inkCount < 30 || minX >= maxX || minY >= maxY) {
+        // 4. Connected Component Despeckler & Robust Bounding Box
+        // Stray dust, dots, scanner noise (< 30 px) are purged to transparent.
+        const visited = new Uint8Array(width * height);
+        const minComponentSize = 30; // Minimum connected pixels for a genuine stroke segment
+
+        let minX = width;
+        let minY = height;
+        let maxX = 0;
+        let maxY = 0;
+        let validInkPixels = 0;
+
+        const queueX = new Int32Array(width * height);
+        const queueY = new Int32Array(width * height);
+
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
+            const pIdx = y * width + x;
+            if (visited[pIdx] || data[pIdx * 4 + 3] === 0) continue;
+
+            let head = 0;
+            let tail = 0;
+            queueX[tail] = x;
+            queueY[tail] = y;
+            tail++;
+            visited[pIdx] = 1;
+
+            let cMinX = x;
+            let cMaxX = x;
+            let cMinY = y;
+            let cMaxY = y;
+
+            while (head < tail) {
+              const cx = queueX[head];
+              const cy = queueY[head];
+              head++;
+
+              if (cx < cMinX) cMinX = cx;
+              if (cx > cMaxX) cMaxX = cx;
+              if (cy < cMinY) cMinY = cy;
+              if (cy > cMaxY) cMaxY = cy;
+
+              // Check 8-neighborhood
+              for (let dy = -1; dy <= 1; dy++) {
+                const ny = cy + dy;
+                if (ny < 0 || ny >= height) continue;
+                for (let dx = -1; dx <= 1; dx++) {
+                  if (dx === 0 && dy === 0) continue;
+                  const nx = cx + dx;
+                  if (nx < 0 || nx >= width) continue;
+
+                  const nIdx = ny * width + nx;
+                  if (!visited[nIdx] && data[nIdx * 4 + 3] > 0) {
+                    visited[nIdx] = 1;
+                    queueX[tail] = nx;
+                    queueY[tail] = ny;
+                    tail++;
+                  }
+                }
+              }
+            }
+
+            // If cluster is smaller than minComponentSize, it's a speck/dust dot! Erase it.
+            if (tail < minComponentSize) {
+              for (let i = 0; i < tail; i++) {
+                const eraseIdx = (queueY[i] * width + queueX[i]) * 4;
+                data[eraseIdx + 3] = 0;
+              }
+            } else {
+              // Genuine stroke: contribute to bounding box
+              validInkPixels += tail;
+              if (cMinX < minX) minX = cMinX;
+              if (cMaxX > maxX) maxX = cMaxX;
+              if (cMinY < minY) minY = cMinY;
+              if (cMaxY > maxY) maxY = cMaxY;
+            }
+          }
+        }
+
+        // 5. Validate that actual ink was found
+        if (validInkPixels < 40 || minX >= maxX || minY >= maxY) {
           reject(
             new Error(
               "Tanda tangan tidak terdeteksi jelas pada foto. Pastikan tanda tangan di atas kertas putih dan pencahayaan memadai."
@@ -223,17 +287,17 @@ export async function processSignaturePhoto(
           return;
         }
 
-        // 5. Auto-trim / crop with generous 18px padding
-        const padding = 18;
+        // 6. Auto-trim / crop with generous 16px padding
+        const padding = 16;
         const cropX = Math.max(0, minX - padding);
         const cropY = Math.max(0, minY - padding);
         const cropW = Math.min(width - cropX, maxX - minX + padding * 2);
         const cropH = Math.min(height - cropY, maxY - minY + padding * 2);
 
-        // Put modified data back to canvas
+        // Put modified (despeckled) data back to canvas
         ctx.putImageData(imgData, 0, 0);
 
-        // Create trimmed canvas
+        // Create tightly trimmed canvas
         const trimmedCanvas = document.createElement("canvas");
         trimmedCanvas.width = cropW;
         trimmedCanvas.height = cropH;
@@ -248,7 +312,7 @@ export async function processSignaturePhoto(
         const dataUrl = trimmedCanvas.toDataURL("image/png");
         resolve({
           dataUrl,
-          inkCount,
+          inkCount: validInkPixels,
           width: cropW,
           height: cropH,
         });

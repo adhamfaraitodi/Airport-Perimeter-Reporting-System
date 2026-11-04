@@ -619,7 +619,7 @@ export default function ProfilePage() {
                       <div className="space-y-3">
                         {/* Signature Preview Canvas Box with subtle checkerboard pattern */}
                         <div
-                          className="flex min-h-28 w-full items-center justify-center rounded-lg border border-solid border-[var(--rd-border)] p-4 shadow-inner"
+                          className="flex min-h-36 w-full items-center justify-center rounded-lg border border-solid border-[var(--rd-border)] p-4 shadow-inner"
                           style={{
                             backgroundColor: "#f8fafc",
                             backgroundImage:
@@ -630,7 +630,7 @@ export default function ProfilePage() {
                           <img
                             src={signatureUrl}
                             alt="Tanda Tangan Digital"
-                            className="max-h-24 max-w-full object-contain filter drop-shadow-sm"
+                            className="max-h-32 sm:max-h-36 max-w-full object-contain filter drop-shadow-sm"
                           />
                         </div>
 
