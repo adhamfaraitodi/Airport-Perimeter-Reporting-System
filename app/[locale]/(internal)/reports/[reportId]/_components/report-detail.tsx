@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import MapView from "../../../../_components/perimeter-map-view";
 import { api, type ImageRef, type ReportRecord } from "../../../../_lib/client-api";
 import { dateText, message } from "../../../../_lib/draft-store";
+import { btnText } from "../../../../_lib/ui-classes";
 
 const states: Record<string, { label: string; icon: typeof ClipboardClock }> = {
   OPEN: { label: "Baru", icon: ClipboardClock },
@@ -193,13 +194,10 @@ export function ReportDetail({ report, onBack }: ReportDetailProps) {
   return (
     <article className="rounded-2xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] p-3.5 text-[var(--rd-text)] sm:p-6">
       {onBack && (
-        <div className="mb-4 border-b border-[var(--rd-border)] pb-3 lg:hidden">
-          <button
-            type="button"
-            onClick={onBack}
-            className={`${button} inline-flex min-h-9 items-center gap-1.5 bg-transparent px-0 py-1 text-xs font-semibold text-[var(--rd-link)]`}
-          >
-            <ArrowLeft size={16} aria-hidden="true" /> Kembali ke daftar laporan
+        <div className="mb-5 flex items-center justify-between gap-2.5">
+          <button type="button" className={btnText} onClick={onBack}>
+            <ArrowLeft size={16} aria-hidden="true" />
+            Daftar laporan
           </button>
         </div>
       )}
