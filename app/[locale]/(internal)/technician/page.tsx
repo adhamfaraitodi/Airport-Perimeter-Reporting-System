@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { CheckCircle2, Clock, ClipboardList, Wrench } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   api,
@@ -144,8 +145,11 @@ export default function TechnicianDashboardPage() {
         {/* Task Summary Badges for Technician */}
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
           <div className="flex items-center gap-3 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 shadow-xs">
-            <span className="rd-status flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)]">
-              🔧
+            <span
+              data-status="OPEN"
+              className="rd-status flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)]"
+            >
+              <Wrench className="size-[18px]" aria-hidden="true" />
             </span>
             <div className="min-w-0 flex-1">
               <span className="block text-[10px] text-[var(--rd-muted)] sm:text-xs">
@@ -165,7 +169,7 @@ export default function TechnicianDashboardPage() {
               data-status="IN_PROGRESS"
               className="rd-status flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)]"
             >
-              ⏳
+              <Clock className="size-[18px]" aria-hidden="true" />
             </span>
             <div className="min-w-0 flex-1">
               <span className="block text-[10px] text-[var(--rd-muted)] sm:text-xs">
@@ -185,7 +189,7 @@ export default function TechnicianDashboardPage() {
               data-status="RESOLVED"
               className="rd-status flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)]"
             >
-              ✓
+              <CheckCircle2 className="size-[18px]" aria-hidden="true" />
             </span>
             <div className="min-w-0 flex-1">
               <span className="block text-[10px] text-[var(--rd-muted)] sm:text-xs">
@@ -202,7 +206,7 @@ export default function TechnicianDashboardPage() {
           </div>
           <div className="flex items-center gap-3 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 shadow-xs">
             <span className="rd-status flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)]">
-              📋
+              <ClipboardList className="size-[18px]" aria-hidden="true" />
             </span>
             <div className="min-w-0 flex-1">
               <span className="block text-[10px] text-[var(--rd-muted)] sm:text-xs">
