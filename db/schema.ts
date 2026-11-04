@@ -9,8 +9,9 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  uuid,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 // ============================================================================
 // 1. Enums
@@ -43,13 +44,13 @@ export const photoTypeEnum = pgEnum("photo_type", [
 ]);
 
 // ============================================================================
-// 2. Better-Auth & User Tables (Relational)
+// 2. Better-Auth & User Tables (Relational with UUID)
 // ============================================================================
 
 export const user = pgTable(
   "user",
   {
-    id: text("id").primaryKey(),
+    id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
     email: text("email").notNull().unique(),
     emailVerified: boolean("email_verified").notNull().default(false),
@@ -79,7 +80,7 @@ export const user = pgTable(
 export const session = pgTable(
   "session",
   {
-    id: text("id").primaryKey(),
+    id: uuid("id").primaryKey().defaultRandom(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     token: text("token").notNull().unique(),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -90,7 +91,7 @@ export const session = pgTable(
       .defaultNow(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
-    userId: text("user_id")
+    userId: uuid("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
   },
@@ -100,10 +101,10 @@ export const session = pgTable(
 export const account = pgTable(
   "account",
   {
-    id: text("id").primaryKey(),
+    id: uuid("id").primaryKey().defaultRandom(),
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
-    userId: text("user_id")
+    userId: uuid("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     accessToken: text("access_token"),
@@ -128,7 +129,7 @@ export const account = pgTable(
 );
 
 export const verification = pgTable("verification", {
-  id: text("id").primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
   identifier: text("identifier").notNull(),
   value: text("value").notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
@@ -141,7 +142,7 @@ export const verification = pgTable("verification", {
 // ============================================================================
 
 export const perimeterParts = pgTable("perimeter_parts", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey(), // slug identifier (e.g. 'pondasi', 'tiang-pagar')
   name: text("name").notNull(),
   sortOrder: integer("sort_order").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),
@@ -156,7 +157,7 @@ export const perimeterParts = pgTable("perimeter_parts", {
 export const damageTypes = pgTable(
   "damage_types",
   {
-    id: text("id").primaryKey(),
+    id: text("id").primaryKey(), // slug identifier (e.g. 'berkarat-berat')
     partId: text("part_id")
       .notNull()
       .references(() => perimeterParts.id, { onDelete: "cascade" }),
@@ -197,8 +198,8 @@ export interface ReportGpsMetadata {
 export const reports = pgTable(
   "reports",
   {
-    id: text("id").primaryKey(),
-    reporterId: text("reporter_id")
+    id: uuid("id").primaryKey().defaultRandom(),
+    reporterId: uuid("reporter_id")
       .notNull()
       .references(() => user.id, { onDelete: "restrict" }),
     status: reportStatusEnum("status").notNull().default("OPEN"),
@@ -218,7 +219,7 @@ export const reports = pgTable(
     gpsMetadata: jsonb("gps_metadata").$type<ReportGpsMetadata | null>(),
     narrative: text("narrative").notNull(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
-    deletedBy: text("deleted_by").references(() => user.id, {
+    deletedBy: uuid("deleted_by").references(() => user.id, {
       onDelete: "set null",
     }),
     deletionReason: text("deletion_reason"),
@@ -234,17 +235,20 @@ export const reports = pgTable(
     index("reports_status_idx").on(table.status),
     index("reports_created_at_idx").on(table.createdAt),
     index("reports_findings_gin_idx").using("gin", table.findings),
+    index("reports_active_idx")
+      .on(table.createdAt)
+      .where(sql`deleted_at IS NULL`),
   ]
 );
 
 export const reportStatusHistory = pgTable(
   "report_status_history",
   {
-    id: text("id").primaryKey(),
-    reportId: text("report_id")
+    id: uuid("id").primaryKey().defaultRandom(),
+    reportId: uuid("report_id")
       .notNull()
       .references(() => reports.id, { onDelete: "cascade" }),
-    actorId: text("actor_id")
+    actorId: uuid("actor_id")
       .notNull()
       .references(() => user.id, { onDelete: "restrict" }),
     previousStatus: reportStatusEnum("previous_status"),
@@ -260,11 +264,11 @@ export const reportStatusHistory = pgTable(
 export const reportPhotos = pgTable(
   "report_photos",
   {
-    id: text("id").primaryKey(),
-    reportId: text("report_id")
+    id: uuid("id").primaryKey().defaultRandom(),
+    reportId: uuid("report_id")
       .notNull()
       .references(() => reports.id, { onDelete: "cascade" }),
-    historyId: text("history_id").references(() => reportStatusHistory.id, {
+    historyId: uuid("history_id").references(() => reportStatusHistory.id, {
       onDelete: "cascade",
     }),
     photoType: photoTypeEnum("photo_type").notNull().default("REPORT_INITIAL"),

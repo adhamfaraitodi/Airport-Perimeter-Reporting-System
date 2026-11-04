@@ -66,6 +66,14 @@
   display: none !important;
 }
 
+/* Fix Leaflet tile seams / hairline cracks caused by rotated map bearing and browser subpixel rounding */
+.leaflet-tile-container img.leaflet-tile {
+  outline: 1px solid rgba(255, 255, 255, 0.01);
+  mix-blend-mode: normal;
+  /* Slight 0.5px bleed to eliminate subpixel gaps when rotated */
+  transform: scale(1.005);
+}
+
 /* Login Page Tokens */
 .login-page {
   --login-primary: #14848d;

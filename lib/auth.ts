@@ -22,6 +22,11 @@ export function nipToEmail(nip: string): string {
 export const auth = betterAuth({
   secret: AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  advanced: {
+    database: {
+      generateId: "uuid",
+    },
+  },
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {

@@ -4,10 +4,10 @@ CREATE TYPE "public"."photo_type" AS ENUM('REPORT_INITIAL', 'STATUS_UPDATE', 'SO
 CREATE TYPE "public"."report_status" AS ENUM('OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED');--> statement-breakpoint
 CREATE TYPE "public"."user_role" AS ENUM('REPORTER', 'OPERATOR', 'TECHNICIAN');--> statement-breakpoint
 CREATE TABLE "account" (
-	"id" text PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"account_id" text NOT NULL,
 	"provider_id" text NOT NULL,
-	"user_id" text NOT NULL,
+	"user_id" uuid NOT NULL,
 	"access_token" text,
 	"refresh_token" text,
 	"id_token" text,
@@ -39,9 +39,9 @@ CREATE TABLE "perimeter_parts" (
 );
 --> statement-breakpoint
 CREATE TABLE "report_photos" (
-	"id" text PRIMARY KEY NOT NULL,
-	"report_id" text NOT NULL,
-	"history_id" text,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"report_id" uuid NOT NULL,
+	"history_id" uuid,
 	"photo_type" "photo_type" DEFAULT 'REPORT_INITIAL' NOT NULL,
 	"file_path" text NOT NULL,
 	"mime_type" text NOT NULL,
@@ -51,9 +51,9 @@ CREATE TABLE "report_photos" (
 );
 --> statement-breakpoint
 CREATE TABLE "report_status_history" (
-	"id" text PRIMARY KEY NOT NULL,
-	"report_id" text NOT NULL,
-	"actor_id" text NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"report_id" uuid NOT NULL,
+	"actor_id" uuid NOT NULL,
 	"previous_status" "report_status",
 	"new_status" "report_status" NOT NULL,
 	"narrative" text NOT NULL,
@@ -61,8 +61,8 @@ CREATE TABLE "report_status_history" (
 );
 --> statement-breakpoint
 CREATE TABLE "reports" (
-	"id" text PRIMARY KEY NOT NULL,
-	"reporter_id" text NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"reporter_id" uuid NOT NULL,
 	"status" "report_status" DEFAULT 'OPEN' NOT NULL,
 	"side" text,
 	"segment_code" text,
@@ -73,26 +73,26 @@ CREATE TABLE "reports" (
 	"gps_metadata" jsonb,
 	"narrative" text NOT NULL,
 	"deleted_at" timestamp with time zone,
-	"deleted_by" text,
+	"deleted_by" uuid,
 	"deletion_reason" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "session" (
-	"id" text PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"expires_at" timestamp with time zone NOT NULL,
 	"token" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"ip_address" text,
 	"user_agent" text,
-	"user_id" text NOT NULL,
+	"user_id" uuid NOT NULL,
 	CONSTRAINT "session_token_unique" UNIQUE("token")
 );
 --> statement-breakpoint
 CREATE TABLE "user" (
-	"id" text PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
 	"email" text NOT NULL,
 	"email_verified" boolean DEFAULT false NOT NULL,
@@ -112,7 +112,7 @@ CREATE TABLE "user" (
 );
 --> statement-breakpoint
 CREATE TABLE "verification" (
-	"id" text PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"identifier" text NOT NULL,
 	"value" text NOT NULL,
 	"expires_at" timestamp with time zone NOT NULL,
@@ -138,6 +138,7 @@ CREATE INDEX "reports_reporter_id_idx" ON "reports" USING btree ("reporter_id");
 CREATE INDEX "reports_status_idx" ON "reports" USING btree ("status");--> statement-breakpoint
 CREATE INDEX "reports_created_at_idx" ON "reports" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "reports_findings_gin_idx" ON "reports" USING gin ("findings");--> statement-breakpoint
+CREATE INDEX "reports_active_idx" ON "reports" USING btree ("created_at") WHERE deleted_at IS NULL;--> statement-breakpoint
 CREATE INDEX "session_user_id_idx" ON "session" USING btree ("user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "user_nip_idx" ON "user" USING btree ("nip");--> statement-breakpoint
 CREATE INDEX "user_role_idx" ON "user" USING btree ("role");
