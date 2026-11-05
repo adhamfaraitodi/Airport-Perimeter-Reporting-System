@@ -194,8 +194,10 @@ export function ReportCardItem({
               className="text-[var(--rd-link)]"
               aria-hidden="true"
             />
-            {report.segmentCode
-              ? `Segmen ${report.segmentCode}`
+            {report.segmentCode && report.side
+              ? `Grid ${report.segmentCode} · Sisi ${report.side}`
+              : report.segmentCode
+              ? `Grid ${report.segmentCode}`
               : report.side
                 ? `Sisi ${report.side}`
                 : "Segmen belum dipetakan"}

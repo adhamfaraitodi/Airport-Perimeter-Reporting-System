@@ -14,7 +14,6 @@ import { getDamageCatalogAction } from "../../operator/perimeter-damage/_lib/dam
 import catalog from "../../../_data/damage-catalog.json";
 import {
   api,
-  isMock,
   type BeginSubmissionPayload,
   type DamageItem,
   type GpsPoint,
@@ -26,6 +25,11 @@ import MapView, {
   isPointInNavigationBounds,
   type LatLngPoint,
 } from "../../../_components/perimeter-map-view";
+import {
+  getLocationGridAndSide,
+  getGridCellFromLatLng,
+  PERIMETER_SIDES,
+} from "../../../_components/airport-grid";
 
 interface CatalogPart {
   id: string;
@@ -33,10 +37,20 @@ interface CatalogPart {
   damages: DamageItem[];
 }
 
-const parts: CatalogPart[] = (catalog as CatalogPart[]).map((part) => ({
-  ...part,
-  damages: [...part.damages].sort((a, b) => a.name.localeCompare(b.name, "id")),
-}));
+function isOtherDamage(name: string): boolean {
+  const norm = name.trim().toLowerCase();
+  return norm === "lainnya" || norm.startsWith("lainnya");
+}
+
+function sortDamages(items: DamageItem[]): DamageItem[] {
+  return [...items].sort((a, b) => {
+    const aIsOther = isOtherDamage(a.name);
+    const bIsOther = isOtherDamage(b.name);
+    if (aIsOther && !bIsOther) return 1;
+    if (!aIsOther && bIsOther) return -1;
+    return a.name.localeCompare(b.name, "id");
+  });
+}
 
 const button =
   "border-0 font-normal shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] disabled:cursor-not-allowed disabled:opacity-50";
@@ -119,12 +133,14 @@ function ReporterFormSession({
   const clear = useDrafts((state) => state.clear);
   const selection = draft?.selection || {};
   const narrative = draft?.narrative || "";
+  const side = draft?.side || "";
+  const segmentCode = draft?.segmentCode || "";
   const id = useId();
 
   const [parts, setParts] = useState<CatalogPart[]>(() =>
     (catalog as CatalogPart[]).map((part) => ({
       ...part,
-      damages: [...part.damages].sort((a, b) => a.name.localeCompare(b.name, "id")),
+      damages: sortDamages(part.damages),
     }))
   );
 
@@ -137,9 +153,7 @@ function ReporterFormSession({
             res.catalog.map((part) => ({
               id: part.id,
               name: part.name,
-              damages: [...part.damages].sort((a, b) =>
-                a.name.localeCompare(b.name, "id")
-              ),
+              damages: sortDamages(part.damages),
             }))
           );
         }
@@ -179,6 +193,13 @@ function ReporterFormSession({
   );
   const blocked = () =>
     inFlight.current || !!attemptRef.current || completed.current;
+
+  // Active detected location details
+  const detectedLocation = point
+    ? getLocationGridAndSide(point.latitude, point.longitude)
+    : null;
+  const currentGrid = segmentCode || detectedLocation?.code || "";
+  const currentSide = side || detectedLocation?.side || "";
 
   useEffect(() => {
     mounted.current = true;
@@ -234,6 +255,16 @@ function ReporterFormSession({
             longitude: original.longitude,
           });
           setSource("GPS");
+          const detected = getLocationGridAndSide(
+            original.latitude,
+            original.longitude
+          );
+          if (detected) {
+            update(key, {
+              segmentCode: detected.code,
+              side: draft?.side || detected.side,
+            });
+          }
         }
         setGpsMessage(
           `GPS asli tercatat · akurasi ±${Math.round(original.accuracy)} m. ${
@@ -320,7 +351,8 @@ function ReporterFormSession({
       Object.keys(selection).length > 0 ||
       narrative.trim() !== "" ||
       filesRef.current.length > 0 ||
-      manualRevision.current > 0
+      manualRevision.current > 0 ||
+      side !== ""
     )
       setConfirmation("evidence");
     else onCancel?.();
@@ -338,10 +370,6 @@ function ReporterFormSession({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (inFlight.current || completed.current || confirmation) return;
-    if (!isMock) {
-      setError("Integrasi field baru belum tersedia");
-      return;
-    }
     inFlight.current = true;
     setError("");
     let result: ReportRecord | undefined;
@@ -379,10 +407,19 @@ function ReporterFormSession({
           );
           return;
         }
+
+        const detected = point
+          ? getLocationGridAndSide(point.latitude, point.longitude)
+          : null;
+        const finalGrid = segmentCode || detected?.code || undefined;
+        const finalSide = side || detected?.side || undefined;
+
         attemptRef.current = {
           payload: {
             id: newId(),
             action: "CREATE",
+            side: finalSide,
+            segmentCode: finalGrid,
             findings,
             narrative: narrative.trim(),
             latitude: point.latitude,
@@ -612,7 +649,7 @@ function ReporterFormSession({
           </section>
         </fieldset>
 
-        {/* RIGHT COLUMN: Location Map & Draft Info */}
+        {/* RIGHT COLUMN: Location Map, Grid Detection & Draft Info */}
         <div className="min-w-0 space-y-5">
           <section aria-labelledby={`${id}-location`}>
             <div className="mb-2 flex items-center justify-between gap-2">
@@ -639,6 +676,16 @@ function ReporterFormSession({
                 manualRevision.current += 1;
                 setPoint(value);
                 setSource("MANUAL");
+                const detected = getLocationGridAndSide(
+                  value.latitude,
+                  value.longitude
+                );
+                if (detected) {
+                  update(key, {
+                    segmentCode: detected.code,
+                    side: detected.side,
+                  });
+                }
               }}
             />
             <p className={`${muted} mb-0 mt-2`}>
@@ -654,13 +701,45 @@ function ReporterFormSession({
                 akurasi ±{Math.round(gps.accuracy)} m
               </p>
             )}
-          </section>
 
-          <p className={`${muted} m-0 rounded-lg bg-[var(--rd-bg)] p-3 leading-relaxed`}>
-            Pilihan bagian, kerusakan, dan teks draft tersimpan di perangkat ini
-            khusus akun Anda. Foto dan koordinat hanya disimpan dalam memori;
-            pilih ulang setelah menutup formulir atau memuat ulang halaman.
-          </p>
+            {/* Grid & Perimeter Side detection details */}
+            <div className="mt-3.5 space-y-2.5 rounded-xl border border-[var(--rd-border)] bg-[var(--rd-bg)]/60 p-3 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--rd-muted)]">Segmen Grid Bandara:</span>
+                <span className="font-semibold text-[var(--rd-link)]">
+                  {currentGrid ? `Grid ${currentGrid}` : "-"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--rd-muted)]">Sisi Perimeter:</span>
+                <span className="font-medium text-[var(--rd-text)]">
+                  {currentSide ? `Sisi ${currentSide}` : "-"}
+                </span>
+              </div>
+              <div className="border-t border-[var(--rd-border)]/70 pt-2">
+                <label
+                  htmlFor={`${id}-side`}
+                  className="mb-1.5 block font-medium text-[var(--rd-muted)]"
+                >
+                  Konfirmasi / Pilih Sisi:
+                </label>
+                <select
+                  id={`${id}-side`}
+                  disabled={frozen || !!confirmation}
+                  value={currentSide}
+                  onChange={(e) => update(key, { side: e.target.value })}
+                  className="w-full rounded-lg border border-[var(--rd-border)] bg-[var(--rd-surface)] px-2.5 py-1.5 text-xs text-[var(--rd-text)] focus-visible:outline-[var(--rd-link)]"
+                >
+                  <option value="">Pilih sisi perimeter</option>
+                  {PERIMETER_SIDES.map((val) => (
+                    <option key={val} value={val}>
+                      {val}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
 

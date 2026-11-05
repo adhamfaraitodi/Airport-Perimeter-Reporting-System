@@ -19,6 +19,19 @@ export const ROW_LABELS = [
   "N",
 ] as const;
 
+export const PERIMETER_SIDES = [
+  "Utara",
+  "Timur Laut",
+  "Timur",
+  "Tenggara",
+  "Selatan",
+  "Barat Daya",
+  "Barat",
+  "Barat Laut",
+] as const;
+
+export type PerimeterSide = (typeof PERIMETER_SIDES)[number];
+
 /**
  * Calibrated against Appendix 3: Grid Map Bandara Internasional Yogyakarta
  * and the surveyed YIA perimeter polygon (`new_perimeter.json`).
@@ -107,10 +120,65 @@ export function getGridCellFromLatLng(
   return { col, row, code: `${row}${col}` };
 }
 
+/**
+ * Determines perimeter side ("Utara", "Timur", "Selatan", "Barat", etc.)
+ * given a grid column (1..29) and row label ('A'..'N').
+ *
+ * Calibrated against YIA rotated grid geometry:
+ * - Columns run West (1) to East (29)
+ * - Rows run North (A) to South (N)
+ * E.g. G29 -> "Timur", G1 -> "Barat", A15 -> "Utara", N15 -> "Selatan"
+ */
+export function getPerimeterSideFromGrid(col: number, row: string): string {
+  const rowIndex = ROW_LABELS.indexOf(row as (typeof ROW_LABELS)[number]);
+  if (rowIndex === -1 || col < 1 || col > GRID_COLS) return "";
+
+  // Normalized coordinates centered on the 29x14 grid
+  // u: -1 at col 1 (West), +1 at col 29 (East)
+  // v: +1 at row 0 (A = North), -1 at row 13 (N = South)
+  const u = (col - 15) / 14;
+  const v = (6.5 - rowIndex) / 6.5;
+
+  let deg = (Math.atan2(v, u) * 180) / Math.PI;
+  if (deg < 0) deg += 360;
+
+  // 8 standard sectors of 45 deg centered on cardinal & ordinal directions
+  if (deg >= 337.5 || deg < 22.5) return "Timur";
+  if (deg >= 22.5 && deg < 67.5) return "Timur Laut";
+  if (deg >= 67.5 && deg < 112.5) return "Utara";
+  if (deg >= 112.5 && deg < 157.5) return "Barat Laut";
+  if (deg >= 157.5 && deg < 202.5) return "Barat";
+  if (deg >= 202.5 && deg < 247.5) return "Barat Daya";
+  if (deg >= 247.5 && deg < 292.5) return "Selatan";
+  return "Tenggara";
+}
+
+/**
+ * Combined helper: returns grid column, row, code (e.g. "M3"), and side (e.g. "Barat Daya")
+ * directly from geographic (latitude, longitude) coordinates.
+ */
+export function getLocationGridAndSide(
+  lat: number,
+  lng: number
+): { col: number; row: string; code: string; side: string } | null {
+  const cell = getGridCellFromLatLng(lat, lng);
+  if (!cell) return null;
+  const side = getPerimeterSideFromGrid(cell.col, cell.row);
+  return { ...cell, side };
+}
+
 export interface GridLabelItem {
   id: string;
   text: string;
   position: [number, number];
+}
+
+export interface AirportGridData {
+  linesCollection: FeatureCollection<LineString>;
+  headerCellsCollection: FeatureCollection<Polygon>;
+  cornersCollection: FeatureCollection<Polygon>;
+  labels: GridLabelItem[];
+  outerCorners: [number, number][];
 }
 
 const HEADER_THICKNESS = 0.62;
@@ -120,7 +188,7 @@ const HEADER_THICKNESS = 0.62;
  * header frame polygons (white label cells + 4 black corner blocks), and the
  * label center coordinates for `1..29` and `A..N`.
  */
-export function buildAirportGridData() {
+export function buildAirportGridData(): AirportGridData {
   const lineFeatures: Feature<LineString>[] = [];
   const headerCellFeatures: Feature<Polygon>[] = [];
   const cornerFeatures: Feature<Polygon>[] = [];
@@ -130,13 +198,10 @@ export function buildAirportGridData() {
   for (let c = 0; c <= GRID_COLS; c++) {
     lineFeatures.push({
       type: "Feature",
-      properties: { kind: "grid-line", axis: "col", index: c },
+      properties: { kind: "grid-line", orientation: "vertical", index: c },
       geometry: {
         type: "LineString",
-        coordinates: [
-          gridToGeoJsonCoord(c, 0),
-          gridToGeoJsonCoord(c, GRID_ROWS),
-        ],
+        coordinates: [gridToGeoJsonCoord(c, 0), gridToGeoJsonCoord(c, GRID_ROWS)],
       },
     });
   }
@@ -145,13 +210,10 @@ export function buildAirportGridData() {
   for (let r = 0; r <= GRID_ROWS; r++) {
     lineFeatures.push({
       type: "Feature",
-      properties: { kind: "grid-line", axis: "row", index: r },
+      properties: { kind: "grid-line", orientation: "horizontal", index: r },
       geometry: {
         type: "LineString",
-        coordinates: [
-          gridToGeoJsonCoord(0, r),
-          gridToGeoJsonCoord(GRID_COLS, r),
-        ],
+        coordinates: [gridToGeoJsonCoord(0, r), gridToGeoJsonCoord(GRID_COLS, r)],
       },
     });
   }

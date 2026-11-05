@@ -4,6 +4,7 @@ import { persist } from "zustand/middleware";
 export interface DraftEntry {
   narrative?: string;
   side?: string;
+  segmentCode?: string;
   selection?: Record<string, string[]>;
 }
 
@@ -48,17 +49,22 @@ export const labels: Record<string, string> = {
 export const countText = (text: string): number => Array.from(text || "").length;
 
 export const dateText = (value?: string | null): string =>
-  value
-    ? new Intl.DateTimeFormat("id-ID", {
-        dateStyle: "medium",
-        timeStyle: "short",
+  value && !Number.isNaN(new Date(value).getTime())
+    ? new Date(value).toLocaleString("id-ID", {
         timeZone: "Asia/Jakarta",
-      }).format(new Date(value)) + " WIB"
-    : "—";
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
+    : "Waktu tidak tersedia";
 
-export const newId = (): string => crypto.randomUUID();
+export const message = (err: unknown): string =>
+  err instanceof Error && err.message ? err.message : "Terjadi kesalahan.";
 
-export const message = (error: unknown): string =>
-  error instanceof Error && error.message
-    ? error.message
-    : "Permintaan gagal. Periksa koneksi lalu coba lagi.";
+export const newId = (): string =>
+  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : "sub-" + Math.random().toString(36).slice(2, 10);

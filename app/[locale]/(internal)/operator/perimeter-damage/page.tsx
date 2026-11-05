@@ -749,9 +749,13 @@ export default function PerimeterDamageMasterPage() {
                 ) : (
                   <>
                     {filteredParts.map((part, index) => {
-                      const sortedDamages = [...part.damages].sort((a, b) =>
-                        a.name.localeCompare(b.name, "id")
-                      );
+                      const sortedDamages = [...part.damages].sort((a, b) => {
+                        const aOther = a.name.trim().toLowerCase().startsWith("lainnya");
+                        const bOther = b.name.trim().toLowerCase().startsWith("lainnya");
+                        if (aOther && !bOther) return 1;
+                        if (!aOther && bOther) return -1;
+                        return a.name.localeCompare(b.name, "id");
+                      });
                       return (
                         <TableRow key={part.id}>
                           <TableCell className="text-center font-medium text-[var(--rd-muted)]">

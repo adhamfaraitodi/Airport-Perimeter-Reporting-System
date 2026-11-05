@@ -82,7 +82,11 @@ export default function ReportsPage() {
     });
   }
 
-  const owned = user ? reports.filter((r) => r.reporterId === user.id) : [];
+  const owned = user
+    ? user.role === "OPERATOR"
+      ? reports
+      : reports.filter((r) => r.reporterId === user.id)
+    : [];
   const selected = owned.find((r) => r.id === selectedId) || null;
 
   return (

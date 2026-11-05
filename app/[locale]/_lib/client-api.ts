@@ -260,7 +260,9 @@ export const api = {
       fail("Narasi dan foto wajib diisi.");
     }
     if (payload.action === "CREATE") {
-      if (role !== "REPORTER") fail("Hanya reporter dapat membuat laporan.");
+      if (role !== "REPORTER" && role !== "OPERATOR") {
+        fail("Hanya pelapor atau operator yang dapat membuat laporan.");
+      }
       if (
         !Number.isFinite(payload.latitude) ||
         !Number.isFinite(payload.longitude)

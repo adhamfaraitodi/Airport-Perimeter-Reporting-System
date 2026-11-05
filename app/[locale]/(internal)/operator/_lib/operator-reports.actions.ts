@@ -224,8 +224,8 @@ export async function commitReportSubmissionAction(input: {
     });
 
     if (payload.action === "CREATE") {
-      if (userRole !== "REPORTER") {
-        throw new Error("Hanya Pelapor (Reporter) yang dapat membuat laporan baru.");
+      if (userRole !== "REPORTER" && userRole !== "OPERATOR") {
+        throw new Error("Hanya Pelapor (Reporter) atau Operator yang dapat membuat laporan baru.");
       }
 
       const reportId = payload.id;

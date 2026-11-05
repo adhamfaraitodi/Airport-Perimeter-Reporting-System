@@ -27,6 +27,7 @@ import MapView, {
   isPointInNavigationBounds,
   type LatLngPoint,
 } from "../../../_components/perimeter-map-view";
+import { getLocationGridAndSide } from "../../../_components/airport-grid";
 import {
   alertBox,
   btnCancelCoral,
@@ -64,7 +65,7 @@ function readBase64(file: File): Promise<string> {
     reader.onerror = () =>
       reject(
         new Error(
-          "Foto tidak dapat dibaca. Coba pilih ulang atau kirim kembali."
+          "Tidak dapat membaca file gambar. Silakan pilih kembali foto bukti."
         )
       );
     reader.readAsDataURL(file);
@@ -144,9 +145,11 @@ export function UpdateStatusDialog({
     mounted.current = true;
     return () => {
       mounted.current = false;
+      lock.current = false;
+      onLock(false);
       filesRef.current.forEach((item) => URL.revokeObjectURL(item.preview));
     };
-  }, []);
+  }, [onLock]);
 
   useEffect(() => {
     onLock(frozen);
@@ -184,6 +187,16 @@ export function UpdateStatusDialog({
             longitude: location.longitude,
           });
           setSource("GPS");
+          const detected = getLocationGridAndSide(
+            location.latitude,
+            location.longitude
+          );
+          if (detected) {
+            update(key, {
+              side: draft?.side || detected.side,
+              segmentCode: detected.code,
+            });
+          }
         }
         setGpsMessage(
           `GPS tercatat · akurasi ±${Math.round(location.accuracy)} m${
@@ -250,8 +263,7 @@ export function UpdateStatusDialog({
   }
 
   function abandon() {
-    if (inFlight.current || !attemptRef.current || !confirmAbandon) return;
-    const submissionId = attemptRef.current.id;
+    const submissionId = attemptRef.current?.id;
     attemptRef.current = null;
     lock.current = false;
     onLock(false);
@@ -280,6 +292,10 @@ export function UpdateStatusDialog({
       const targetStatus: LifecycleStatus =
         isTechnician && action === "STATUS" ? technicianNextStatus : status;
 
+      const detected = point
+        ? getLocationGridAndSide(point.latitude, point.longitude)
+        : null;
+
       const transaction: BeginSubmissionPayload = attemptRef.current || {
         id: newId(),
         action,
@@ -290,7 +306,8 @@ export function UpdateStatusDialog({
         narrative: narrative.trim(),
         ...(action === "CREATE" && point
           ? {
-              side,
+              side: side || detected?.side,
+              segmentCode: draft?.segmentCode || detected?.code,
               latitude: point.latitude,
               longitude: point.longitude,
               gps,
@@ -328,8 +345,8 @@ export function UpdateStatusDialog({
       lock.current = false;
       onLock(false);
       onSuccess(updated);
-    } catch (e) {
-      setError(message(e));
+    } catch (submitError) {
+      if (mounted.current) setError(message(submitError));
     } finally {
       inFlight.current = false;
       if (mounted.current) setBusy(false);
@@ -339,14 +356,14 @@ export function UpdateStatusDialog({
   const overLimit = countText(narrative) > 2000;
 
   return (
-    <form className="px-[18px] py-[21px] md:p-[26px]" onSubmit={submit}>
-      <div className="mb-5 flex items-center justify-between gap-2.5">
+    <form onSubmit={submit} className="relative">
+      <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <span className={eyebrow}>
-            {action === "CREATE"
-              ? "PELAPORAN LAPANGAN"
-              : isTechnician
-                ? "TINDAK LANJUT TEKNISI"
+            {isTechnician
+              ? "TINDAKAN TEKNISI"
+              : action === "CREATE"
+                ? "PELAPORAN BARU"
                 : "TINDAKAN OPERATOR"}
           </span>
           <h2 className="m-0 text-[21px] leading-snug font-semibold md:text-[23px]">
@@ -408,7 +425,7 @@ export function UpdateStatusDialog({
                   : (["RESOLVED"] as const)
               ).map((value) => (
                 <option key={value} value={value}>
-                  {labels[value]}
+                  {labels[value] || value}
                 </option>
               ))}
             </select>
@@ -533,12 +550,22 @@ export function UpdateStatusDialog({
                 setConfirmDiscard(false);
                 setPoint(value);
                 setSource("MANUAL");
+                const detected = getLocationGridAndSide(
+                  value.latitude,
+                  value.longitude
+                );
+                if (detected) {
+                  update(key, {
+                    side: detected.side,
+                    segmentCode: detected.code,
+                  });
+                }
               }}
             />
           </div>
           <p className={`${mutedText} mt-2`}>
             {point
-              ? `${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)} · ${
+              ? `${draft?.segmentCode || getLocationGridAndSide(point.latitude, point.longitude)?.code ? `Grid ${draft?.segmentCode || getLocationGridAndSide(point.latitude, point.longitude)?.code} · ` : ""}${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)} · ${
                   source === "GPS" ? "GPS" : "Pin manual"
                 }`
               : "Ketuk peta atau geser pin untuk menentukan lokasi."}
@@ -573,30 +600,26 @@ export function UpdateStatusDialog({
               className={btnSecondary}
               onClick={() => setConfirmDiscard(false)}
             >
-              Lanjut mengisi
+              Tetap isi formulir
             </button>
             <button
               type="button"
               className={btnDangerGhost}
               onClick={() => {
-                clear(key);
                 setConfirmDiscard(false);
                 onCancel();
               }}
             >
-              Ya, batalkan
+              Buang perubahan
             </button>
           </div>
         </section>
       )}
-      {attempt && !busy && confirmAbandon && (
-        <section
-          className={alertBox}
-          aria-label="Konfirmasi tinggalkan percobaan"
-        >
-          <strong>Hasil pengiriman mungkin belum pasti</strong>
-          <p className="mt-2 mb-0">
-            Transaksi {attempt.id} mungkin sudah tersimpan meskipun respons
+      {confirmAbandon && (
+        <section className={alertBox} aria-label="Konfirmasi status transaksi">
+          <strong>Hasil pengiriman belum pasti</strong>
+          <p className="mt-1 mb-0 break-all">
+            Transaksi {attempt?.id} mungkin sudah disimpan server walaupun tanda
             gagal diterima. Meninggalkan halaman ini tidak membatalkan transaksi
             di server. Periksa daftar dan riwayat terbaru sebelum membuat
             pengiriman baru agar tidak terjadi duplikasi.

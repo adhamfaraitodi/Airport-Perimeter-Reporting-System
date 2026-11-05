@@ -100,63 +100,59 @@ function PhotoItem({ image, label, onOpen }: PhotoItemProps) {
   return (
     <div
       ref={ref}
-      className="relative aspect-square min-h-24 overflow-hidden rounded-lg border border-[var(--rd-border)] bg-[var(--rd-bg)]"
+      className="relative flex aspect-square flex-col justify-end overflow-hidden rounded-lg border border-[var(--rd-border)] bg-[var(--rd-bg)]"
     >
-      {error ? (
-        <button
-          type="button"
-          onClick={() => {
-            setUrl(null);
-            setError("");
-            setRetry((value) => value + 1);
-          }}
-          className={`${button} flex h-full w-full items-center justify-center bg-transparent p-2 text-center text-xs text-[var(--rd-coral)]`}
-        >
-          {error} · Coba lagi
-        </button>
-      ) : url ? (
-        <button
-          type="button"
-          onClick={() => onOpen({ url, label })}
-          aria-label={`Perbesar ${label}`}
-          className={`${button} group relative block h-full w-full bg-transparent p-0`}
-        >
-          <img
-            src={url}
-            alt={label}
-            loading="lazy"
-            onError={() => setError("Foto gagal dimuat")}
-            className="block h-full w-full object-cover"
-          />
-          <span
-            aria-hidden="true"
-            className="absolute right-1.5 bottom-1.5 grid size-7 place-items-center rounded-full bg-black/55 text-white opacity-85 transition-opacity group-hover:opacity-100"
+      {url ? (
+        <>
+          <img src={url} alt={label} className="h-full w-full object-cover" />
+          <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-black/60 p-1.5 text-xs text-white">
+            <span className="truncate">{label}</span>
+            <button
+              type="button"
+              onClick={() => onOpen({ url, label })}
+              aria-label={`Buka foto ${label}`}
+              className={`${button} flex min-h-7 items-center gap-1 rounded bg-[var(--rd-surface)]/20 px-1.5 py-0.5 text-[10px] text-white hover:bg-[var(--rd-surface)]/40`}
+            >
+              <ZoomIn size={12} aria-hidden="true" />
+              Perbesar
+            </button>
+          </div>
+        </>
+      ) : error ? (
+        <div className="flex h-full flex-col items-center justify-center p-2 text-center text-xs">
+          <p className="m-0 mb-1 text-[var(--rd-coral)]">{error}</p>
+          <button
+            type="button"
+            className={`${button} text-[var(--rd-link)]`}
+            onClick={() => setRetry((x) => x + 1)}
           >
-            <ZoomIn size={15} />
-          </span>
-        </button>
+            Coba lagi
+          </button>
+        </div>
       ) : (
-        <Skeleton className="h-full w-full rounded-none" />
+        <Skeleton className="h-full w-full rounded-lg" />
       )}
     </div>
   );
 }
 
 function Photos({
-  images = [],
+  images,
   onOpen,
 }: {
   images?: ImageRef[];
   onOpen: (photo: { url: string; label: string }) => void;
 }) {
-  if (!images.length) return <p className={small}>Tidak ada foto.</p>;
+  if (!images || !images.length) {
+    return <p className={small}>Tidak ada foto yang dilampirkan.</p>;
+  }
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
       {images.map((image, index) => (
         <PhotoItem
           key={image.id}
           image={image}
-          label={(image as any).name || `Foto bukti ${index + 1}`}
+          label={`Foto ${index + 1}`}
           onOpen={onOpen}
         />
       ))}
@@ -170,21 +166,22 @@ export interface ReportDetailProps {
 }
 
 export function ReportDetail({ report, onBack }: ReportDetailProps) {
+  const dialog = useRef<HTMLDialogElement | null>(null);
   const [photo, setPhoto] = useState<{ url: string; label: string } | null>(
     null
   );
-  const dialog = useRef<HTMLDialogElement | null>(null);
 
   useEffect(() => {
-    if (!dialog.current) return;
-    if (photo && !dialog.current.open) dialog.current.showModal();
-    if (!photo && dialog.current.open) dialog.current.close();
+    if (photo && dialog.current && !dialog.current.open) {
+      dialog.current.showModal();
+    } else if (!photo && dialog.current?.open) {
+      dialog.current.close();
+    }
   }, [photo]);
 
-  const status = report.deletedAt ? "CLOSED" : report.status;
-  const state = states[status] || states.OPEN;
-  const Icon = state.icon;
   const findings = Array.isArray(report.findings) ? report.findings : [];
+  const status = report.deletedAt ? "CLOSED" : report.status;
+  const Icon = (states[status] || states.OPEN).icon;
   const history = [...(report.history || [])].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
@@ -222,6 +219,13 @@ export function ReportDetail({ report, onBack }: ReportDetailProps) {
               {findings.map((item) => item.partName).join(", ") ||
                 "Laporan Perimeter"}
             </h2>
+            {(report.segmentCode || report.side) && (
+              <p className={`${small} m-0 mt-0.5 font-medium text-[var(--rd-link)]`}>
+                {report.segmentCode ? `Grid ${report.segmentCode}` : ""}
+                {report.segmentCode && report.side ? " · " : ""}
+                {report.side ? `Sisi ${report.side}` : ""}
+              </p>
+            )}
             <p className={`${small} m-0 mt-1`}>
               Dilaporkan {timestamp(report.createdAt)} · Diperbarui{" "}
               {timestamp((report as any).updatedAt || report.createdAt)}
@@ -324,6 +328,8 @@ export function ReportDetail({ report, onBack }: ReportDetailProps) {
                   }}
                 />
                 <p className={`${small} mt-2 mb-0`}>
+                  {report.segmentCode ? `Grid ${report.segmentCode} · ` : ""}
+                  {report.side ? `Sisi ${report.side} · ` : ""}
                   {report.latitude.toFixed(6)}, {report.longitude.toFixed(6)} ·{" "}
                   {report.locationSource === "GPS" ? "GPS" : "Pin manual"}
                 </p>
