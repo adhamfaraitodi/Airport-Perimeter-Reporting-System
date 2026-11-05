@@ -356,7 +356,7 @@ export function UpdateStatusDialog({
   const overLimit = countText(narrative) > 2000;
 
   return (
-    <form onSubmit={submit} className="relative">
+    <form onSubmit={submit} className="relative p-4 sm:p-6 md:p-[26px]">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <span className={eyebrow}>
@@ -572,10 +572,6 @@ export function UpdateStatusDialog({
           </p>
         </section>
       )}
-      <p className="my-[22px] rounded-[7px] bg-[var(--rd-bg)] p-3 text-[10px] leading-[1.7] text-[var(--rd-muted)]">
-        Teks draft tersimpan di perangkat ini, khusus akun Anda. Foto dan lokasi
-        perlu dipilih ulang setelah halaman dimuat ulang.
-      </p>
       {error && (
         <div className={alertBox} role="alert">
           {error}

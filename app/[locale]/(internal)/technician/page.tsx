@@ -47,38 +47,30 @@ export default function TechnicianDashboardPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await getTechnicianDashboardDataAction();
-      if (!res.success) {
-        // Fallback for edge-case session lookup or client redirects
-        const session = await api.getSession();
-        if (!session) {
-          window.location.href = `/${locale}/login`;
-          return;
-        }
-        if (session.role !== "TECHNICIAN") {
-          window.location.href = `/${locale}/${
-            session.role === "OPERATOR" ? "operator" : "reports"
-          }`;
-          return;
-        }
-        setUser(session);
-        const data = await api.listReports();
-        setReports(data);
+      const session = await api.getSession();
+      if (!session) {
+        window.location.href = `/${locale}/login`;
         return;
       }
+      if (session.role !== "TECHNICIAN") {
+        window.location.href = `/${locale}/${
+          session.role === "OPERATOR" ? "operator" : "reports"
+        }`;
+        return;
+      }
+      setUser(session);
+      api.syncUser(session);
 
-      if (res.user) {
-        if (res.user.role !== "TECHNICIAN" && res.user.role !== "OPERATOR") {
-          window.location.href = `/${locale}/reports`;
-          return;
-        }
-        setUser(res.user);
-      }
-      if (res.reports) {
+      const res = await getTechnicianDashboardDataAction();
+      if (res.success && res.reports) {
         setReports(res.reports);
-      }
-      if (res.summary) {
-        setSummary(res.summary);
+        api.syncReports(res.reports);
+        if (res.summary) {
+          setSummary(res.summary);
+        }
+      } else {
+        const data = await api.listReports();
+        setReports(data);
       }
     } catch (e) {
       setError(message(e));

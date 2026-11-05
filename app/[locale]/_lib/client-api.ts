@@ -151,6 +151,18 @@ export async function setMockRole(_next: UserRole): Promise<void> {
 }
 
 export const api = {
+  syncReports: (newReports: ReportRecord[]) => {
+    reports.clear();
+    for (const r of newReports) {
+      reports.set(r.id, r);
+    }
+  },
+
+  syncUser: (sessionUser: SessionUser) => {
+    role = sessionUser.role;
+    users[sessionUser.role] = sessionUser;
+  },
+
   getSession: async (): Promise<SessionUser | null> => {
     try {
       const res = await authClient.getSession();
@@ -300,7 +312,20 @@ export const api = {
         }
       }
     } else {
-      const report = payload.reportId ? reports.get(payload.reportId) : undefined;
+      // Re-verify session role if currently set to REPORTER
+      if (role === "REPORTER") {
+        const sess = await api.getSession();
+        if (sess) {
+          role = sess.role;
+        }
+      }
+
+      let report = payload.reportId ? reports.get(payload.reportId) : undefined;
+      if (!report && payload.reportId) {
+        const fetched = await api.listReports();
+        report = fetched.find((r) => r.id === payload.reportId);
+      }
+
       if (role === "REPORTER" || !report || report.deletedAt) {
         fail("Tidak dapat memperbarui laporan.");
       }
