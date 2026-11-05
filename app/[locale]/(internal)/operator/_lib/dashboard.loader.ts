@@ -1,4 +1,4 @@
-import { isNull, sql } from "drizzle-orm";
+import { and, isNull, ne, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import type {
   DashboardStatusSummary,
@@ -15,60 +15,54 @@ export async function getDashboardMapData(): Promise<{
   summary: DashboardStatusSummary;
   markers: MapReportMarker[];
 }> {
-  // Query all reports for summary counts and active map markers
-  const allReports = await db
+  // 1. Efficient SQL aggregation for status summary counters
+  const [summaryRow] = await db
+    .select({
+      total: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NULL AND ${schema.reports.status} != 'CLOSED')::int`,
+      open: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NULL AND ${schema.reports.status} = 'OPEN')::int`,
+      inProgress: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NULL AND ${schema.reports.status} = 'IN_PROGRESS')::int`,
+      resolved: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NULL AND ${schema.reports.status} = 'RESOLVED')::int`,
+      closed: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NOT NULL OR ${schema.reports.status} = 'CLOSED')::int`,
+    })
+    .from(schema.reports);
+
+  // 2. Fetch only active reports for map markers (uses partial index reports_active_idx)
+  const activeReports = await db
     .select({
       id: schema.reports.id,
       status: schema.reports.status,
-      deletedAt: schema.reports.deletedAt,
       side: schema.reports.side,
       segmentCode: schema.reports.segmentCode,
       latitude: schema.reports.latitude,
       longitude: schema.reports.longitude,
     })
-    .from(schema.reports);
+    .from(schema.reports)
+    .where(
+      and(
+        isNull(schema.reports.deletedAt),
+        ne(schema.reports.status, "CLOSED")
+      )
+    );
 
-  let open = 0;
-  let inProgress = 0;
-  let resolved = 0;
-  let closed = 0;
-
-  const markers: MapReportMarker[] = [];
-
-  for (const r of allReports) {
-    if (r.deletedAt || r.status === "CLOSED") {
-      closed++;
-    } else if (r.status === "OPEN") {
-      open++;
-    } else if (r.status === "IN_PROGRESS") {
-      inProgress++;
-    } else if (r.status === "RESOLVED") {
-      resolved++;
-    }
-
-    // Only active reports become map markers
-    if (!r.deletedAt && r.status !== "CLOSED") {
-      const activeStatus = r.status as "OPEN" | "IN_PROGRESS" | "RESOLVED";
-      markers.push({
-        id: r.id,
-        sideLocation: r.side ? `Sisi ${r.side}` : r.segmentCode || "Perimeter",
-        latitude: r.latitude,
-        longitude: r.longitude,
-        status: activeStatus,
-        statusLabel: STATUS_LABELS[activeStatus] || "Baru",
-      });
-    }
-  }
-
-  const total = open + inProgress + resolved;
+  const markers: MapReportMarker[] = activeReports.map((r) => {
+    const activeStatus = r.status as "OPEN" | "IN_PROGRESS" | "RESOLVED";
+    return {
+      id: r.id,
+      sideLocation: r.side ? `Sisi ${r.side}` : r.segmentCode || "Perimeter",
+      latitude: r.latitude,
+      longitude: r.longitude,
+      status: activeStatus,
+      statusLabel: STATUS_LABELS[activeStatus] || "Baru",
+    };
+  });
 
   return {
     summary: {
-      total,
-      open,
-      inProgress,
-      resolved,
-      closed,
+      total: Number(summaryRow?.total || 0),
+      open: Number(summaryRow?.open || 0),
+      inProgress: Number(summaryRow?.inProgress || 0),
+      resolved: Number(summaryRow?.resolved || 0),
+      closed: Number(summaryRow?.closed || 0),
     },
     markers,
   };

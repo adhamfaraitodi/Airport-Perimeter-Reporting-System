@@ -63,6 +63,7 @@ function saveReportPhotoFile(
 
 /**
  * Fetch all reports with reporter, photos, and status history from PostgreSQL.
+ * Filters directly at the SQL layer when caller is a REPORTER to leverage reports_reporter_id_idx.
  */
 export async function getReportsAction(): Promise<{
   success: boolean;
@@ -73,8 +74,8 @@ export async function getReportsAction(): Promise<{
     const user = await verifySession();
     const userRole = (user as Record<string, unknown>).role as UserRole | undefined;
 
-    // Fetch reports
-    const reportRows = await db
+    // Fetch reports with SQL-level role filtering
+    const baseQuery = db
       .select({
         id: schema.reports.id,
         reporterId: schema.reports.reporterId,
@@ -94,14 +95,12 @@ export async function getReportsAction(): Promise<{
         reporterEmail: schema.user.email,
       })
       .from(schema.reports)
-      .leftJoin(schema.user, eq(schema.reports.reporterId, schema.user.id))
-      .orderBy(desc(schema.reports.createdAt));
+      .leftJoin(schema.user, eq(schema.reports.reporterId, schema.user.id));
 
-    // If reporter, filter only own reports
-    const filteredRows =
-      userRole === "REPORTER"
-        ? reportRows.filter((r) => r.reporterId === user.id)
-        : reportRows;
+    const filteredRows = await (userRole === "REPORTER"
+      ? baseQuery.where(eq(schema.reports.reporterId, user.id))
+      : baseQuery
+    ).orderBy(desc(schema.reports.createdAt));
 
     if (filteredRows.length === 0) {
       return { success: true, reports: [] };
@@ -198,6 +197,7 @@ export async function getReportsAction(): Promise<{
 
 /**
  * Commit a full submission (CREATE, STATUS update, or DELETE/close) to PostgreSQL.
+ * Uses atomic transactions and bulk photo batching for integrity.
  */
 export async function commitReportSubmissionAction(input: {
   payload: BeginSubmissionPayload;
@@ -231,34 +231,37 @@ export async function commitReportSubmissionAction(input: {
       const reportId = payload.id;
       const findingsJson = payload.findings || [];
 
-      // Insert new report
-      await db.insert(schema.reports).values({
-        id: reportId,
-        reporterId: user.id,
-        status: "OPEN",
-        side: payload.side || null,
-        segmentCode: payload.segmentCode || null,
-        latitude: payload.latitude!,
-        longitude: payload.longitude!,
-        locationSource: payload.locationSource || "MANUAL",
-        findings: findingsJson as any,
-        gpsMetadata: payload.gps || null,
-        narrative: payload.narrative,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-
-      // Insert initial photos
-      for (const photo of savedPhotos) {
-        await db.insert(schema.reportPhotos).values({
-          id: photo.id,
-          reportId,
-          photoType: "REPORT_INITIAL",
-          filePath: photo.filePath,
-          mimeType: photo.mimeType,
-          sizeBytes: photo.sizeBytes,
+      // Atomic transaction: Insert new report + batch insert initial photos
+      await db.transaction(async (tx) => {
+        await tx.insert(schema.reports).values({
+          id: reportId,
+          reporterId: user.id,
+          status: "OPEN",
+          side: payload.side || null,
+          segmentCode: payload.segmentCode || null,
+          latitude: payload.latitude!,
+          longitude: payload.longitude!,
+          locationSource: payload.locationSource || "MANUAL",
+          findings: findingsJson as any,
+          gpsMetadata: payload.gps || null,
+          narrative: payload.narrative,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         });
-      }
+
+        if (savedPhotos.length > 0) {
+          await tx.insert(schema.reportPhotos).values(
+            savedPhotos.map((photo) => ({
+              id: photo.id,
+              reportId,
+              photoType: "REPORT_INITIAL" as const,
+              filePath: photo.filePath,
+              mimeType: photo.mimeType,
+              sizeBytes: photo.sizeBytes,
+            }))
+          );
+        }
+      });
 
       // Dispatch notification
       const firstFinding = payload.findings?.[0];
@@ -302,42 +305,45 @@ export async function commitReportSubmissionAction(input: {
       }
 
       const historyId = crypto.randomUUID();
+      const now = new Date();
 
-      // Insert status history for soft close
-      await db.insert(schema.reportStatusHistory).values({
-        id: historyId,
-        reportId: report.id,
-        actorId: user.id,
-        previousStatus,
-        newStatus: "CLOSED",
-        narrative: payload.narrative,
-        createdAt: new Date(),
-      });
-
-      // Insert close proof photos
-      for (const photo of savedPhotos) {
-        await db.insert(schema.reportPhotos).values({
-          id: photo.id,
+      // Atomic transaction: Insert history + batch close photos + update report
+      await db.transaction(async (tx) => {
+        await tx.insert(schema.reportStatusHistory).values({
+          id: historyId,
           reportId: report.id,
-          historyId,
-          photoType: "SOFT_DELETE",
-          filePath: photo.filePath,
-          mimeType: photo.mimeType,
-          sizeBytes: photo.sizeBytes,
+          actorId: user.id,
+          previousStatus,
+          newStatus: "CLOSED",
+          narrative: payload.narrative,
+          createdAt: now,
         });
-      }
 
-      // Update report record
-      await db
-        .update(schema.reports)
-        .set({
-          status: "CLOSED",
-          deletedAt: new Date(),
-          deletedBy: user.id,
-          deletionReason: payload.narrative,
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.reports.id, report.id));
+        if (savedPhotos.length > 0) {
+          await tx.insert(schema.reportPhotos).values(
+            savedPhotos.map((photo) => ({
+              id: photo.id,
+              reportId: report.id,
+              historyId,
+              photoType: "SOFT_DELETE" as const,
+              filePath: photo.filePath,
+              mimeType: photo.mimeType,
+              sizeBytes: photo.sizeBytes,
+            }))
+          );
+        }
+
+        await tx
+          .update(schema.reports)
+          .set({
+            status: "CLOSED",
+            deletedAt: now,
+            deletedBy: user.id,
+            deletionReason: payload.narrative,
+            updatedAt: now,
+          })
+          .where(eq(schema.reports.id, report.id));
+      });
 
       // Notification
       const firstFinding = (report.findings as FindingItem[])?.[0];
@@ -361,39 +367,42 @@ export async function commitReportSubmissionAction(input: {
 
     if (payload.action === "STATUS" && payload.status) {
       const historyId = crypto.randomUUID();
+      const now = new Date();
 
-      // Insert status history
-      await db.insert(schema.reportStatusHistory).values({
-        id: historyId,
-        reportId: report.id,
-        actorId: user.id,
-        previousStatus,
-        newStatus: payload.status,
-        narrative: payload.narrative,
-        createdAt: new Date(),
-      });
-
-      // Insert status update photos
-      for (const photo of savedPhotos) {
-        await db.insert(schema.reportPhotos).values({
-          id: photo.id,
+      // Atomic transaction: Insert history + batch update photos + update report status
+      await db.transaction(async (tx) => {
+        await tx.insert(schema.reportStatusHistory).values({
+          id: historyId,
           reportId: report.id,
-          historyId,
-          photoType: "STATUS_UPDATE",
-          filePath: photo.filePath,
-          mimeType: photo.mimeType,
-          sizeBytes: photo.sizeBytes,
+          actorId: user.id,
+          previousStatus,
+          newStatus: payload.status!,
+          narrative: payload.narrative,
+          createdAt: now,
         });
-      }
 
-      // Update report status
-      await db
-        .update(schema.reports)
-        .set({
-          status: payload.status,
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.reports.id, report.id));
+        if (savedPhotos.length > 0) {
+          await tx.insert(schema.reportPhotos).values(
+            savedPhotos.map((photo) => ({
+              id: photo.id,
+              reportId: report.id,
+              historyId,
+              photoType: "STATUS_UPDATE" as const,
+              filePath: photo.filePath,
+              mimeType: photo.mimeType,
+              sizeBytes: photo.sizeBytes,
+            }))
+          );
+        }
+
+        await tx
+          .update(schema.reports)
+          .set({
+            status: payload.status,
+            updatedAt: now,
+          })
+          .where(eq(schema.reports.id, report.id));
+      });
 
       // Notification
       const firstFinding = (report.findings as FindingItem[])?.[0];

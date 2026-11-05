@@ -481,82 +481,78 @@ export default function ManageAccountsPage() {
           </div>
         </div>
 
-        {/* Metrics Summary Cards */}
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-[var(--rd-muted)]">
-                Total Akun
-              </span>
-              <span className="grid size-8 place-items-center rounded-xl bg-[var(--rd-active)] text-[var(--rd-link)]">
-                <Users size={16} aria-hidden="true" />
-              </span>
-            </div>
-            <div className="mt-2 text-2xl font-bold">
-              {loading ? <Skeleton className="h-8 w-12 rounded" /> : totalAccounts}
-            </div>
-            <span className="text-[11px] text-[var(--rd-muted)]">
-              Terdaftar di sistem
+        {/* Summary Cards */}
+        <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 md:mb-6">
+          <div className="flex items-center gap-3.5 rounded-[14px] border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4">
+            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--rd-active)] text-[var(--rd-link)]">
+              <Users size={22} strokeWidth={1.8} aria-hidden="true" />
             </span>
-          </div>
-
-          <div className="rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-[var(--rd-muted)]">
-                Operator Aktif
+            <div>
+              <span className="block text-xs text-[var(--rd-muted)]">
+                Total Akun Terdaftar
               </span>
-              <span className="grid size-8 place-items-center rounded-xl bg-[var(--rd-link)]/15 text-[var(--rd-link)]">
-                <ShieldCheck size={16} aria-hidden="true" />
-              </span>
-            </div>
-            <div className="mt-2 text-2xl font-bold">
               {loading ? (
-                <Skeleton className="h-8 w-12 rounded" />
+                <Skeleton className="mt-1 h-6 w-20 rounded-md" />
               ) : (
-                totalOperators
+                <strong className="text-xl font-semibold text-[var(--rd-text)]">
+                  {totalAccounts} <span className="text-xs font-normal text-[var(--rd-muted)]">pengguna</span>
+                </strong>
               )}
             </div>
-            <span className="text-[11px] text-[var(--rd-muted)]">
-              Hak kelola penuh
-            </span>
           </div>
 
-          <div className="rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-[var(--rd-muted)]">
-                Petugas Lapangan
+          <div className="flex items-center gap-3.5 rounded-[14px] border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4">
+            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--rd-active)] text-[var(--rd-link)]">
+              <ShieldCheck size={22} strokeWidth={1.8} aria-hidden="true" />
+            </span>
+            <div>
+              <span className="block text-xs text-[var(--rd-muted)]">
+                Operator Perimeter
               </span>
-              <span className="grid size-8 place-items-center rounded-xl bg-[var(--rd-brown)]/15 text-[var(--rd-brown)]">
-                <Wrench size={16} aria-hidden="true" />
-              </span>
-            </div>
-            <div className="mt-2 text-2xl font-bold">
               {loading ? (
-                <Skeleton className="h-8 w-12 rounded" />
+                <Skeleton className="mt-1 h-6 w-20 rounded-md" />
               ) : (
-                totalFieldStaff
+                <strong className="text-xl font-semibold text-[var(--rd-text)]">
+                  {totalOperators} <span className="text-xs font-normal text-[var(--rd-muted)]">operator</span>
+                </strong>
               )}
             </div>
-            <span className="text-[11px] text-[var(--rd-muted)]">
-              Pelapor & Teknisi
-            </span>
           </div>
 
-          <div className="rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-[var(--rd-muted)]">
-                Status Aktif
-              </span>
-              <span className="grid size-8 place-items-center rounded-xl bg-[var(--rd-lime)]/15 text-[var(--rd-lime)]">
-                <UserCheck size={16} aria-hidden="true" />
-              </span>
-            </div>
-            <div className="mt-2 text-2xl font-bold">
-              {loading ? <Skeleton className="h-8 w-12 rounded" /> : totalActive}
-            </div>
-            <span className="text-[11px] text-[var(--rd-muted)]">
-              Siap bertugas
+          <div className="flex items-center gap-3.5 rounded-[14px] border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4">
+            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--rd-brown)]/15 text-[var(--rd-brown)]">
+              <Wrench size={21} strokeWidth={1.8} aria-hidden="true" />
             </span>
+            <div>
+              <span className="block text-xs text-[var(--rd-muted)]">
+                Pelapor & Teknisi
+              </span>
+              {loading ? (
+                <Skeleton className="mt-1 h-6 w-24 rounded-md" />
+              ) : (
+                <strong className="text-xl font-semibold text-[var(--rd-text)]">
+                  {totalFieldStaff} <span className="text-xs font-normal text-[var(--rd-muted)]">personel lapangan</span>
+                </strong>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3.5 rounded-[14px] border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4">
+            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--rd-lime)]/15 text-[var(--rd-lime)]">
+              <UserCheck size={22} strokeWidth={1.8} aria-hidden="true" />
+            </span>
+            <div>
+              <span className="block text-xs text-[var(--rd-muted)]">
+                Status Akun Aktif
+              </span>
+              {loading ? (
+                <Skeleton className="mt-1 h-6 w-24 rounded-md" />
+              ) : (
+                <strong className="text-xl font-semibold text-[var(--rd-text)]">
+                  {totalActive} <span className="text-xs font-normal text-[var(--rd-muted)]">dari {totalAccounts} akun</span>
+                </strong>
+              )}
+            </div>
           </div>
         </div>
 

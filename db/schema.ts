@@ -73,7 +73,6 @@ export const user = pgTable(
       .defaultNow(),
   },
   (table) => [
-    uniqueIndex("user_nip_idx").on(table.nip),
     index("user_role_idx").on(table.role),
   ]
 );
@@ -233,6 +232,7 @@ export const reports = pgTable(
   },
   (table) => [
     index("reports_reporter_id_idx").on(table.reporterId),
+    index("reports_deleted_by_idx").on(table.deletedBy),
     index("reports_status_idx").on(table.status),
     index("reports_created_at_idx").on(table.createdAt),
     index("reports_findings_gin_idx").using("gin", table.findings),
@@ -259,7 +259,10 @@ export const reportStatusHistory = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [index("report_status_history_report_id_idx").on(table.reportId)]
+  (table) => [
+    index("report_status_history_report_id_idx").on(table.reportId),
+    index("report_status_history_actor_id_idx").on(table.actorId),
+  ]
 );
 
 export const reportPhotos = pgTable(
@@ -302,7 +305,9 @@ export const notification = pgTable(
   "notification",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    reportId: text("report_id"),
+    reportId: uuid("report_id").references(() => reports.id, {
+      onDelete: "cascade",
+    }),
     category: notificationCategoryEnum("category").notNull().default("SYSTEM"),
     status: text("status"),
     templateKey: text("template_key").notNull().default("SYSTEM_ALERT"),
@@ -345,7 +350,6 @@ export const notificationRead = pgTable(
       table.userId,
       table.notificationId
     ),
-    index("notification_read_user_id_idx").on(table.userId),
   ]
 );
 
