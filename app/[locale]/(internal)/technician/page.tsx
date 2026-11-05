@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { CheckCircle2, Clock, ClipboardList, Wrench } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   api,
-  setMockRole,
   type ReportRecord,
   type SessionUser,
 } from "../../_lib/client-api";
@@ -23,6 +23,8 @@ import { ReportHistoryPanel } from "../../_components/report-history-panel";
 const inlineAlertButton = `ml-2.5 rounded-md bg-[var(--rd-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--rd-coral)] disabled:cursor-not-allowed disabled:opacity-55 ${focusRing}`;
 
 export default function TechnicianDashboardPage() {
+  const params = useParams<{ locale?: string }>();
+  const locale = params?.locale || "id";
   const { theme, dark, toggleTheme } = useTheme();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [reports, setReports] = useState<ReportRecord[]>([]);
@@ -42,8 +44,11 @@ export default function TechnicianDashboardPage() {
     setLoading(true);
     setError("");
     try {
-      await setMockRole("TECHNICIAN");
       const session = await api.getSession();
+      if (!session) {
+        window.location.href = `/${locale}/login`;
+        return;
+      }
       setUser(session);
       const data = await api.listReports();
       setReports(data);
@@ -52,7 +57,7 @@ export default function TechnicianDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     load();

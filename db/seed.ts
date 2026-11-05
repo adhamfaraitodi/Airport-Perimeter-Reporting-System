@@ -4,27 +4,11 @@ import { eq } from "drizzle-orm";
 
 const DEFAULT_USERS = [
   {
-    nip: "199001012020011001",
-    name: "Budi Santoso",
-    role: "REPORTER" as const,
-    unit: "Operasional Bandara",
-    phone: "081234567801",
-    password: "password123",
-  },
-  {
-    nip: "198505152010121002",
-    name: "Siti Rahma",
+    nip: "1234567",
+    name: "Operator Admin",
     role: "OPERATOR" as const,
     unit: "Unit Pengamanan Bandara",
-    phone: "081234567802",
-    password: "password123",
-  },
-  {
-    nip: "198808202015021003",
-    name: "Agus Setiawan",
-    role: "TECHNICIAN" as const,
-    unit: "Fasilitas & Pemeliharaan",
-    phone: "081234567803",
+    phone: "081234567800",
     password: "password123",
   },
 ];

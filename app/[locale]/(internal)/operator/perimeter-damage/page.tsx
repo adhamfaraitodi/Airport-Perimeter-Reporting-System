@@ -17,7 +17,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   api,
-  setMockRole,
   type DamageItem,
   type SessionUser,
 } from "../../../_lib/client-api";
@@ -116,8 +115,11 @@ export default function PerimeterDamageMasterPage() {
     (async () => {
       setLoading(true);
       try {
-        await setMockRole("OPERATOR");
         const session = await api.getSession();
+        if (!session) {
+          window.location.href = `/${locale}/login`;
+          return;
+        }
         if (active) setUser(session);
       } catch (e) {
         if (active) toast.error(message(e));

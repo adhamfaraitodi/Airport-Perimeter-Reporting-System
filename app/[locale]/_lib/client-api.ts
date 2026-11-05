@@ -89,7 +89,7 @@ export interface BeginSubmissionPayload {
 
 export const isMock = true;
 
-let role: UserRole = "REPORTER";
+let role: UserRole = "OPERATOR";
 
 function readStoredRole(): UserRole {
   if (typeof window === "undefined") return role;
@@ -106,24 +106,24 @@ function readStoredRole(): UserRole {
 
 const users: Record<UserRole, SessionUser> = {
   REPORTER: {
-    id: "a948831d-be68-4b58-be90-8ffb21a1c924",
-    name: "Budi Santoso",
-    email: "199001012020011001@perimeter.yia.id",
-    nip: "199001012020011001",
+    id: "usr-admin-reporter",
+    name: "Operator Admin",
+    email: "1234567@perimeter.yia.id",
+    nip: "1234567",
     role: "REPORTER",
   },
   OPERATOR: {
-    id: "5c53d0ac-b8d6-42bc-ad95-1e853d00f14e",
-    name: "Siti Rahma",
-    email: "198505152010121002@perimeter.yia.id",
-    nip: "198505152010121002",
+    id: "usr-admin-operator",
+    name: "Operator Admin",
+    email: "1234567@perimeter.yia.id",
+    nip: "1234567",
     role: "OPERATOR",
   },
   TECHNICIAN: {
-    id: "95c21624-7b6c-421a-b888-d813ebda26a8",
-    name: "Agus Setiawan",
-    email: "198808202015021003@perimeter.yia.id",
-    nip: "198808202015021003",
+    id: "usr-admin-technician",
+    name: "Operator Admin",
+    email: "1234567@perimeter.yia.id",
+    nip: "1234567",
     role: "TECHNICIAN",
   },
 };
@@ -155,22 +155,12 @@ const transitions: Record<LifecycleStatus, LifecycleStatus[]> = {
   RESOLVED: ["OPEN"],
 };
 
-export async function setMockRole(next: UserRole): Promise<void> {
-  if (!isMock || !users[next]) {
-    fail("Pergantian role hanya tersedia dalam demo lokal.");
-  }
-  role = next;
-  if (typeof window !== "undefined") {
-    try {
-      localStorage.setItem("perimeter-mock-role", next);
-    } catch {
-      /* Ignore storage access errors */
-    }
-  }
+export async function setMockRole(_next: UserRole): Promise<void> {
+  // No-op: Authentication is strictly enforced via PostgreSQL & Better-Auth
 }
 
 export const api = {
-  getSession: async (): Promise<SessionUser> => {
+  getSession: async (): Promise<SessionUser | null> => {
     try {
       const res = await authClient.getSession();
       const sessionUser = res?.data?.user as Record<string, unknown> | undefined;
@@ -183,8 +173,8 @@ export const api = {
         role = resolvedRole;
         const activeUser: SessionUser = {
           id: sessionUser.id,
-          name: (sessionUser.name as string) || "Pengguna",
-          email: (sessionUser.email as string) || "",
+          name: (sessionUser.name as string) || "-",
+          email: (sessionUser.email as string) || "-",
           role: resolvedRole,
           nip: (sessionUser.nip as string) || undefined,
           phone: (sessionUser.phone as string) || undefined,
@@ -196,10 +186,9 @@ export const api = {
         return clone(activeUser);
       }
     } catch {
-      /* Fallback to local demo session if Better-Auth endpoint is unavailable */
+      /* Better-Auth session lookup failed */
     }
-    const activeRole = readStoredRole();
-    return clone(users[activeRole]);
+    return null;
   },
 
   listReports: async (): Promise<ReportRecord[]> =>

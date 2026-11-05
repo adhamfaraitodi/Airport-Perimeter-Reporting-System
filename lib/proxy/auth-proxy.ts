@@ -88,7 +88,7 @@ export async function resolveProxySession(request: NextRequest): Promise<{
 /**
  * Child proxy handler invoked by root `proxy.ts`.
  * Handles Better-Auth session checks, `/dashboard` alias routing,
- * login redirect for authenticated users, and Role-Based Access Control (RBAC).
+ * login redirect for unauthenticated users, and Role-Based Access Control (RBAC).
  */
 export async function handleAuthProxy(
   request: NextRequest,
@@ -98,11 +98,6 @@ export async function handleAuthProxy(
   const { pathname, search } = request.nextUrl;
 
   const { isAuthenticated, role } = await resolveProxySession(request);
-
-  // Enforce strict redirect to /login in production or when NEXT_PUBLIC_REQUIRE_AUTH="true"
-  const enforceAuthRedirect =
-    process.env.NEXT_PUBLIC_REQUIRE_AUTH === "true" ||
-    process.env.NODE_ENV === "production";
 
   // 1. Legacy `/[locale]/dashboard` alias -> redirect to role-appropriate home
   if (routeSegment === "dashboard") {
@@ -125,12 +120,12 @@ export async function handleAuthProxy(
     return NextResponse.next();
   }
 
-  // 3. Protected routes: check authentication when auth enforcement is enabled
+  // 3. Protected routes: ALWAYS enforce authentication -> kick unauthenticated to login
   const isProtected = (PROTECTED_ROUTE_SEGMENTS as readonly string[]).includes(
     routeSegment
   );
 
-  if (isProtected && !isAuthenticated && enforceAuthRedirect) {
+  if (isProtected && !isAuthenticated) {
     const loginUrl = new URL(`/${locale}/login`, request.url);
     loginUrl.searchParams.set("callbackUrl", `${pathname}${search}`);
     return NextResponse.redirect(loginUrl);

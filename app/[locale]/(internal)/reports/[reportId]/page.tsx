@@ -29,6 +29,10 @@ export default function ReportDetailPage() {
     setLoading(true);
     Promise.all([api.getSession(), api.listReports()])
       .then(([session, items]) => {
+        if (!session) {
+          window.location.href = `/${locale}/login`;
+          return;
+        }
         setUser(session);
         const found = items.find((r) => r.id === reportId) || null;
         setReport(found);

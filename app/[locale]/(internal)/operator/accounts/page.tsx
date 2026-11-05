@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -21,7 +21,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   api,
-  setMockRole,
   type SessionUser,
   type UserRole,
 } from "../../../_lib/client-api";
@@ -129,8 +128,11 @@ export default function ManageAccountsPage() {
     (async () => {
       setLoading(true);
       try {
-        await setMockRole("OPERATOR");
         const session = await api.getSession();
+        if (!session) {
+          window.location.href = `/${locale}/login`;
+          return;
+        }
         if (active) setUser(session);
       } catch (e) {
         if (active) toast.error(message(e));
@@ -251,6 +253,12 @@ export default function ManageAccountsPage() {
   function handleSaveAccountModal(e: FormEvent) {
     e.preventDefault();
     if (!accountModal) return;
+
+    const cleanedPhone = accountModal.phone.trim();
+    if (!cleanedPhone || cleanedPhone.length < 10 || cleanedPhone.length > 13) {
+      toast.error("Nomor kontak telepon harus berupa angka antara 10 sampai 13 digit.");
+      return;
+    }
 
     try {
       if (
@@ -783,7 +791,7 @@ export default function ManageAccountsPage() {
                   <input
                     type="text"
                     required
-                    placeholder="Contoh: Budi Santoso"
+                    placeholder="Contoh: Nama Lengkap"
                     value={accountModal.name}
                     onChange={(e) => {
                       setConfirmDiscardAccount(false);
@@ -815,13 +823,14 @@ export default function ManageAccountsPage() {
                   <input
                     type="tel"
                     required
-                    placeholder="Contoh: 0812-3456-7890"
+                    maxLength={13}
+                    placeholder="Contoh: 089999999999"
                     value={accountModal.phone}
                     onChange={(e) => {
                       setConfirmDiscardAccount(false);
                       setAccountModal({
                         ...accountModal,
-                        phone: e.target.value,
+                        phone: e.target.value.replace(/\D/g, "").slice(0, 13),
                       });
                     }}
                     className={fieldControl}

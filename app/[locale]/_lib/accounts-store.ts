@@ -23,72 +23,9 @@ export const roleLabels: Record<UserRole, string> = {
   TECHNICIAN: "Teknisi",
 };
 
-const defaultAccounts: ManagedAccount[] = [
-  {
-    id: "5c53d0ac-b8d6-42bc-ad95-1e853d00f14e",
-    nip: "198505152010121002",
-    name: "Siti Rahma",
-    email: "198505152010121002@perimeter.yia.id",
-    phone: "0811-2640-101",
-    avatarUrl: null,
-    role: "OPERATOR",
-    unit: "Airport Operation Control Center (AOCC)",
-    status: "ACTIVE",
-    createdAt: "2026-01-10T08:00:00.000Z",
-  },
-  {
-    id: "a948831d-be68-4b58-be90-8ffb21a1c924",
-    nip: "199001012020011001",
-    name: "Budi Santoso",
-    email: "199001012020011001@perimeter.yia.id",
-    phone: "0812-3456-7890",
-    avatarUrl: null,
-    role: "REPORTER",
-    unit: "Airport Security (AVSEC)",
-    status: "ACTIVE",
-    createdAt: "2026-01-12T09:15:00.000Z",
-  },
-  {
-    id: "95c21624-7b6c-421a-b888-d813ebda26a8",
-    nip: "198808202015021003",
-    name: "Agus Setiawan",
-    email: "198808202015021003@perimeter.yia.id",
-    phone: "0813-8899-7766",
-    avatarUrl: null,
-    role: "TECHNICIAN",
-    unit: "Airport Maintenance & Civil",
-    status: "ACTIVE",
-    createdAt: "2026-01-15T10:30:00.000Z",
-  },
-  {
-    id: "usr-avsec-03",
-    nip: "19970809202204",
-    name: "Rina Wulandari",
-    email: "rina.wulandari@injourneyairports.id",
-    phone: "0813-5566-7788",
-    avatarUrl: null,
-    role: "REPORTER",
-    unit: "Patroli Perimeter & Airside",
-    status: "ACTIVE",
-    createdAt: "2026-02-18T13:20:00.000Z",
-  },
-  {
-    id: "usr-tech-02",
-    nip: "19930529201905",
-    name: "Hendra Wijaya",
-    email: "hendra.wijaya@injourneyairports.id",
-    phone: "0815-4433-2211",
-    avatarUrl: null,
-    role: "TECHNICIAN",
-    unit: "Airport Maintenance & Civil",
-    status: "INACTIVE",
-    createdAt: "2026-03-01T11:00:00.000Z",
-  },
-];
+const defaultAccounts: ManagedAccount[] = [];
 
-const defaultPhoneById = new Map(
-  defaultAccounts.map((acc) => [acc.id, acc.phone])
-);
+const defaultPhoneById = new Map<string, string>();
 
 export interface AccountInput {
   nip: string;
@@ -120,7 +57,7 @@ interface AccountsState {
 export const useAccountsStore = create<AccountsState>()(
   persist(
     (set, get) => ({
-      accounts: defaultAccounts,
+      accounts: [],
 
       addAccount: (input) => {
         const nip = input.nip.trim();
@@ -247,12 +184,12 @@ export const useAccountsStore = create<AccountsState>()(
 
       resetToDefault: () => {
         set({
-          accounts: defaultAccounts.map((account) => ({ ...account })),
+          accounts: [],
         });
       },
     }),
     {
-      name: "perimeter-accounts-master-v3",
+      name: "perimeter-accounts-master-v4",
       merge: (persistedState, currentState) => {
         const typed = persistedState as Partial<AccountsState> | undefined;
         if (!typed?.accounts) return currentState;

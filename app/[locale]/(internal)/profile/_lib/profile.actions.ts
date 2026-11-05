@@ -46,16 +46,10 @@ export async function getProfileAction(): Promise<{
     const reqHeaders = await headers();
     const session = await auth.api.getSession({ headers: reqHeaders }).catch(() => null);
 
-    let targetUserId = session?.user?.id;
+    const targetUserId = session?.user?.id;
 
-    // Fallback if running with mock role in development
     if (!targetUserId) {
-      // Find first user or default reporter
-      const fallback = await db.query.user.findFirst();
-      if (!fallback) {
-        return { success: false, errorMessage: "Pengguna tidak ditemukan." };
-      }
-      targetUserId = fallback.id;
+      return { success: false, errorMessage: "Sesi pengguna tidak valid. Silakan login kembali." };
     }
 
     const record = await db.query.user.findFirst({
@@ -105,14 +99,10 @@ export async function updateProfileAction(
     const reqHeaders = await headers();
     const session = await auth.api.getSession({ headers: reqHeaders }).catch(() => null);
 
-    let targetUserId = session?.user?.id;
+    const targetUserId = session?.user?.id;
 
     if (!targetUserId) {
-      const fallback = await db.query.user.findFirst();
-      if (!fallback) {
-        return { success: false, errorMessage: "Sesi pengguna tidak valid." };
-      }
-      targetUserId = fallback.id;
+      return { success: false, errorMessage: "Sesi pengguna tidak valid. Silakan login kembali." };
     }
 
     const existing = await db.query.user.findFirst({

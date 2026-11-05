@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import {
   api,
-  setMockRole,
   type ReportRecord,
   type SessionUser,
 } from "../../_lib/client-api";
@@ -14,6 +14,8 @@ import { CreateReportDialog } from "./_components/create-report-dialog";
 import { ReportDetail } from "./[reportId]/_components/report-detail";
 
 export default function ReportsPage() {
+  const params = useParams<{ locale?: string }>();
+  const locale = params?.locale || "id";
   const [user, setUser] = useState<SessionUser | null>(null);
   const [reports, setReports] = useState<ReportRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,8 +33,11 @@ export default function ReportsPage() {
     setLoading(true);
     setError("");
     try {
-      await setMockRole("REPORTER");
       const session = await api.getSession();
+      if (!session) {
+        window.location.href = `/${locale}/login`;
+        return;
+      }
       setUser(session);
       const data = await api.listReports();
       setReports(data);
@@ -41,7 +46,7 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     load();

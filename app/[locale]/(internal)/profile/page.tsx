@@ -104,6 +104,11 @@ export default function ProfilePage() {
 
         if (!active) return;
 
+        if (!session) {
+          window.location.href = `/${locale}/login`;
+          return;
+        }
+
         setUser(session);
         setReports(reportItems);
 
@@ -209,8 +214,8 @@ export default function ProfilePage() {
       toast.error("Nama lengkap tidak boleh kosong.");
       return;
     }
-    if (!cleanedPhone) {
-      toast.error("Nomor kontak telepon wajib diisi.");
+    if (!cleanedPhone || cleanedPhone.length < 10 || cleanedPhone.length > 13) {
+      toast.error("Nomor kontak telepon harus berupa angka antara 10 sampai 13 digit.");
       return;
     }
 
@@ -283,10 +288,10 @@ export default function ProfilePage() {
     (r) => !r.deletedAt && r.status === "RESOLVED"
   ).length;
 
-  const displayName = name.trim() || dbProfile?.name || user?.name || "Pengguna";
-  const displayUnit = dbProfile?.unit || user?.unit || "Operasional Bandara";
+  const displayName = name.trim() || dbProfile?.name || user?.name || "-";
+  const displayUnit = dbProfile?.unit || user?.unit || "-";
   const displayNip = dbProfile?.nip || user?.nip || "-";
-  const displayPhone = phone.trim() || dbProfile?.phone || user?.phone || "Belum diatur";
+  const displayPhone = phone.trim() || dbProfile?.phone || user?.phone || "-";
   const isAccountActive = dbProfile?.status !== "INACTIVE";
 
   return (
@@ -721,9 +726,10 @@ export default function ProfilePage() {
                         id="profile-phone"
                         type="tel"
                         required
+                        maxLength={13}
                         value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="Contoh: 0812-3456-7890"
+                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 13))}
+                        placeholder="Contoh: 089999999999"
                         className={`${fieldControl} !mt-0 font-mono`}
                       />
                     )}
