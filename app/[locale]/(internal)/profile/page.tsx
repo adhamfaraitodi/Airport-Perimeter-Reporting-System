@@ -109,11 +109,18 @@ export default function ProfilePage() {
           return;
         }
 
-        setUser(session);
         setReports(reportItems);
 
         if (profileRes.success && profileRes.user) {
           const p = profileRes.user;
+          setUser({
+            ...session,
+            name: p.name,
+            phone: p.phone || undefined,
+            unit: p.unit || undefined,
+            image: p.image || undefined,
+            signatureUrl: p.signatureUrl || undefined,
+          });
           setDbProfile(p);
           setName(p.name);
           setPhone(p.phone || "");
@@ -239,6 +246,19 @@ export default function ProfilePage() {
       setSignatureUrl(res.user.signatureUrl || null);
       setAvatarPayload(undefined);
       setSignaturePayload(undefined);
+
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              name: res.user!.name,
+              phone: res.user!.phone || undefined,
+              unit: res.user!.unit || undefined,
+              image: res.user!.image || undefined,
+              signatureUrl: res.user!.signatureUrl || undefined,
+            }
+          : null
+      );
 
       // Sync local accounts store if available
       updateStoreProfile(user.id, {

@@ -1,4 +1,5 @@
 import { dispatchReportNotificationAction } from "./notifications.actions";
+import { getProfileAction } from "../(internal)/profile/_lib/profile.actions";
 import { authClient } from "@/lib/auth-client";
 import damageCatalog from "../_data/damage-catalog.json";
 
@@ -182,6 +183,16 @@ export const api = {
           image: (sessionUser.image as string) || undefined,
           signatureUrl: (sessionUser.signatureUrl as string) || undefined,
         };
+        if (!activeUser.image) {
+          try {
+            const p = await getProfileAction();
+            if (p.success && p.user?.image) {
+              activeUser.image = p.user.image;
+            }
+          } catch {
+            /* ignore */
+          }
+        }
         users[resolvedRole] = activeUser;
         return clone(activeUser);
       }

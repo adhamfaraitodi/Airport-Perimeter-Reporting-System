@@ -1,6 +1,7 @@
 "use client";
 
 import { getNotificationsAction, markNotificationReadAction, markAllNotificationsReadAction } from "../_lib/notifications.actions";
+import { getProfileAction } from "../(internal)/profile/_lib/profile.actions";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -101,6 +102,23 @@ export function AppHeader({
   const [dataMasterOpen, setDataMasterOpen] = useState(false);
   const [mobileDataMasterOpen, setMobileDataMasterOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [dbAvatarUrl, setDbAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (!user?.image && user?.id) {
+      getProfileAction()
+        .then((res) => {
+          if (active && res.success && res.user?.image) {
+            setDbAvatarUrl(res.user.image);
+          }
+        })
+        .catch(() => {});
+    }
+    return () => {
+      active = false;
+    };
+  }, [user?.id, user?.image]);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifFilter, setNotifFilter] = useState<"ALL" | "UNREAD">("ALL");
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -122,7 +140,7 @@ export function AppHeader({
     user?.name?.trim() ||
     user?.email ||
     "Pengguna";
-  const avatarUrl = managedAccount?.avatarUrl || null;
+  const avatarUrl = user?.image || dbAvatarUrl || (user as { avatarUrl?: string | null })?.avatarUrl || managedAccount?.avatarUrl || null;
 
   const unreadCount = notifications.filter((n) => !n.read).length;
   const showUnreadDot =
@@ -541,7 +559,7 @@ export function AppHeader({
                   <img
                     src={avatarUrl}
                     alt={displayName}
-                    className="size-9 shrink-0 rounded-xl object-cover shadow-xs sm:size-10 sm:rounded-2xl"
+                    className="size-9 shrink-0 rounded-full object-cover shadow-xs sm:size-10 sm:rounded-full"
                   />
                 ) : (
                   <span
