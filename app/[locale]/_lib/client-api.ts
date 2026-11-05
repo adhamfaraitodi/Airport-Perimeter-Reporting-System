@@ -1,5 +1,10 @@
 import { dispatchReportNotificationAction } from "./notifications.actions";
 import { getProfileAction } from "../(internal)/profile/_lib/profile.actions";
+import {
+  getReportsAction,
+  commitReportSubmissionAction,
+  type UploadedFilePayload,
+} from "../(internal)/operator/_lib/operator-reports.actions";
 import { authClient } from "@/lib/auth-client";
 import damageCatalog from "../_data/damage-catalog.json";
 
@@ -79,6 +84,7 @@ export interface BeginSubmissionPayload {
   expectedStatus?: LifecycleStatus;
   status?: LifecycleStatus;
   side?: string;
+  segmentCode?: string;
   findings?: FindingItem[];
   narrative: string;
   latitude?: number;
@@ -88,22 +94,9 @@ export interface BeginSubmissionPayload {
   expectedImageIds: string[];
 }
 
-export const isMock = true;
+export const isMock = false;
 
 let role: UserRole = "OPERATOR";
-
-function readStoredRole(): UserRole {
-  if (typeof window === "undefined") return role;
-  try {
-    const saved = localStorage.getItem("perimeter-mock-role");
-    if (saved === "OPERATOR" || saved === "REPORTER" || saved === "TECHNICIAN") {
-      role = saved;
-    }
-  } catch {
-    /* Ignore storage access errors */
-  }
-  return role;
-}
 
 const users: Record<UserRole, SessionUser> = {
   REPORTER: {
@@ -128,9 +121,6 @@ const users: Record<UserRole, SessionUser> = {
     role: "TECHNICIAN",
   },
 };
-
-const initialImages: Array<[string, string]> = [];
-const initialReports: ReportRecord[] = [];
 
 const reports = new Map<string, ReportRecord>();
 const submissions = new Map<
@@ -202,14 +192,25 @@ export const api = {
     return null;
   },
 
-  listReports: async (): Promise<ReportRecord[]> =>
-    clone(
+  listReports: async (): Promise<ReportRecord[]> => {
+    try {
+      const res = await getReportsAction();
+      if (res.success && res.reports) {
+        reports.clear();
+        for (const r of res.reports) {
+          reports.set(r.id, r);
+        }
+        return res.reports;
+      }
+    } catch {
+      /* Fallback to memory cache */
+    }
+    return clone(
       [...reports.values()].filter(
-        (r) =>
-          role !== "REPORTER" ||
-          r.reporterId === users[role].id
+        (r) => role !== "REPORTER" || r.reporterId === users[role].id
       )
-    ),
+    );
+  },
 
   beginSubmission: async (
     payload: BeginSubmissionPayload
@@ -299,7 +300,6 @@ export const api = {
   uploadImage: async ({
     submissionId,
     imageId,
-    name,
     mimeType,
     base64,
   }: {
@@ -329,114 +329,58 @@ export const api = {
     const submission = submissions.get(submissionId);
     if (!submission || submission.committed) fail("Sesi tidak dapat disimpan.");
     const p = submission.payload;
-    const now = new Date().toISOString();
-    const evidence = p.expectedImageIds.map((id) => ({
-      id,
-      url: images.get(id),
-    }));
-    let report: ReportRecord;
-    if (p.action === "CREATE") {
-      report = {
-        id: p.id,
-        reporterId: submission.actor.id,
-        reporterName: submission.actor.name || submission.actor.email,
-        createdAt: now,
-        side: p.side || "",
-        findings: clone(p.findings || []),
-        narrative: p.narrative,
-        latitude: p.latitude!,
-        longitude: p.longitude!,
-        gps: p.gps || null,
-        locationSource: p.locationSource || "MANUAL",
-        status: "OPEN",
-        deletedAt: null,
-        deletionReason: "",
-        images: evidence,
-        history: [],
-      };
 
-      // Realtime notification dispatch on new report
-      const firstFinding = report.findings?.[0];
-      const partName = firstFinding?.partName || `Perimeter sisi ${report.side || "-"}`;
-      dispatchReportNotificationAction({
-        reportId: report.id,
-        action: "CREATE",
-        partName,
-        side: report.side,
-        segmentCode: report.segmentCode,
-        actorName: report.reporterName,
-        reporterId: report.reporterId,
-      }).catch(() => {});
-    } else {
-      const existing = p.reportId ? reports.get(p.reportId) : undefined;
-      if (
-        !existing ||
-        existing.deletedAt ||
-        existing.status !== p.expectedStatus ||
-        existing.history.length !== submission.revision
-      ) {
-        fail("Laporan berubah. Muat ulang untuk memulai tindakan baru.");
+    // Collect uploaded base64 files
+    const files: UploadedFilePayload[] = [];
+    for (const imgId of p.expectedImageIds) {
+      const base64 = images.get(imgId);
+      if (base64) {
+        const mimeType = base64.startsWith("data:image/png")
+          ? "image/png"
+          : base64.startsWith("data:image/webp")
+          ? "image/webp"
+          : "image/jpeg";
+        files.push({
+          id: imgId,
+          mimeType,
+          base64,
+        });
       }
-      report = existing;
-      const previousStatus = report.status;
-      if (p.action === "DELETE") {
-        report.deletedAt = now;
-        report.deletionReason = p.narrative;
-
-        // Realtime notification dispatch on closed report
-        const firstFinding = report.findings?.[0];
-        const partName = firstFinding?.partName || `Perimeter sisi ${report.side || "-"}`;
-        dispatchReportNotificationAction({
-          reportId: report.id,
-          action: "DELETE",
-          status: "CLOSED",
-          partName,
-          side: report.side,
-          segmentCode: report.segmentCode,
-          narrative: p.narrative,
-          actorName: submission.actor.name,
-          reporterId: report.reporterId,
-        }).catch(() => {});
-      } else if (p.status) {
-        report.status = p.status;
-
-        // Realtime notification dispatch on status change
-        const firstFinding = report.findings?.[0];
-        const partName = firstFinding?.partName || `Perimeter sisi ${report.side || "-"}`;
-        dispatchReportNotificationAction({
-          reportId: report.id,
-          action: "STATUS",
-          status: p.status,
-          partName,
-          side: report.side,
-          segmentCode: report.segmentCode,
-          actorName: submission.actor.name,
-          reporterId: report.reporterId,
-        }).catch(() => {});
-      }
-      report.history.push({
-        id: p.id,
-        status: p.action === "DELETE" ? "CLOSED" : p.status || report.status,
-        previousStatus,
-        narrative: p.narrative,
-        createdAt: now,
-        actorId: submission.actor.id,
-        actorName: submission.actor.name,
-        images: evidence,
-      });
     }
-    reports.set(report.id, report);
-    submission.committed = true;
-    return clone(report);
+
+    try {
+      const res = await commitReportSubmissionAction({
+        payload: p,
+        files,
+      });
+
+      if (res.success && res.report) {
+        submission.committed = true;
+        reports.set(res.report.id, res.report);
+        return clone(res.report);
+      } else if (res.errorMessage) {
+        fail(res.errorMessage);
+      }
+    } catch (e: unknown) {
+      if (e instanceof Error && e.message) fail(e.message);
+      fail("Gagal menyimpan laporan ke database server.");
+    }
+
+    fail("Gagal menyelesaikan penyimpanan.");
   },
 
-  finalizeSubmission: async (params: { submissionId: string }): Promise<ReportRecord> => api.commitSubmission(params),
+  finalizeSubmission: async (params: {
+    submissionId: string;
+  }): Promise<ReportRecord> => api.commitSubmission(params),
 
-  getImage: async ({ imageId }: { imageId: string }): Promise<{ url: string }> => {
+  getImage: async ({
+    imageId,
+  }: {
+    imageId: string;
+  }): Promise<{ url: string }> => {
     const visible = [...reports.values()].some(
       (r) =>
-        (role !== "REPORTER" ||
-          r.reporterId === users[role].id) &&
+        (role !== "REPORTER" || r.reporterId === users[role].id) &&
         [...r.images, ...r.history.flatMap((h) => h.images)].some(
           (i) => i.id === imageId
         )

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -26,10 +26,17 @@ import {
 } from "../../../_lib/client-api";
 import {
   roleLabels,
-  useAccountsStore,
   type AccountStatus,
   type ManagedAccount,
 } from "../../../_lib/accounts-store";
+import {
+  getAccountsAction,
+  createAccountAction,
+  updateAccountAction,
+  toggleAccountStatusAction,
+  resetAccountPasswordAction,
+  deleteAccountAction,
+} from "./_lib/accounts.actions";
 import { dateText, message } from "../../../_lib/draft-store";
 import {
   btnBase,
@@ -97,15 +104,8 @@ export default function ManageAccountsPage() {
 
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const {
-    accounts,
-    addAccount,
-    updateAccount,
-    toggleAccountStatus,
-    deleteAccount,
-    resetToDefault,
-  } = useAccountsStore();
+  const [actionBusy, setActionBusy] = useState(false);
+  const [accounts, setAccounts] = useState<ManagedAccount[]>([]);
 
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("ALL");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
@@ -123,6 +123,15 @@ export default function ManageAccountsPage() {
   const [deleteTarget, setDeleteTarget] = useState<ManagedAccount | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
 
+  const loadAccounts = useCallback(async () => {
+    const res = await getAccountsAction();
+    if (res.success) {
+      setAccounts(res.accounts);
+    } else if (res.errorMessage) {
+      toast.error(res.errorMessage);
+    }
+  }, []);
+
   useEffect(() => {
     let active = true;
     (async () => {
@@ -133,7 +142,19 @@ export default function ManageAccountsPage() {
           window.location.href = `/${locale}/login`;
           return;
         }
+        if (session.role !== "OPERATOR") {
+          window.location.href = `/${locale}/${
+            session.role === "TECHNICIAN" ? "technician" : "reports"
+          }`;
+          return;
+        }
         if (active) setUser(session);
+        const res = await getAccountsAction();
+        if (active && res.success) {
+          setAccounts(res.accounts);
+        } else if (active && res.errorMessage) {
+          toast.error(res.errorMessage);
+        }
       } catch (e) {
         if (active) toast.error(message(e));
       } finally {
@@ -143,7 +164,7 @@ export default function ManageAccountsPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [locale]);
 
   const totalAccounts = accounts.length;
   const totalOperators = accounts.filter((a) => a.role === "OPERATOR").length;
@@ -250,27 +271,28 @@ export default function ManageAccountsPage() {
     setPasswordModal(null);
   }
 
-  function handleSaveAccountModal(e: FormEvent) {
+  async function handleSaveAccountModal(e: FormEvent) {
     e.preventDefault();
-    if (!accountModal) return;
+    if (!accountModal || actionBusy) return;
 
     const cleanedPhone = accountModal.phone.trim();
     if (!cleanedPhone || cleanedPhone.length < 10 || cleanedPhone.length > 13) {
-      toast.error("Nomor kontak telepon harus berupa angka antara 10 sampai 13 digit.");
+      toast.error(
+        "Nomor kontak telepon harus berupa angka antara 10 sampai 13 digit."
+      );
       return;
     }
 
+    setActionBusy(true);
     try {
-      if (
-        accountModal.mode === "CREATE" &&
-        accountModal.password.trim().length < 6
-      ) {
-        toast.error("Password awal minimal terdiri dari 6 karakter.");
-        return;
-      }
-
       if (accountModal.mode === "CREATE") {
-        const created = addAccount({
+        if (accountModal.password.trim().length < 6) {
+          toast.error("Password awal minimal terdiri dari 6 karakter.");
+          setActionBusy(false);
+          return;
+        }
+
+        const res = await createAccountAction({
           nip: accountModal.nip,
           name: accountModal.name,
           email: accountModal.email,
@@ -278,12 +300,22 @@ export default function ManageAccountsPage() {
           role: accountModal.role,
           unit: accountModal.unit,
           status: accountModal.status,
+          password: accountModal.password,
         });
+
+        if (!res.success) {
+          toast.error(res.errorMessage || "Gagal membuat akun.");
+          setActionBusy(false);
+          return;
+        }
+
+        const accountRole = (res.account?.role as UserRole) || "REPORTER";
         toast.success("Akun baru berhasil dibuat", {
-          description: `${created.name} (${roleLabels[created.role]}) telah terdaftar.`,
+          description: `${res.account?.name} (${roleLabels[accountRole]}) telah terdaftar.`,
         });
+        await loadAccounts();
       } else if (accountModal.accountId) {
-        updateAccount(accountModal.accountId, {
+        const res = await updateAccountAction(accountModal.accountId, {
           nip: accountModal.nip,
           name: accountModal.name,
           email: accountModal.email,
@@ -292,20 +324,53 @@ export default function ManageAccountsPage() {
           unit: accountModal.unit,
           status: accountModal.status,
         });
+
+        if (!res.success) {
+          toast.error(res.errorMessage || "Gagal memperbarui akun.");
+          setActionBusy(false);
+          return;
+        }
+
         toast.success("Data akun diperbarui", {
           description: `Perubahan pada akun "${accountModal.name}" telah disimpan.`,
         });
+        await loadAccounts();
       }
       setConfirmDiscardAccount(false);
       setAccountModal(null);
     } catch (err) {
       toast.error(message(err));
+    } finally {
+      setActionBusy(false);
     }
   }
 
-  function handleSavePasswordModal(e: FormEvent) {
+  async function handleToggleAccountStatus(account: ManagedAccount) {
+    if (actionBusy) return;
+    const nextStatus = account.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    setActionBusy(true);
+    try {
+      const res = await toggleAccountStatusAction(account.id, nextStatus);
+      if (!res.success) {
+        toast.error(res.errorMessage || "Gagal mengubah status akun.");
+        return;
+      }
+      toast.success(
+        nextStatus === "ACTIVE"
+          ? `Akun ${account.name} diaktifkan`
+          : `Akun ${account.name} dinonaktifkan`
+      );
+      await loadAccounts();
+    } catch (err) {
+      toast.error(message(err));
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  async function handleSavePasswordModal(e: FormEvent) {
     e.preventDefault();
-    if (!passwordModal) return;
+    if (!passwordModal || actionBusy) return;
 
     if (passwordModal.newPassword.trim().length < 6) {
       toast.error("Password baru minimal 6 karakter.");
@@ -316,20 +381,49 @@ export default function ManageAccountsPage() {
       return;
     }
 
-    toast.success("Password berhasil direset", {
-      description: `Kredensial login untuk ${passwordModal.account.name} (${passwordModal.account.nip}) telah diperbarui.`,
-    });
-    setConfirmDiscardPassword(false);
-    setPasswordModal(null);
+    setActionBusy(true);
+    try {
+      const res = await resetAccountPasswordAction(
+        passwordModal.account.id,
+        passwordModal.newPassword
+      );
+
+      if (!res.success) {
+        toast.error(res.errorMessage || "Gagal mereset password akun.");
+        return;
+      }
+
+      toast.success("Password berhasil direset", {
+        description: `Kredensial login untuk ${passwordModal.account.name} (${passwordModal.account.nip}) telah diperbarui.`,
+      });
+      setConfirmDiscardPassword(false);
+      setPasswordModal(null);
+    } catch (err) {
+      toast.error(message(err));
+    } finally {
+      setActionBusy(false);
+    }
   }
 
-  function handleConfirmDelete() {
-    if (!deleteTarget) return;
-    deleteAccount(deleteTarget.id);
-    toast.success("Akun dihapus", {
-      description: `Akun "${deleteTarget.name}" (${deleteTarget.nip}) telah dihapus.`,
-    });
-    setDeleteTarget(null);
+  async function handleConfirmDelete() {
+    if (!deleteTarget || actionBusy) return;
+    setActionBusy(true);
+    try {
+      const res = await deleteAccountAction(deleteTarget.id);
+      if (!res.success) {
+        toast.error(res.errorMessage || "Gagal menghapus akun.");
+        return;
+      }
+      toast.success("Akun dihapus", {
+        description: `Akun "${deleteTarget.name}" (${deleteTarget.nip}) telah dihapus.`,
+      });
+      setDeleteTarget(null);
+      await loadAccounts();
+    } catch (err) {
+      toast.error(message(err));
+    } finally {
+      setActionBusy(false);
+    }
   }
 
   return (
@@ -358,25 +452,28 @@ export default function ManageAccountsPage() {
             Dashboard
           </Link>
           <span className="text-[var(--rd-muted)]/50 select-none">/</span>
-          <span className="font-medium text-[var(--rd-link)]">Kelola Akun</span>
+          <span className="font-medium text-[var(--rd-link)]">
+            Kelola Akun Pengguna
+          </span>
         </nav>
 
-        {/* Page Title & Actions */}
-        <div className="mb-5 flex flex-col justify-between gap-3 px-1.5 sm:flex-row sm:items-end md:mb-6 md:px-0">
+        {/* Page Title & Action Header */}
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="m-0 mb-1.5 text-xl leading-tight font-normal sm:text-3xl">
-              Data Master Kelola Akun,
+            <h1 className="m-0 text-xl font-semibold sm:text-2xl">
+              Manajemen Akun Personel
             </h1>
-            <p className="m-0 text-xs text-[var(--rd-muted)] sm:text-sm">
-              Kelola akun pengguna, kontak person, hak akses peran (Operator,
-              Pelapor, Teknisi), dan status aktif personel bandara.
+            <p className="m-0 mt-1 text-xs text-[var(--rd-muted)] sm:text-sm">
+              Kelola kredensial, peran akses, dan status operasional akun
+              petugas perimeter.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={openCreateAccountModal}
-              className={btnPrimary}
+              disabled={loading || actionBusy}
+              className={`${btnPrimary} flex items-center gap-2 disabled:opacity-50`}
             >
               <UserPlus size={16} aria-hidden="true" />
               <span>Tambah Akun</span>
@@ -384,121 +481,105 @@ export default function ManageAccountsPage() {
           </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="mb-5 grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4 md:mb-6">
-          <div className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:rounded-[14px] sm:p-4">
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--rd-active)] text-[var(--rd-link)] sm:size-11 sm:rounded-xl">
-              <Users className="size-[18px] sm:size-[22px]" strokeWidth={1.8} aria-hidden="true" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <span className="mt-2 block text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
-                Total Akun Terdaftar
+        {/* Metrics Summary Cards */}
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-[var(--rd-muted)]">
+                Total Akun
               </span>
-              {loading ? (
-                <Skeleton className="mt-2 h-[25px] w-14 rounded-md sm:mt-1 sm:h-6 sm:w-20" />
-              ) : (
-                <strong className="mt-1.5 block text-xl font-semibold leading-tight text-[var(--rd-text)] sm:mt-0">
-                  {totalAccounts}{" "}
-                  <span className="text-[11px] font-normal text-[var(--rd-muted)] sm:text-xs">
-                    pengguna
-                  </span>
-                </strong>
-              )}
+              <span className="grid size-8 place-items-center rounded-xl bg-[var(--rd-active)] text-[var(--rd-link)]">
+                <Users size={16} aria-hidden="true" />
+              </span>
             </div>
+            <div className="mt-2 text-2xl font-bold">
+              {loading ? <Skeleton className="h-8 w-12 rounded" /> : totalAccounts}
+            </div>
+            <span className="text-[11px] text-[var(--rd-muted)]">
+              Terdaftar di sistem
+            </span>
           </div>
 
-          <div className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:rounded-[14px] sm:p-4">
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--rd-active)] text-[var(--rd-link)] sm:size-11 sm:rounded-xl">
-              <ShieldCheck className="size-[18px] sm:size-[22px]" strokeWidth={1.8} aria-hidden="true" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <span className="mt-2 block text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
-                Operator Perimeter
+          <div className="rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-[var(--rd-muted)]">
+                Operator Aktif
               </span>
+              <span className="grid size-8 place-items-center rounded-xl bg-[var(--rd-link)]/15 text-[var(--rd-link)]">
+                <ShieldCheck size={16} aria-hidden="true" />
+              </span>
+            </div>
+            <div className="mt-2 text-2xl font-bold">
               {loading ? (
-                <Skeleton className="mt-2 h-[25px] w-14 rounded-md sm:mt-1 sm:h-6 sm:w-20" />
+                <Skeleton className="h-8 w-12 rounded" />
               ) : (
-                <strong className="mt-1.5 block text-xl font-semibold leading-tight text-[var(--rd-text)] sm:mt-0">
-                  {totalOperators}{" "}
-                  <span className="text-[11px] font-normal text-[var(--rd-muted)] sm:text-xs">
-                    operator
-                  </span>
-                </strong>
+                totalOperators
               )}
             </div>
+            <span className="text-[11px] text-[var(--rd-muted)]">
+              Hak kelola penuh
+            </span>
           </div>
 
-          <div className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:rounded-[14px] sm:p-4">
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--rd-brown)]/15 text-[var(--rd-brown)] sm:size-11 sm:rounded-xl">
-              <Wrench className="size-[18px] sm:size-[21px]" strokeWidth={1.8} aria-hidden="true" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <span className="mt-2 block text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
-                Pelapor & Teknisi
+          <div className="rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-[var(--rd-muted)]">
+                Petugas Lapangan
               </span>
+              <span className="grid size-8 place-items-center rounded-xl bg-[var(--rd-brown)]/15 text-[var(--rd-brown)]">
+                <Wrench size={16} aria-hidden="true" />
+              </span>
+            </div>
+            <div className="mt-2 text-2xl font-bold">
               {loading ? (
-                <Skeleton className="mt-2 h-[25px] w-16 rounded-md sm:mt-1 sm:h-6 sm:w-24" />
+                <Skeleton className="h-8 w-12 rounded" />
               ) : (
-                <strong className="mt-1.5 block text-xl font-semibold leading-tight text-[var(--rd-text)] sm:mt-0">
-                  {totalFieldStaff}{" "}
-                  <span className="text-[11px] font-normal text-[var(--rd-muted)] sm:text-xs">
-                    personel
-                  </span>
-                </strong>
+                totalFieldStaff
               )}
             </div>
+            <span className="text-[11px] text-[var(--rd-muted)]">
+              Pelapor & Teknisi
+            </span>
           </div>
 
-          <div className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:rounded-[14px] sm:p-4">
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--rd-lime)]/15 text-[var(--rd-lime)] sm:size-11 sm:rounded-xl">
-              <UserCheck className="size-[18px] sm:size-[22px]" strokeWidth={1.8} aria-hidden="true" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <span className="mt-2 block text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
-                Status Akun Aktif
+          <div className="rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-[var(--rd-muted)]">
+                Status Aktif
               </span>
-              {loading ? (
-                <Skeleton className="mt-2 h-[25px] w-16 rounded-md sm:mt-1 sm:h-6 sm:w-24" />
-              ) : (
-                <strong className="mt-1.5 block text-xl font-semibold leading-tight text-[var(--rd-text)] sm:mt-0">
-                  {totalActive}{" "}
-                  <span className="text-[11px] font-normal text-[var(--rd-muted)] sm:text-xs">
-                    dari {totalAccounts} akun
-                  </span>
-                </strong>
-              )}
+              <span className="grid size-8 place-items-center rounded-xl bg-[var(--rd-lime)]/15 text-[var(--rd-lime)]">
+                <UserCheck size={16} aria-hidden="true" />
+              </span>
             </div>
+            <div className="mt-2 text-2xl font-bold">
+              {loading ? <Skeleton className="h-8 w-12 rounded" /> : totalActive}
+            </div>
+            <span className="text-[11px] text-[var(--rd-muted)]">
+              Siap bertugas
+            </span>
           </div>
         </div>
 
-        {/* Main Table Card */}
+        {/* Content Section: Table & Filters */}
         <section
-          aria-label="Tabel Data Master Akun Pengguna"
-          className="flex flex-1 flex-col overflow-hidden rounded-[14px] border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)]"
+          aria-label="Tabel daftar akun personel"
+          className="mb-8 rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] shadow-xs"
         >
-          {/* Toolbar: Role Tabs, Status Filter, Search */}
-          <div className="flex flex-col gap-3 border-b border-solid border-[var(--rd-border)] p-4 lg:flex-row lg:items-center lg:justify-between">
+          {/* Controls Bar */}
+          <div className="flex flex-col gap-3 border-b border-solid border-[var(--rd-border)] p-4 sm:flex-row sm:items-center sm:justify-between">
+            {/* Filter by Role Pills */}
             <div className="flex flex-wrap items-center gap-2">
               <div
                 role="tablist"
-                aria-label="Filter peran akun"
-                className="inline-flex flex-wrap rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] p-1"
+                aria-label="Filter peran akses"
+                className="flex rounded-xl bg-[var(--rd-bg)] p-1 text-xs"
               >
                 {(
                   [
                     ["ALL", `Semua (${accounts.length})`],
-                    [
-                      "OPERATOR",
-                      `Operator (${accounts.filter((a) => a.role === "OPERATOR").length})`,
-                    ],
-                    [
-                      "REPORTER",
-                      `Pelapor (${accounts.filter((a) => a.role === "REPORTER").length})`,
-                    ],
-                    [
-                      "TECHNICIAN",
-                      `Teknisi (${accounts.filter((a) => a.role === "TECHNICIAN").length})`,
-                    ],
+                    ["OPERATOR", `Operator (${accounts.filter((a) => a.role === "OPERATOR").length})`],
+                    ["REPORTER", `Pelapor (${accounts.filter((a) => a.role === "REPORTER").length})`],
+                    ["TECHNICIAN", `Teknisi (${accounts.filter((a) => a.role === "TECHNICIAN").length})`],
                   ] as const
                 ).map(([value, label]) => (
                   <button
@@ -606,54 +687,57 @@ export default function ManageAccountsPage() {
               ) : (
                 <>
                   {filteredAccounts.map((account, index) => {
+                    const initials = initialsOfName(
+                      account.name,
+                      account.email
+                    );
+                    const isSelf = user?.id === account.id;
+
                     const roleBadgeClass =
                       account.role === "OPERATOR"
-                        ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
+                        ? "bg-[var(--rd-link)]/15 text-[var(--rd-link)]"
                         : account.role === "TECHNICIAN"
-                          ? "bg-[var(--rd-brown)]/15 text-[var(--rd-brown)]"
-                          : "bg-[var(--rd-border)]/70 text-[var(--rd-text)]";
+                        ? "bg-[var(--rd-brown)]/15 text-[var(--rd-brown)]"
+                        : "bg-[var(--rd-active)] text-[var(--rd-teal)]";
 
                     return (
                       <TableRow key={account.id}>
-                        <TableCell className="text-center font-medium text-[var(--rd-muted)]">
+                        <TableCell className="text-center font-mono text-xs text-[var(--rd-muted)]">
                           {index + 1}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            {account.avatarUrl ? (
-                              <img
-                                src={account.avatarUrl}
-                                alt={account.name}
-                                className="size-9 shrink-0 rounded-xl object-cover"
-                              />
-                            ) : (
-                              <span
-                                className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-panel)] text-xs font-semibold tracking-wide text-[var(--rd-link)]"
-                                aria-hidden="true"
-                              >
-                                {initialsOfName(account.name)}
-                              </span>
-                            )}
+                            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-border)] text-xs font-bold text-[var(--rd-text)]">
+                              {initials}
+                            </span>
                             <div className="min-w-0">
-                              <div className="truncate font-semibold text-[var(--rd-text)]">
+                              <span className="block truncate text-sm font-semibold">
                                 {account.name}
-                              </div>
+                                {isSelf && (
+                                  <span className="ml-1.5 rounded-sm bg-[var(--rd-active)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--rd-link)]">
+                                    Anda
+                                  </span>
+                                )}
+                              </span>
+                              <span className="block truncate text-xs text-[var(--rd-muted)]">
+                                {account.email}
+                              </span>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="font-mono text-xs font-semibold text-[var(--rd-text)]">
+                          <span className="block font-mono text-xs font-semibold">
                             {account.nip}
-                          </div>
-                          <div className="text-xs text-[var(--rd-muted)]">
+                          </span>
+                          <span className="block truncate text-xs text-[var(--rd-muted)]">
                             {account.unit}
-                          </div>
+                          </span>
                         </TableCell>
                         <TableCell>
-                          <span className="inline-flex items-center gap-1.5 font-mono text-xs font-medium text-[var(--rd-text)]">
+                          <span className="flex items-center gap-1.5 text-xs text-[var(--rd-text)]">
                             <Phone
                               size={13}
-                              className="shrink-0 text-[var(--rd-link)]"
+                              className="shrink-0 text-[var(--rd-muted)]"
                               aria-hidden="true"
                             />
                             <span>{account.phone || "-"}</span>
@@ -669,16 +753,14 @@ export default function ManageAccountsPage() {
                         <TableCell className="text-center">
                           <button
                             type="button"
-                            onClick={() => {
-                              toggleAccountStatus(account.id);
-                              toast.success(
-                                account.status === "ACTIVE"
-                                  ? `Akun ${account.name} dinonaktifkan`
-                                  : `Akun ${account.name} diaktifkan`
-                              );
-                            }}
-                            title="Klik untuk ubah status aktif/nonaktif"
-                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold transition-opacity hover:opacity-80 ${focusRing} ${
+                            onClick={() => handleToggleAccountStatus(account)}
+                            disabled={actionBusy || isSelf}
+                            title={
+                              isSelf
+                                ? "Anda tidak dapat menonaktifkan akun sendiri"
+                                : "Klik untuk ubah status aktif/nonaktif"
+                            }
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50 ${focusRing} ${
                               account.status === "ACTIVE"
                                 ? "bg-[var(--rd-lime)]/15 text-[var(--rd-lime)]"
                                 : "bg-[var(--rd-border)] text-[var(--rd-muted)]"
@@ -698,6 +780,7 @@ export default function ManageAccountsPage() {
                             <button
                               type="button"
                               onClick={() => openEditAccountModal(account)}
+                              disabled={actionBusy}
                               className={btnIcon}
                               title={`Ubah akun ${account.name}`}
                               aria-label={`Ubah akun ${account.name}`}
@@ -714,6 +797,7 @@ export default function ManageAccountsPage() {
                                   confirmPassword: "",
                                 });
                               }}
+                              disabled={actionBusy}
                               className={btnIcon}
                               title={`Reset password ${account.name}`}
                               aria-label={`Reset password ${account.name}`}
@@ -723,8 +807,13 @@ export default function ManageAccountsPage() {
                             <button
                               type="button"
                               onClick={() => setDeleteTarget(account)}
-                              className={`${btnIcon} hover:!bg-[var(--rd-coral)]/15 hover:!text-[var(--rd-coral)]`}
-                              title={`Hapus akun ${account.name}`}
+                              disabled={actionBusy || isSelf}
+                              className={`${btnIcon} hover:!bg-[var(--rd-coral)]/15 hover:!text-[var(--rd-coral)] disabled:opacity-30 disabled:cursor-not-allowed`}
+                              title={
+                                isSelf
+                                  ? "Tidak dapat menghapus akun sendiri"
+                                  : `Hapus akun ${account.name}`
+                              }
                               aria-label={`Hapus akun ${account.name}`}
                             >
                               <Trash2 size={16} aria-hidden="true" />
@@ -951,12 +1040,19 @@ export default function ManageAccountsPage() {
                 <button
                   type="button"
                   onClick={requestCloseAccountModal}
+                  disabled={actionBusy}
                   className={btnCancelCoral}
                 >
                   Batal
                 </button>
-                <button type="submit" className={btnPrimary}>
-                  {accountModal.mode === "CREATE"
+                <button
+                  type="submit"
+                  disabled={actionBusy}
+                  className={`${btnPrimary} disabled:opacity-50`}
+                >
+                  {actionBusy
+                    ? "Menyimpan…"
+                    : accountModal.mode === "CREATE"
                     ? "Buat Akun"
                     : "Simpan Perubahan"}
                 </button>
@@ -1080,12 +1176,17 @@ export default function ManageAccountsPage() {
                 <button
                   type="button"
                   onClick={requestClosePasswordModal}
+                  disabled={actionBusy}
                   className={btnCancelCoral}
                 >
                   Batal
                 </button>
-                <button type="submit" className={btnPrimary}>
-                  Simpan Password
+                <button
+                  type="submit"
+                  disabled={actionBusy}
+                  className={`${btnPrimary} disabled:opacity-50`}
+                >
+                  {actionBusy ? "Menyimpan…" : "Simpan Password"}
                 </button>
               </div>
             </form>
@@ -1137,6 +1238,7 @@ export default function ManageAccountsPage() {
               <button
                 type="button"
                 onClick={() => setDeleteTarget(null)}
+                disabled={actionBusy}
                 className={btnCancelCoral}
               >
                 Batal
@@ -1144,9 +1246,10 @@ export default function ManageAccountsPage() {
               <button
                 type="button"
                 onClick={handleConfirmDelete}
-                className={btnDanger}
+                disabled={actionBusy}
+                className={`${btnDanger} disabled:opacity-50`}
               >
-                Ya, Hapus
+                {actionBusy ? "Menghapus…" : "Ya, Hapus"}
               </button>
             </div>
           </div>
@@ -1170,7 +1273,7 @@ export default function ManageAccountsPage() {
                 id="reset-account-modal-title"
                 className="m-0 text-base font-semibold"
               >
-                Kembalikan Daftar Akun Bawaan?
+                Segarkan Daftar Akun?
               </h2>
               <button
                 type="button"
@@ -1182,8 +1285,7 @@ export default function ManageAccountsPage() {
               </button>
             </div>
             <p className="m-0 mb-5 text-xs leading-relaxed text-[var(--rd-muted)] sm:text-sm">
-              Seluruh perubahan daftar akun akan dikembalikan ke data awal
-              sistem.
+              Muat ulang seluruh data akun personel langsung dari database.
             </p>
             <div className="flex justify-end gap-2.5">
               <button
@@ -1195,14 +1297,14 @@ export default function ManageAccountsPage() {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  resetToDefault();
+                onClick={async () => {
                   setConfirmReset(false);
-                  toast.success("Daftar akun dikembalikan ke setelan bawaan.");
+                  await loadAccounts();
+                  toast.success("Daftar akun diperbarui.");
                 }}
                 className={btnPrimary}
               >
-                Ya, Reset
+                Ya, Segarkan
               </button>
             </div>
           </div>
