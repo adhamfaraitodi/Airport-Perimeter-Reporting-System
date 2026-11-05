@@ -1,3 +1,4 @@
+import { dispatchReportNotificationAction } from "./notifications.actions";
 import { authClient } from "@/lib/auth-client";
 import damageCatalog from "../_data/damage-catalog.json";
 

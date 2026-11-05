@@ -288,6 +288,68 @@ export const reportPhotos = pgTable(
 );
 
 // ============================================================================
+// 4b. Notification Tables (Role Broadcast + Personal Read Tracking)
+// ============================================================================
+
+export const notificationCategoryEnum = pgEnum("notification_category", [
+  "REPORT_NEW",
+  "STATUS_UPDATE",
+  "REPORT_CLOSED",
+  "SYSTEM",
+]);
+
+export const notification = pgTable(
+  "notification",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    reportId: text("report_id"),
+    category: notificationCategoryEnum("category").notNull().default("SYSTEM"),
+    status: text("status"),
+    templateKey: text("template_key").notNull().default("SYSTEM_ALERT"),
+    params: jsonb("params").$type<Record<string, unknown>>().notNull().default({}),
+    title: text("title"),
+    description: text("description"),
+    targetRole: text("target_role"),
+    targetUserId: uuid("target_user_id").references(() => user.id, {
+      onDelete: "cascade",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("notification_target_role_idx").on(table.targetRole),
+    index("notification_target_user_id_idx").on(table.targetUserId),
+    index("notification_created_at_idx").on(table.createdAt),
+    index("notification_report_id_idx").on(table.reportId),
+    index("notification_template_key_idx").on(table.templateKey),
+  ]
+);
+
+export const notificationRead = pgTable(
+  "notification_read",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    notificationId: uuid("notification_id")
+      .notNull()
+      .references(() => notification.id, { onDelete: "cascade" }),
+    readAt: timestamp("read_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("notification_read_user_notif_idx").on(
+      table.userId,
+      table.notificationId
+    ),
+    index("notification_read_user_id_idx").on(table.userId),
+  ]
+);
+
+// ============================================================================
 // 5. Drizzle Relations
 // ============================================================================
 
