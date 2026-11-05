@@ -8,6 +8,7 @@ import type { ReportRecord } from "../../../_lib/client-api";
 import { dateText, labels } from "../../../_lib/draft-store";
 import { downloadReportDocument } from "../../../_lib/report-document";
 import {
+  btnBase,
   btnDangerGhost,
   btnPrimary,
   btnSecondary,
@@ -32,6 +33,7 @@ export interface ReportDetailSheetProps {
   canDelete?: boolean;
   canUpdateStatus?: boolean;
   statusActionLabel?: string;
+  statusActionDisabled?: boolean;
   onAction?: (action: "STATUS" | "DELETE") => void;
   onBack: () => void;
 }
@@ -46,6 +48,7 @@ export function ReportDetailSheet({
   canDelete = true,
   canUpdateStatus = false,
   statusActionLabel = "Perbarui status",
+  statusActionDisabled = false,
   onAction,
   onBack,
 }: ReportDetailSheetProps) {
@@ -136,15 +139,24 @@ export function ReportDetailSheet({
           {canUpdateStatus && onAction && (
             <button
               type="button"
-              className={`${btnPrimary} flex-1 text-xs`}
-              onClick={() => onAction("STATUS")}
+              disabled={statusActionDisabled}
+              className={`${
+                statusActionDisabled
+                  ? `${btnBase} min-h-10 flex-1 border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)]/70 px-4 py-2 text-xs font-semibold text-[var(--rd-muted)] cursor-not-allowed opacity-60 shadow-none`
+                  : `${btnPrimary} flex-1 text-xs`
+              }`}
+              onClick={() => {
+                if (!statusActionDisabled) {
+                  onAction("STATUS");
+                }
+              }}
             >
               {statusActionLabel}
             </button>
           )}
           <button
             type="button"
-            className={`${canUpdateStatus ? btnSecondary : btnPrimary} flex-1 text-xs`}
+            className={`${canUpdateStatus && !statusActionDisabled ? btnSecondary : btnPrimary} flex-1 text-xs`}
             onClick={() => downloadReportDocument(report)}
           >
             <Download size={14} className="mr-1.5" aria-hidden="true" />

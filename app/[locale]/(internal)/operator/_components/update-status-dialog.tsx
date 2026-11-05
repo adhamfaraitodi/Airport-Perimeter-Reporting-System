@@ -81,6 +81,7 @@ export interface SubmissionFormProps {
   user: SessionUser;
   report?: ReportRecord | null;
   action?: "CREATE" | "STATUS" | "DELETE";
+  customSubtitle?: string;
   onSuccess: (report: ReportRecord) => void;
   onCancel: (options?: { abandonedSubmissionId?: string }) => void;
   onLock: (locked: boolean) => void;
@@ -90,10 +91,15 @@ export function UpdateStatusDialog({
   user,
   report,
   action = "STATUS",
+  customSubtitle,
   onSuccess,
   onCancel,
   onLock,
 }: SubmissionFormProps) {
+  const isTechnician = user.role === "TECHNICIAN";
+  const technicianNextStatus: LifecycleStatus =
+    report?.status === "OPEN" ? "IN_PROGRESS" : "RESOLVED";
+
   const key = `${user.id}:${action}:${report?.id || "new"}`;
   const draft = useDrafts((state) => state.drafts[key]);
   const update = useDrafts((state) => state.update);
@@ -101,8 +107,9 @@ export function UpdateStatusDialog({
   const narrative = draft?.narrative || "";
   const side = draft?.side || "";
 
-  const defaultStatus: LifecycleStatus =
-    report?.status === "RESOLVED"
+  const defaultStatus: LifecycleStatus = isTechnician
+    ? technicianNextStatus
+    : report?.status === "RESOLVED"
       ? "OPEN"
       : report?.status === "OPEN"
         ? "IN_PROGRESS"
@@ -228,7 +235,7 @@ export function UpdateStatusDialog({
       narrative.trim() !== "" ||
       files.length > 0 ||
       (action === "CREATE" && (side !== "" || manual.current)) ||
-      (action === "STATUS" && status !== defaultStatus)
+      (!isTechnician && action === "STATUS" && status !== defaultStatus)
     );
   }
 
@@ -269,13 +276,17 @@ export function UpdateStatusDialog({
         );
         return;
       }
+
+      const targetStatus: LifecycleStatus =
+        isTechnician && action === "STATUS" ? technicianNextStatus : status;
+
       const transaction: BeginSubmissionPayload = attemptRef.current || {
         id: newId(),
         action,
         ...(report
           ? { reportId: report.id, expectedStatus: report.status }
           : {}),
-        ...(action === "STATUS" ? { status } : {}),
+        ...(action === "STATUS" ? { status: targetStatus } : {}),
         narrative: narrative.trim(),
         ...(action === "CREATE" && point
           ? {
@@ -334,7 +345,7 @@ export function UpdateStatusDialog({
           <span className={eyebrow}>
             {action === "CREATE"
               ? "PELAPORAN LAPANGAN"
-              : user.role === "TECHNICIAN"
+              : isTechnician
                 ? "TINDAK LANJUT TEKNISI"
                 : "TINDAKAN OPERATOR"}
           </span>
@@ -343,7 +354,11 @@ export function UpdateStatusDialog({
               ? "Buat laporan baru"
               : action === "DELETE"
                 ? "Tutup laporan"
-                : "Perbarui penanganan"}
+                : isTechnician
+                  ? report?.status === "OPEN"
+                    ? "Mulai Kerjakan"
+                    : "Selesai Diperbaiki"
+                  : "Perbarui penanganan"}
           </h2>
         </div>
         {!frozen && (
@@ -358,15 +373,24 @@ export function UpdateStatusDialog({
         )}
       </div>
       <p className="mb-5 text-sm leading-relaxed text-[var(--rd-muted)]">
-        {action === "DELETE"
-          ? "Penutupan menyembunyikan titik dari peta, bukan menghapus bukti atau menyatakan masalah selesai."
-          : "Informasi yang jelas membantu tim menindaklanjuti kondisi perimeter."}
+        {customSubtitle ||
+          (action === "DELETE"
+            ? "Penutupan menyembunyikan titik dari peta, bukan menghapus bukti atau menyatakan masalah selesai."
+            : action === "CREATE"
+              ? "Informasi yang jelas membantu tim menindaklanjuti kondisi perimeter."
+              : isTechnician
+                ? report?.status === "OPEN"
+                  ? "Mulai pengerjaan perbaikan. Catat narasi pengerjaan dan rencana tindakan awal untuk menangani kondisi perimeter."
+                  : report?.status === "IN_PROGRESS"
+                    ? "Konfirmasi penyelesaian perbaikan. Lengkapi dokumentasi foto hasil perbaikan dan tindakan teknis yang telah diambil."
+                    : "Perbaikan kerusakan perimeter ini telah selesai dilaksanakan."
+                : "Informasi yang jelas membantu tim menindaklanjuti kondisi perimeter.")}
       </p>
       <fieldset
         disabled={frozen}
         className="m-0 min-w-0 border-0 p-0 disabled:opacity-70"
       >
-        {action === "STATUS" && report && (
+        {action === "STATUS" && report && !isTechnician && (
           <label className={fieldLabel}>
             Status berikutnya
             <select
@@ -637,7 +661,11 @@ export function UpdateStatusDialog({
                 ? "Kirim laporan →"
                 : action === "DELETE"
                   ? "Konfirmasi penutupan"
-                  : "Simpan perubahan"}
+                  : isTechnician
+                    ? report?.status === "OPEN"
+                      ? "Mulai Kerjakan"
+                      : "Selesai Diperbaiki"
+                    : "Simpan perubahan"}
         </button>
       </div>
     </form>

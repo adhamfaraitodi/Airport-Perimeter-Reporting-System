@@ -281,12 +281,13 @@ export default function TechnicianDashboardPage() {
                 operator
                 canDelete={false}
                 canUpdateStatus
+                statusActionDisabled={
+                  selected.status === "RESOLVED" || !!selected.deletedAt
+                }
                 statusActionLabel={
                   selected.status === "OPEN"
-                    ? "Mulai / Perbarui Status Perbaikan"
-                    : selected.status === "IN_PROGRESS"
-                      ? "Selesaikan Perbaikan & Unggah Bukti"
-                      : "Perbarui Status Penanganan"
+                    ? "Mulai Kerjakan"
+                    : "Selesai Diperbaiki"
                 }
                 onAction={() => setAction("STATUS")}
                 onBack={() => setSelectedId(null)}
