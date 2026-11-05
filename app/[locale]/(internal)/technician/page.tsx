@@ -19,6 +19,8 @@ import { ReportDetailSheet } from "../operator/_components/report-detail-sheet";
 import { UpdateStatusDialog } from "../operator/_components/update-status-dialog";
 import { DashboardFooter } from "../operator/_components/dashboard-footer";
 import { ReportHistoryPanel } from "../../_components/report-history-panel";
+import { getTechnicianDashboardDataAction } from "./_lib/technician.actions";
+import type { TechnicianTaskSummary } from "./_lib/technician.schema";
 
 const inlineAlertButton = `ml-2.5 rounded-md bg-[var(--rd-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--rd-coral)] disabled:cursor-not-allowed disabled:opacity-55 ${focusRing}`;
 
@@ -28,6 +30,7 @@ export default function TechnicianDashboardPage() {
   const { theme, dark, toggleTheme } = useTheme();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [reports, setReports] = useState<ReportRecord[]>([]);
+  const [summary, setSummary] = useState<TechnicianTaskSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [abandonedSubmissionId, setAbandonedSubmissionId] = useState<
@@ -44,20 +47,39 @@ export default function TechnicianDashboardPage() {
     setLoading(true);
     setError("");
     try {
-      const session = await api.getSession();
-      if (!session) {
-        window.location.href = `/${locale}/login`;
+      const res = await getTechnicianDashboardDataAction();
+      if (!res.success) {
+        // Fallback for edge-case session lookup or client redirects
+        const session = await api.getSession();
+        if (!session) {
+          window.location.href = `/${locale}/login`;
+          return;
+        }
+        if (session.role !== "TECHNICIAN") {
+          window.location.href = `/${locale}/${
+            session.role === "OPERATOR" ? "operator" : "reports"
+          }`;
+          return;
+        }
+        setUser(session);
+        const data = await api.listReports();
+        setReports(data);
         return;
       }
-      if (session.role !== "TECHNICIAN") {
-        window.location.href = `/${locale}/${
-          session.role === "OPERATOR" ? "operator" : "reports"
-        }`;
-        return;
+
+      if (res.user) {
+        if (res.user.role !== "TECHNICIAN" && res.user.role !== "OPERATOR") {
+          window.location.href = `/${locale}/reports`;
+          return;
+        }
+        setUser(res.user);
       }
-      setUser(session);
-      const data = await api.listReports();
-      setReports(data);
+      if (res.reports) {
+        setReports(res.reports);
+      }
+      if (res.summary) {
+        setSummary(res.summary);
+      }
     } catch (e) {
       setError(message(e));
     } finally {
@@ -92,17 +114,22 @@ export default function TechnicianDashboardPage() {
     toast.success("Progres perbaikan berhasil disimpan", {
       description: "Status perbaikan dan foto bukti lapangan telah diperbarui.",
     });
+    // Refresh aggregation counters directly from PostgreSQL
+    load();
   }
 
   const activeReports = reports.filter((report) => !report.deletedAt);
 
-  const countOpen = activeReports.filter((r) => r.status === "OPEN").length;
-  const countInProgress = activeReports.filter(
-    (r) => r.status === "IN_PROGRESS"
-  ).length;
-  const countResolved = activeReports.filter(
-    (r) => r.status === "RESOLVED"
-  ).length;
+  const countOpen = summary
+    ? summary.open
+    : activeReports.filter((r) => r.status === "OPEN").length;
+  const countInProgress = summary
+    ? summary.inProgress
+    : activeReports.filter((r) => r.status === "IN_PROGRESS").length;
+  const countResolved = summary
+    ? summary.resolved
+    : activeReports.filter((r) => r.status === "RESOLVED").length;
+  const countTotal = summary ? summary.totalActive : activeReports.length;
 
   const visible = activeReports.filter((report) => {
     const matchesStatus =
@@ -227,7 +254,7 @@ export default function TechnicianDashboardPage() {
                 <Skeleton className="mt-1 h-5 w-10 rounded" />
               ) : (
                 <span className="text-base font-bold sm:text-lg">
-                  {activeReports.length}
+                  {countTotal}
                 </span>
               )}
             </div>

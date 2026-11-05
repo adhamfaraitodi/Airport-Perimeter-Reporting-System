@@ -313,6 +313,7 @@ export async function createNotificationEvent(payload: {
  * 2. STATUS (IN_PROGRESS or RESOLVED):
  *    - Personal to REPORTER: "STATUS_UPDATE_REPORTER" (specific to report owner)
  *    - Broadcast to OPERATOR: "STATUS_UPDATE_OPERATOR"
+ *    - Broadcast to TECHNICIAN: "STATUS_UPDATE_TECHNICIAN"
  * 3. DELETE (CLOSED):
  *    - Personal to REPORTER: "REPORT_CLOSED_REPORTER"
  *    - Broadcast to TECHNICIAN: "REPORT_CLOSED_TECHNICIAN"
@@ -403,6 +404,22 @@ export async function dispatchReportNotificationAction(params: {
           actorName: params.actorName,
         },
         targetRole: "OPERATOR",
+      });
+
+      // 3. Broadcast to Technician
+      await createNotificationEvent({
+        reportId: params.reportId,
+        category: "STATUS_UPDATE",
+        status: params.status || "IN_PROGRESS",
+        templateKey: "STATUS_UPDATE_TECHNICIAN",
+        params: {
+          part,
+          side,
+          grid,
+          status: params.status || "IN_PROGRESS",
+          actorName: params.actorName,
+        },
+        targetRole: "TECHNICIAN",
       });
     } else if (params.action === "DELETE") {
       // 1. Personal to reporter

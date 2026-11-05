@@ -366,6 +366,18 @@ export async function commitReportSubmissionAction(input: {
     }
 
     if (payload.action === "STATUS" && payload.status) {
+      if (userRole !== "OPERATOR" && userRole !== "TECHNICIAN") {
+        throw new Error(
+          "Hanya Operator atau Teknisi yang berwenang memperbarui status penanganan laporan."
+        );
+      }
+
+      if (report.deletedAt || report.status === "CLOSED") {
+        throw new Error(
+          "Laporan telah ditutup dan tidak dapat diubah statusnya."
+        );
+      }
+
       const historyId = crypto.randomUUID();
       const now = new Date();
 
