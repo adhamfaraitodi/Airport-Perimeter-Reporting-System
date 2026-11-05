@@ -124,20 +124,26 @@ export function getGridCellFromLatLng(
  * Determines perimeter side ("Utara", "Timur", "Selatan", "Barat", etc.)
  * given a grid column (1..29) and row label ('A'..'N').
  *
- * Calibrated against YIA rotated grid geometry:
- * - Columns run West (1) to East (29)
- * - Rows run North (A) to South (N)
- * E.g. G29 -> "Timur", G1 -> "Barat", A15 -> "Utara", N15 -> "Selatan"
+ * Calibrated against airport perimeter reference anchors:
+ * - East: L28 - L29 ("Timur")
+ * - West: L1 - L2 ("Barat")
+ * - North: I15 ("Utara")
+ * - South: M15 - N15 ("Selatan")
  */
 export function getPerimeterSideFromGrid(col: number, row: string): string {
   const rowIndex = ROW_LABELS.indexOf(row as (typeof ROW_LABELS)[number]);
   if (rowIndex === -1 || col < 1 || col > GRID_COLS) return "";
 
-  // Normalized coordinates centered on the 29x14 grid
-  // u: -1 at col 1 (West), +1 at col 29 (East)
-  // v: +1 at row 0 (A = North), -1 at row 13 (N = South)
-  const u = (col - 15) / 14;
-  const v = (6.5 - rowIndex) / 6.5;
+  // Horizontal offset relative to center column 15 (cols 1..29)
+  const u = (col - 15) / 13.5;
+
+  // Vertical offset relative to perimeter horizontal axis (Row L = index 11)
+  // North anchor is I15 (Row I = index 8, distance 3 rows)
+  // South anchors are M15-N15 (Rows M-N = indices 12-13, distance ~1.7 rows)
+  const v =
+    rowIndex <= 11
+      ? (11 - rowIndex) / 3.0
+      : (11 - rowIndex) / 1.7;
 
   let deg = (Math.atan2(v, u) * 180) / Math.PI;
   if (deg < 0) deg += 360;

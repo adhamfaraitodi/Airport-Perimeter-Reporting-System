@@ -249,7 +249,7 @@ export function ReportList({
         )}
 
         {children ? (
-          <div>{children}</div>
+          <div className="w-full">{children}</div>
         ) : (
           <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[350px_minmax(0,1fr)] xl:grid-cols-[380px_minmax(0,1fr)] xl:gap-6">
             {/* LEFT SIDEBAR: Summary Stats & Field Reporter Guide */}

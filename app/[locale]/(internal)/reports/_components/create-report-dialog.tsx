@@ -28,7 +28,6 @@ import MapView, {
 import {
   getLocationGridAndSide,
   getGridCellFromLatLng,
-  PERIMETER_SIDES,
 } from "../../../_components/airport-grid";
 
 interface CatalogPart {
@@ -198,8 +197,8 @@ function ReporterFormSession({
   const detectedLocation = point
     ? getLocationGridAndSide(point.latitude, point.longitude)
     : null;
-  const currentGrid = segmentCode || detectedLocation?.code || "";
-  const currentSide = side || detectedLocation?.side || "";
+  const currentGrid = detectedLocation?.code || segmentCode || "";
+  const currentSide = detectedLocation?.side || side || "";
 
   useEffect(() => {
     mounted.current = true;
@@ -262,7 +261,7 @@ function ReporterFormSession({
           if (detected) {
             update(key, {
               segmentCode: detected.code,
-              side: draft?.side || detected.side,
+              side: detected.side,
             });
           }
         }
@@ -411,8 +410,8 @@ function ReporterFormSession({
         const detected = point
           ? getLocationGridAndSide(point.latitude, point.longitude)
           : null;
-        const finalGrid = segmentCode || detected?.code || undefined;
-        const finalSide = side || detected?.side || undefined;
+        const finalGrid = detected?.code || segmentCode || undefined;
+        const finalSide = detected?.side || side || undefined;
 
         attemptRef.current = {
           payload: {
@@ -474,45 +473,19 @@ function ReporterFormSession({
   }
 
   return (
-    <form
-      onSubmit={submit}
-      aria-labelledby={`${id}-title`}
-      className="rounded-2xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] p-3.5 text-[var(--rd-text)] sm:p-6"
-    >
-      <div className="mb-5 flex items-start justify-between gap-3 border-b border-[var(--rd-border)] pb-4">
-        <div>
-          <h2
-            id={`${id}-title`}
-            className="m-0 text-base font-normal tracking-normal sm:text-lg"
-          >
-            Buat Laporan Baru
-          </h2>
-          <p className={`${muted} m-0 mt-1 max-w-md`}>
-            Informasi yang jelas membantu tim menindaklanjuti kondisi perimeter.
-          </p>
-        </div>
-        <button
-          type="button"
-          aria-label="Tutup formulir"
-          disabled={busy}
-          onClick={requestCancel}
-          className={`${button} flex min-h-9 items-center justify-center rounded-lg bg-transparent p-1 text-[var(--rd-muted)] transition-all duration-200 hover:bg-[var(--rd-coral)]/15 hover:text-[var(--rd-coral)] active:bg-[var(--rd-coral)]/20 active:text-[var(--rd-coral)] active:duration-0 max-sm:active:scale-95`}
-        >
-          <X size={22} aria-hidden="true" />
-        </button>
-      </div>
-
-      {/* 2-Column Split on Desktop to prevent wide horizontal stretching */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start lg:gap-8">
-        {/* LEFT COLUMN: Damage Selection, Narrative & Photos */}
+    <form onSubmit={submit} noValidate className="w-full space-y-5">
+      <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2">
+        {/* LEFT COLUMN: Damaged Parts, Damage Types, Narrative & Evidence Photos */}
         <fieldset
           disabled={frozen || !!confirmation}
-          className="m-0 min-w-0 space-y-6 border-0 p-0"
+          className="m-0 min-w-0 space-y-5 border-0 p-0"
         >
-          <fieldset className="m-0 min-w-0 border-0 p-0">
-            <legend className="mb-3 text-sm">Bagian Pagar Perimeter</legend>
-            <p className={`${muted} mb-3`}>Pilih satu atau lebih bagian pagar</p>
-            <div className="mb-4 flex flex-wrap gap-2">
+          <section aria-labelledby={`${id}-parts`}>
+            <h3 id={`${id}-parts`} className="m-0 text-sm font-normal">
+              Bagian Pagar Perimeter
+            </h3>
+            <p className={`${muted} mb-2`}>Pilih satu atau lebih bagian pagar</p>
+            <div className="flex flex-wrap gap-2">
               {parts.map((part) => (
                 <Chip
                   key={part.id}
@@ -523,120 +496,114 @@ function ReporterFormSession({
                 </Chip>
               ))}
             </div>
-          </fieldset>
-          <section aria-labelledby={`${id}-damages`}>
-            <h3 id={`${id}-damages`} className="mb-3 text-sm font-normal">
-              Jenis Kerusakan
-            </h3>
-            <p className={`${muted} mb-3`}>
-              Pilih satu atau lebih kerusakan untuk setiap bagian.
-            </p>
-            {!selectedParts.length && (
-              <p className={muted}>Pilih bagian pagar terlebih dahulu.</p>
-            )}
-            <div className="space-y-3">
-              {selectedParts.map((part) => (
-                <fieldset
-                  key={part.id}
-                  className="m-0 min-w-0 rounded-lg border border-[var(--rd-border)] px-2 pb-3 pt-1"
-                >
-                  <legend className="px-1 text-xs">{part.name}</legend>
-                  <div className="flex flex-wrap gap-2">
-                    {part.damages.map((damage) => (
-                      <Chip
-                        key={damage.id}
-                        selected={selection[part.id].includes(damage.id)}
-                        onClick={() => toggleDamage(part, damage)}
-                      >
-                        {damage.name}
-                      </Chip>
-                    ))}
-                  </div>
-                  {part.damages.some((damage) => damage.exclusiveGroup) && (
-                    <p className={`${muted} mb-0 mt-2`}>
-                      Berkarat sedang dan berat tidak dapat dipilih bersamaan.
-                      Memilih salah satu menggantikan tingkat karat sebelumnya
-                      pada bagian ini.
-                    </p>
-                  )}
-                </fieldset>
-              ))}
-            </div>
           </section>
-          <div>
-            <label
-              htmlFor={`${id}-narrative`}
-              className="mb-3 block text-sm font-normal"
-            >
-              Narasi Laporan Temuan
-            </label>
+
+          {selectedParts.length > 0 && (
+            <section aria-labelledby={`${id}-damages`}>
+              <h3 id={`${id}-damages`} className="m-0 text-sm font-normal">
+                Jenis Kerusakan
+              </h3>
+              <p className={`${muted} mb-2`}>
+                Pilih satu atau lebih kerusakan untuk setiap bagian.
+              </p>
+              <div className="space-y-3">
+                {selectedParts.map((part) => (
+                  <fieldset
+                    key={part.id}
+                    className="m-0 rounded-lg border border-[var(--rd-border)] p-3"
+                  >
+                    <legend className="px-1 text-xs text-[var(--rd-muted)]">
+                      {part.name}
+                    </legend>
+                    <div className="flex flex-wrap gap-2">
+                      {part.damages.map((damage) => (
+                        <Chip
+                          key={damage.id}
+                          selected={(selection[part.id] || []).includes(
+                            damage.id
+                          )}
+                          onClick={() => toggleDamage(part, damage)}
+                        >
+                          {damage.name}
+                        </Chip>
+                      ))}
+                    </div>
+                  </fieldset>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section aria-labelledby={`${id}-narrative`}>
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor={`${id}-narrative`}
+                className="text-sm font-normal text-[var(--rd-text)]"
+              >
+                Narasi Laporan Temuan
+              </label>
+              <span className={muted} aria-live="polite">
+                {countText(narrative)} / 2.000
+              </span>
+            </div>
             <textarea
               id={`${id}-narrative`}
               rows={4}
+              maxLength={2000}
+              placeholder="Deskripsikan kondisi kerusakan pagar perimeter secara rinci..."
               value={narrative}
-              aria-describedby={`${id}-count`}
-              placeholder="Jelaskan dengan detail mengenai temuan"
-              onChange={(event) => {
-                if (!blocked())
-                  update(key, {
-                    narrative: Array.from(event.target.value)
-                      .slice(0, 2000)
-                      .join(""),
-                  });
-              }}
-              className="m-0 w-full rounded-lg border border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 text-sm text-[var(--rd-text)] placeholder:text-[var(--rd-muted)] focus-visible:outline-[var(--rd-link)]"
+              onChange={(event) =>
+                update(key, { narrative: event.target.value })
+              }
+              className="mt-1.5 w-full rounded-lg border border-[var(--rd-border)] bg-transparent p-2 text-sm text-[var(--rd-text)] focus-visible:outline-[var(--rd-link)]"
             />
-            <p id={`${id}-count`} className={`${muted} mb-0 mt-2 text-right`}>
-              {countText(narrative).toLocaleString("id-ID")} / 2.000 karakter
-            </p>
-          </div>
+          </section>
+
           <section aria-labelledby={`${id}-photos`}>
-            <h3 id={`${id}-photos`} className="mb-3 text-sm font-normal">
-              Foto-foto Laporan Temuan
+            <h3 id={`${id}-photos`} className="m-0 text-sm font-normal">
+              Foto Bukti Temuan
             </h3>
-            <label className="relative mb-0 flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-[var(--rd-border)] p-4 text-center text-sm font-normal focus-within:outline-2 focus-within:outline-[var(--rd-link)]">
-              <Plus
-                size={22}
-                className="text-[var(--rd-muted)]"
-                aria-hidden="true"
-              />
-              <span>Tambahkan foto dokumentasi</span>
-              <span className={muted}>
-                JPEG, PNG, WebP · maksimal 3 MB (3.000.000 byte) per foto ·
-                minimal 1 foto
-              </span>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-                onChange={selectFiles}
-                className="absolute inset-0 m-0 h-full w-full cursor-pointer opacity-0"
-              />
+            <p className={`${muted} mb-2`}>
+              Maksimal 3 MB per foto. Format: JPEG, PNG, WebP.
+            </p>
+            <input
+              id={`${id}-file-input`}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              disabled={frozen || !!confirmation}
+              onChange={selectFiles}
+              className="sr-only"
+            />
+            <label
+              htmlFor={`${id}-file-input`}
+              className={`${secondary} inline-flex min-h-9 cursor-pointer items-center gap-1.5`}
+            >
+              <Plus size={16} aria-hidden="true" /> Tambah Foto
             </label>
-            {!!files.length && (
-              <ul className="mt-3 flex list-none flex-wrap gap-3 p-0">
+            {files.length > 0 && (
+              <ul className="m-0 mt-3 list-none p-0 flex flex-wrap gap-2">
                 {files.map((item) => (
                   <li
                     key={item.id}
-                    className="relative w-32 overflow-hidden rounded-lg border border-[var(--rd-border)] bg-[var(--rd-bg)]"
+                    className="relative w-24 overflow-hidden rounded-lg border border-[var(--rd-border)]"
                   >
                     <img
                       src={item.preview}
                       alt={item.file.name}
-                      className="h-24 w-full object-cover"
+                      className="block h-20 w-full object-cover"
                     />
-                    <button
-                      type="button"
-                      aria-label={`Hapus foto ${item.file.name}`}
-                      onClick={() => removeFile(item)}
-                      className={`${button} absolute right-1 top-1 flex min-h-8 items-center rounded-md bg-[var(--rd-surface)] p-2 text-[var(--rd-coral)]`}
-                    >
-                      <Trash2 size={16} aria-hidden="true" />
-                    </button>
-                    <span
-                      className="block truncate px-2 pt-1 text-xs"
-                      title={item.file.name}
-                    >
+                    {!frozen && !confirmation && (
+                      <button
+                        type="button"
+                        aria-label={`Hapus ${item.file.name}`}
+                        onClick={() => removeFile(item)}
+                        className="absolute top-1 right-1 rounded bg-black/60 p-1 text-white border-0 hover:bg-black/80"
+                      >
+                        <Trash2 size={12} aria-hidden="true" />
+                      </button>
+                    )}
+                    <span className="block truncate px-1 text-[10px] text-[var(--rd-muted)]">
                       {item.file.name}
                     </span>
                     <span className={`${muted} block px-2 pb-2`} role="status">
@@ -703,7 +670,7 @@ function ReporterFormSession({
             )}
 
             {/* Grid & Perimeter Side detection details */}
-            <div className="mt-3.5 space-y-2.5 rounded-xl border border-[var(--rd-border)] bg-[var(--rd-bg)]/60 p-3 text-xs">
+            <div className="mt-3.5 space-y-2 rounded-xl border border-[var(--rd-border)] bg-[var(--rd-bg)]/60 p-3 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-[var(--rd-muted)]">Segmen Grid Bandara:</span>
                 <span className="font-semibold text-[var(--rd-link)]">
@@ -715,28 +682,6 @@ function ReporterFormSession({
                 <span className="font-medium text-[var(--rd-text)]">
                   {currentSide ? `Sisi ${currentSide}` : "-"}
                 </span>
-              </div>
-              <div className="border-t border-[var(--rd-border)]/70 pt-2">
-                <label
-                  htmlFor={`${id}-side`}
-                  className="mb-1.5 block font-medium text-[var(--rd-muted)]"
-                >
-                  Konfirmasi / Pilih Sisi:
-                </label>
-                <select
-                  id={`${id}-side`}
-                  disabled={frozen || !!confirmation}
-                  value={currentSide}
-                  onChange={(e) => update(key, { side: e.target.value })}
-                  className="w-full rounded-lg border border-[var(--rd-border)] bg-[var(--rd-surface)] px-2.5 py-1.5 text-xs text-[var(--rd-text)] focus-visible:outline-[var(--rd-link)]"
-                >
-                  <option value="">Pilih sisi perimeter</option>
-                  {PERIMETER_SIDES.map((val) => (
-                    <option key={val} value={val}>
-                      {val}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
           </section>
