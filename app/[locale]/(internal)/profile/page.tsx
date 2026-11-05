@@ -560,7 +560,7 @@ export default function ProfilePage() {
                       Foto Profil
                     </p>
                     <p className="m-0 mb-2.5 text-[11px] text-[var(--rd-muted)]">
-                      Kompresi otomatis WebP (&lt; 30 KB) agar ringan dan cepat.
+                      Foto tersimpan
                     </p>
                     <div className="flex flex-wrap items-center gap-2.5">
                       <input
