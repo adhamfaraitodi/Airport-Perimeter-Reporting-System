@@ -11,6 +11,14 @@ import {
   type DamageItemDto,
   slugifyCatalogId,
 } from "./damage-catalog.types";
+import {
+  createPartSchema,
+  updatePartSchema,
+  deletePartSchema,
+  createDamageTypeSchema,
+  updateDamageTypeSchema,
+  deleteDamageTypeSchema,
+} from "./damage-catalog.schema";
 
 export type { CatalogPartDto, DamageItemDto };
 
@@ -114,6 +122,7 @@ export async function getDamageCatalogAction(): Promise<{
 
 /**
  * Create a new perimeter part with optional initial damages in PostgreSQL.
+ * Validates input via Zod createPartSchema.
  */
 export async function createPartAction(input: {
   name: string;
@@ -126,10 +135,13 @@ export async function createPartAction(input: {
   try {
     await verifyOperatorSession();
 
-    const trimmedName = input.name.trim();
-    if (!trimmedName) {
-      return { success: false, errorMessage: "Nama bagian pagar wajib diisi." };
+    const parsed = createPartSchema.safeParse(input);
+    if (!parsed.success) {
+      const firstError = Object.values(parsed.error.flatten().fieldErrors)[0]?.[0];
+      return { success: false, errorMessage: firstError || "Nama bagian pagar wajib diisi." };
     }
+
+    const trimmedName = parsed.data.name;
 
     const existingParts = await db
       .select({ id: schema.perimeterParts.id, sortOrder: schema.perimeterParts.sortOrder })
@@ -146,8 +158,8 @@ export async function createPartAction(input: {
       ? Math.max(...existingParts.map((p) => p.sortOrder || 0)) + 1
       : 1;
 
-    const initialDamages = input.damages && input.damages.length > 0
-      ? input.damages
+    const initialDamages = parsed.data.damages && parsed.data.damages.length > 0
+      ? parsed.data.damages
       : [{ name: "Lainnya" }];
 
     await db.transaction(async (tx) => {
@@ -195,6 +207,7 @@ export async function createPartAction(input: {
 
 /**
  * Update an existing perimeter part and optionally sync its damage items.
+ * Validates input via Zod updatePartSchema.
  */
 export async function updatePartAction(
   partId: string,
@@ -210,10 +223,13 @@ export async function updatePartAction(
   try {
     await verifyOperatorSession();
 
-    const trimmedName = input.name.trim();
-    if (!trimmedName) {
-      return { success: false, errorMessage: "Nama bagian pagar wajib diisi." };
+    const parsed = updatePartSchema.safeParse({ id: partId, name: input.name });
+    if (!parsed.success) {
+      const firstError = Object.values(parsed.error.flatten().fieldErrors)[0]?.[0];
+      return { success: false, errorMessage: firstError || "Nama bagian pagar wajib diisi." };
     }
+
+    const trimmedName = parsed.data.name;
 
     await db.transaction(async (tx) => {
       await tx
@@ -225,7 +241,6 @@ export async function updatePartAction(
         .where(eq(schema.perimeterParts.id, partId));
 
       if (input.damages && input.damages.length > 0) {
-        // Collect current damages to preserve/update
         for (const d of input.damages) {
           const damageName = d.name.trim();
           if (!damageName) continue;
@@ -263,6 +278,7 @@ export async function updatePartAction(
 
 /**
  * Delete a perimeter part (cascades to all its damage types in PostgreSQL).
+ * Validates input via Zod deletePartSchema.
  */
 export async function deletePartAction(partId: string): Promise<{
   success: boolean;
@@ -271,9 +287,14 @@ export async function deletePartAction(partId: string): Promise<{
   try {
     await verifyOperatorSession();
 
+    const parsed = deletePartSchema.safeParse({ partId });
+    if (!parsed.success) {
+      return { success: false, errorMessage: "ID bagian pagar tidak valid." };
+    }
+
     await db
       .delete(schema.perimeterParts)
-      .where(eq(schema.perimeterParts.id, partId));
+      .where(eq(schema.perimeterParts.id, parsed.data.partId));
 
     invalidateDamageCatalogCache();
     await fetchCatalogFromDb();
@@ -287,6 +308,7 @@ export async function deletePartAction(partId: string): Promise<{
 
 /**
  * Add a new damage classification to a part in PostgreSQL.
+ * Validates input via Zod createDamageTypeSchema.
  */
 export async function createDamageAction(input: {
   partId: string;
@@ -300,11 +322,13 @@ export async function createDamageAction(input: {
   try {
     await verifyOperatorSession();
 
-    const trimmedName = input.name.trim();
-    if (!trimmedName) {
-      return { success: false, errorMessage: "Nama jenis kerusakan wajib diisi." };
+    const parsed = createDamageTypeSchema.safeParse(input);
+    if (!parsed.success) {
+      const firstError = Object.values(parsed.error.flatten().fieldErrors)[0]?.[0];
+      return { success: false, errorMessage: firstError || "Nama jenis kerusakan wajib diisi." };
     }
 
+    const { partId, name: trimmedName, exclusiveGroup } = parsed.data;
     const baseSlug = slugifyCatalogId(trimmedName) || `kerusakan-${Date.now()}`;
     const damageId = baseSlug;
 
@@ -314,7 +338,7 @@ export async function createDamageAction(input: {
       .from(schema.damageTypes)
       .where(
         and(
-          eq(schema.damageTypes.partId, input.partId),
+          eq(schema.damageTypes.partId, partId),
           eq(schema.damageTypes.id, damageId)
         )
       )
@@ -329,9 +353,9 @@ export async function createDamageAction(input: {
 
     await db.insert(schema.damageTypes).values({
       id: damageId,
-      partId: input.partId,
+      partId,
       name: trimmedName,
-      exclusiveGroup: input.exclusiveGroup?.trim() || null,
+      exclusiveGroup: exclusiveGroup || null,
       isActive: true,
     });
 
@@ -343,7 +367,7 @@ export async function createDamageAction(input: {
       damage: {
         id: damageId,
         name: trimmedName,
-        ...(input.exclusiveGroup ? { exclusiveGroup: input.exclusiveGroup } : {}),
+        ...(exclusiveGroup ? { exclusiveGroup } : {}),
       },
     };
   } catch (err: unknown) {
@@ -354,6 +378,7 @@ export async function createDamageAction(input: {
 
 /**
  * Update an existing damage classification in PostgreSQL.
+ * Validates input via Zod updateDamageTypeSchema.
  */
 export async function updateDamageAction(
   partId: string,
@@ -370,16 +395,19 @@ export async function updateDamageAction(
   try {
     await verifyOperatorSession();
 
-    const trimmedName = input.name.trim();
-    if (!trimmedName) {
-      return { success: false, errorMessage: "Nama jenis kerusakan wajib diisi." };
+    const parsed = updateDamageTypeSchema.safeParse({ partId, id: damageId, ...input });
+    if (!parsed.success) {
+      const firstError = Object.values(parsed.error.flatten().fieldErrors)[0]?.[0];
+      return { success: false, errorMessage: firstError || "Nama jenis kerusakan wajib diisi." };
     }
+
+    const { name: trimmedName, exclusiveGroup } = parsed.data;
 
     await db
       .update(schema.damageTypes)
       .set({
         name: trimmedName,
-        exclusiveGroup: input.exclusiveGroup?.trim() || null,
+        exclusiveGroup: exclusiveGroup || null,
         updatedAt: new Date(),
       })
       .where(
@@ -397,7 +425,7 @@ export async function updateDamageAction(
       damage: {
         id: damageId,
         name: trimmedName,
-        ...(input.exclusiveGroup ? { exclusiveGroup: input.exclusiveGroup } : {}),
+        ...(exclusiveGroup ? { exclusiveGroup } : {}),
       },
     };
   } catch (err: unknown) {
@@ -408,6 +436,7 @@ export async function updateDamageAction(
 
 /**
  * Delete a damage classification from PostgreSQL.
+ * Validates input via Zod deleteDamageTypeSchema.
  */
 export async function deleteDamageAction(
   partId: string,
@@ -419,12 +448,17 @@ export async function deleteDamageAction(
   try {
     await verifyOperatorSession();
 
+    const parsed = deleteDamageTypeSchema.safeParse({ partId, id: damageId });
+    if (!parsed.success) {
+      return { success: false, errorMessage: "Data jenis kerusakan tidak valid." };
+    }
+
     await db
       .delete(schema.damageTypes)
       .where(
         and(
-          eq(schema.damageTypes.partId, partId),
-          eq(schema.damageTypes.id, damageId)
+          eq(schema.damageTypes.partId, parsed.data.partId),
+          eq(schema.damageTypes.id, parsed.data.id)
         )
       );
 

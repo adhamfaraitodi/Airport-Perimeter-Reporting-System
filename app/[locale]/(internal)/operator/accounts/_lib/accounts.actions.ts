@@ -6,6 +6,13 @@ import { hashPassword } from "better-auth/crypto";
 import { db, schema } from "@/db";
 import { auth, nipToEmail, type UserRole, type AccountStatus } from "@/lib/auth";
 import type { ManagedAccount, AccountInput } from "../../../../_lib/accounts-store";
+import {
+  createAccountSchema,
+  updateAccountSchema,
+  toggleAccountStatusSchema,
+  resetPasswordSchema,
+  deleteAccountSchema,
+} from "./accounts.schema";
 
 export interface CreateAccountInput extends AccountInput {
   password: string;
@@ -76,6 +83,7 @@ export async function getAccountsAction(): Promise<{
 
 /**
  * Create a new user account with Better-Auth credentials.
+ * Validates input via Zod createAccountSchema.
  */
 export async function createAccountAction(
   input: CreateAccountInput
@@ -87,28 +95,13 @@ export async function createAccountAction(
   try {
     await verifyOperatorSession();
 
-    const nip = input.nip.trim();
-    const name = input.name.trim();
-    const phone = input.phone?.trim() || "";
-    const unit = input.unit.trim() || "Operasional Bandara";
-    const role = input.role;
-    const status = input.status || "ACTIVE";
-    const password = input.password.trim();
-
-    if (!nip || !name) {
-      return { success: false, errorMessage: "NIP dan Nama Lengkap wajib diisi." };
+    const parsed = createAccountSchema.safeParse(input);
+    if (!parsed.success) {
+      const firstError = Object.values(parsed.error.flatten().fieldErrors)[0]?.[0];
+      return { success: false, errorMessage: firstError || "Data akun baru tidak valid." };
     }
 
-    if (!password || password.length < 6) {
-      return { success: false, errorMessage: "Password minimal 6 karakter." };
-    }
-
-    if (phone && (phone.length < 10 || phone.length > 13 || !/^\d+$/.test(phone))) {
-      return {
-        success: false,
-        errorMessage: "Nomor telepon harus berupa angka antara 10 sampai 13 digit.",
-      };
-    }
+    const { nip, name, phone, unit, role, status, password } = parsed.data;
 
     // Check duplicate NIP
     const existing = await db
@@ -132,7 +125,7 @@ export async function createAccountAction(
         nip,
         role,
         unit,
-        phone,
+        phone: phone || undefined,
         status,
       },
     });
@@ -173,6 +166,7 @@ export async function createAccountAction(
 
 /**
  * Update an existing user account.
+ * Validates input via Zod updateAccountSchema.
  */
 export async function updateAccountAction(
   id: string,
@@ -185,23 +179,13 @@ export async function updateAccountAction(
   try {
     await verifyOperatorSession();
 
-    const nip = input.nip.trim();
-    const name = input.name.trim();
-    const phone = input.phone?.trim() || "";
-    const unit = input.unit.trim() || "Operasional Bandara";
-    const role = input.role;
-    const status = input.status;
-
-    if (!nip || !name) {
-      return { success: false, errorMessage: "NIP dan Nama Lengkap wajib diisi." };
+    const parsed = updateAccountSchema.safeParse({ id, ...input });
+    if (!parsed.success) {
+      const firstError = Object.values(parsed.error.flatten().fieldErrors)[0]?.[0];
+      return { success: false, errorMessage: firstError || "Data pembaruan akun tidak valid." };
     }
 
-    if (phone && (phone.length < 10 || phone.length > 13 || !/^\d+$/.test(phone))) {
-      return {
-        success: false,
-        errorMessage: "Nomor telepon harus berupa angka antara 10 sampai 13 digit.",
-      };
-    }
+    const { nip, name, phone, unit, role, status } = parsed.data;
 
     // Check duplicate NIP if changed
     const existingNip = await db
@@ -222,7 +206,7 @@ export async function updateAccountAction(
         name,
         nip,
         email,
-        phone,
+        phone: phone || null,
         role,
         unit,
         status,
@@ -254,6 +238,7 @@ export async function updateAccountAction(
 
 /**
  * Toggle account status between ACTIVE and INACTIVE.
+ * Validates input via Zod toggleAccountStatusSchema.
  */
 export async function toggleAccountStatusAction(
   id: string,
@@ -266,6 +251,11 @@ export async function toggleAccountStatusAction(
   try {
     const currentUser = await verifyOperatorSession();
 
+    const parsed = toggleAccountStatusSchema.safeParse({ id, newStatus });
+    if (!parsed.success) {
+      return { success: false, errorMessage: "Status akun tidak valid." };
+    }
+
     if (currentUser.id === id) {
       return {
         success: false,
@@ -276,12 +266,12 @@ export async function toggleAccountStatusAction(
     await db
       .update(schema.user)
       .set({
-        status: newStatus,
+        status: parsed.data.newStatus,
         updatedAt: new Date(),
       })
       .where(eq(schema.user.id, id));
 
-    return { success: true, status: newStatus };
+    return { success: true, status: parsed.data.newStatus };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Gagal mengubah status akun.";
     return { success: false, errorMessage: msg };
@@ -290,6 +280,7 @@ export async function toggleAccountStatusAction(
 
 /**
  * Reset password for a user account.
+ * Validates input via Zod resetPasswordSchema.
  */
 export async function resetAccountPasswordAction(
   id: string,
@@ -301,12 +292,13 @@ export async function resetAccountPasswordAction(
   try {
     await verifyOperatorSession();
 
-    const trimmed = newPassword.trim();
-    if (trimmed.length < 6) {
-      return { success: false, errorMessage: "Password baru minimal 6 karakter." };
+    const parsed = resetPasswordSchema.safeParse({ id, newPassword });
+    if (!parsed.success) {
+      const firstError = Object.values(parsed.error.flatten().fieldErrors)[0]?.[0];
+      return { success: false, errorMessage: firstError || "Password tidak valid." };
     }
 
-    const hashedPassword = await hashPassword(trimmed);
+    const hashedPassword = await hashPassword(parsed.data.newPassword);
 
     // Update password in Better-Auth account table
     await db
@@ -326,6 +318,7 @@ export async function resetAccountPasswordAction(
 
 /**
  * Delete a user account from PostgreSQL.
+ * Validates input via Zod deleteAccountSchema.
  */
 export async function deleteAccountAction(
   id: string
@@ -335,6 +328,11 @@ export async function deleteAccountAction(
 }> {
   try {
     const currentUser = await verifyOperatorSession();
+
+    const parsed = deleteAccountSchema.safeParse({ id });
+    if (!parsed.success) {
+      return { success: false, errorMessage: "ID akun tidak valid." };
+    }
 
     if (currentUser.id === id) {
       return {

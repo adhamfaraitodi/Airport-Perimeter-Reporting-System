@@ -10,15 +10,15 @@ import type {
   ReportRecord,
   FindingItem,
   LifecycleStatus,
-  BeginSubmissionPayload,
 } from "../../../_lib/client-api";
 import { dispatchReportNotificationAction } from "../../../_lib/notifications.actions";
+import {
+  commitReportSubmissionInputSchema,
+  type UploadedFilePayload,
+  type CommitReportSubmissionInput,
+} from "./operator-reports.schema";
 
-export interface UploadedFilePayload {
-  id: string;
-  mimeType: string;
-  base64: string;
-}
+export type { UploadedFilePayload };
 
 /**
  * Verify session for authenticated internal users.
@@ -199,10 +199,7 @@ export async function getReportsAction(): Promise<{
  * Commit a full submission (CREATE, STATUS update, or DELETE/close) to PostgreSQL.
  * Uses atomic transactions and bulk photo batching for integrity.
  */
-export async function commitReportSubmissionAction(input: {
-  payload: BeginSubmissionPayload;
-  files: UploadedFilePayload[];
-}): Promise<{
+export async function commitReportSubmissionAction(input: CommitReportSubmissionInput): Promise<{
   success: boolean;
   report?: ReportRecord;
   errorMessage?: string;
@@ -210,7 +207,16 @@ export async function commitReportSubmissionAction(input: {
   try {
     const user = await verifySession();
     const userRole = (user as Record<string, unknown>).role as UserRole | undefined;
-    const { payload, files } = input;
+
+    const parsed = commitReportSubmissionInputSchema.safeParse(input);
+    if (!parsed.success) {
+      return {
+        success: false,
+        errorMessage: parsed.error.issues[0]?.message || "Input pengiriman laporan tidak valid.",
+      };
+    }
+
+    const { payload, files } = parsed.data;
 
     // Save photos to disk first
     const savedPhotos = files.map((f) => {

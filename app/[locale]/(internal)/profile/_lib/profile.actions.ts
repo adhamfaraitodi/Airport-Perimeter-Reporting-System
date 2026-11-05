@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { auth, type UserRole } from "@/lib/auth";
+import { updateProfileSchema } from "./profile.schema";
 
 export interface ProfileData {
   id: string;
@@ -91,6 +92,7 @@ export async function getProfileAction(): Promise<{
  * - Saves compressed WebP avatar to public/uploads/avatars/
  * - Saves processed wet signature to private storage/signatures/
  * - Persists updates to PostgreSQL `user` table
+ * - Validates input via Zod updateProfileSchema
  */
 export async function updateProfileAction(
   input: UpdateProfileInput
@@ -105,6 +107,12 @@ export async function updateProfileAction(
       return { success: false, errorMessage: "Sesi pengguna tidak valid. Silakan login kembali." };
     }
 
+    const parsed = updateProfileSchema.safeParse(input);
+    if (!parsed.success) {
+      const firstError = Object.values(parsed.error.flatten().fieldErrors)[0]?.[0];
+      return { success: false, errorMessage: firstError || "Data profil tidak valid." };
+    }
+
     const existing = await db.query.user.findFirst({
       where: eq(schema.user.id, targetUserId),
     });
@@ -117,8 +125,8 @@ export async function updateProfileAction(
     let finalSignatureUrl = existing.signatureUrl;
 
     // 1. Process Avatar
-    if (input.avatarDataUrl !== undefined) {
-      if (input.avatarDataUrl === null) {
+    if (parsed.data.avatarDataUrl !== undefined) {
+      if (parsed.data.avatarDataUrl === null) {
         // Remove existing avatar file
         finalImageUrl = null;
         const oldFile = path.join(
@@ -131,9 +139,9 @@ export async function updateProfileAction(
         if (fs.existsSync(oldFile)) {
           fs.unlinkSync(oldFile);
         }
-      } else if (input.avatarDataUrl.startsWith("data:image/")) {
+      } else if (parsed.data.avatarDataUrl.startsWith("data:image/")) {
         // Save avatar file
-        const base64Data = input.avatarDataUrl.replace(/^data:image\/\w+;base64,/, "");
+        const base64Data = parsed.data.avatarDataUrl.replace(/^data:image\/\w+;base64,/, "");
         const buffer = Buffer.from(base64Data, "base64");
         const dir = path.join(process.cwd(), "public", "uploads", "avatars");
         if (!fs.existsSync(dir)) {
@@ -146,8 +154,8 @@ export async function updateProfileAction(
     }
 
     // 2. Process Private Signature
-    if (input.signatureDataUrl !== undefined) {
-      if (input.signatureDataUrl === null) {
+    if (parsed.data.signatureDataUrl !== undefined) {
+      if (parsed.data.signatureDataUrl === null) {
         // Remove existing signature file
         finalSignatureUrl = null;
         const oldSign = path.join(
@@ -159,9 +167,9 @@ export async function updateProfileAction(
         if (fs.existsSync(oldSign)) {
           fs.unlinkSync(oldSign);
         }
-      } else if (input.signatureDataUrl.startsWith("data:image/")) {
+      } else if (parsed.data.signatureDataUrl.startsWith("data:image/")) {
         // Save signature file in private storage
-        const base64Data = input.signatureDataUrl.replace(/^data:image\/\w+;base64,/, "");
+        const base64Data = parsed.data.signatureDataUrl.replace(/^data:image\/\w+;base64,/, "");
         const buffer = Buffer.from(base64Data, "base64");
         const dir = path.join(process.cwd(), "storage", "signatures");
         if (!fs.existsSync(dir)) {
@@ -177,8 +185,8 @@ export async function updateProfileAction(
     const [updated] = await db
       .update(schema.user)
       .set({
-        name: input.name.trim(),
-        phone: input.phone ? input.phone.trim() : null,
+        name: parsed.data.name.trim(),
+        phone: parsed.data.phone ? parsed.data.phone.trim() : null,
         image: finalImageUrl,
         signatureUrl: finalSignatureUrl,
         updatedAt: new Date(),
