@@ -86,10 +86,16 @@ export function AppHeader({
   const router = useRouter();
   const locale = params?.locale || "id";
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const accounts = useAccountsStore((state) => state.accounts);
-  const managedAccount = user
-    ? accounts.find((acc) => acc.id === user.id)
-    : undefined;
+  const managedAccount =
+    mounted && user
+      ? accounts.find((acc) => acc.id === user.id)
+      : undefined;
 
   const isOperator =
     user?.role === "OPERATOR" ||
@@ -140,7 +146,12 @@ export function AppHeader({
     user?.name?.trim() ||
     user?.email ||
     "Pengguna";
-  const avatarUrl = user?.image || dbAvatarUrl || (user as { avatarUrl?: string | null })?.avatarUrl || managedAccount?.avatarUrl || null;
+  const avatarUrl =
+    user?.image ||
+    dbAvatarUrl ||
+    (user as { avatarUrl?: string | null })?.avatarUrl ||
+    (mounted ? managedAccount?.avatarUrl : null) ||
+    null;
 
   const unreadCount = notifications.filter((n) => !n.read).length;
   const showUnreadDot =
@@ -196,6 +207,11 @@ export function AppHeader({
 
   async function handleLogout() {
     setProfileOpen(false);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem("perimeter_profile_cache");
+      } catch {}
+    }
     try {
       await logoutAction();
     } catch {
@@ -542,9 +558,10 @@ export function AppHeader({
           </Popover>
 
           {/* Account Profile Trigger & Dropdown */}
-          <div className="relative pl-0.5 sm:pl-1" ref={profileRef}>
+          <div className="relative pl-0.5 sm:pl-1" ref={profileRef} suppressHydrationWarning>
             <button
               type="button"
+              suppressHydrationWarning
               onClick={() => {
                 setProfileOpen((prev) => !prev);
                 setNotifOpen(false);
@@ -554,7 +571,9 @@ export function AppHeader({
               aria-haspopup="menu"
               className="flex items-center gap-2.5 rounded-2xl p-1 text-left transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
             >
-              {user ? (
+              {!mounted ? (
+                <Skeleton className="size-9 shrink-0 rounded-xl sm:size-10 sm:rounded-2xl" />
+              ) : user ? (
                 avatarUrl ? (
                   <img
                     src={avatarUrl}
@@ -573,8 +592,10 @@ export function AppHeader({
               ) : (
                 <Skeleton className="size-9 shrink-0 rounded-xl sm:size-10 sm:rounded-2xl" />
               )}
-              <div className="hidden leading-tight sm:block">
-                {user ? (
+              <div className="hidden leading-tight sm:block" suppressHydrationWarning>
+                {!mounted ? (
+                  <Skeleton className="mb-1 h-3.5 w-24 rounded-md" />
+                ) : user ? (
                   <strong className="block text-[13px] font-semibold text-[var(--rd-text)]">
                     {displayName}
                   </strong>

@@ -184,6 +184,33 @@ export const api = {
           }
         }
         users[resolvedRole] = activeUser;
+
+        // Sync local cache for instant hydration
+        if (typeof window !== "undefined") {
+          try {
+            const raw = window.localStorage.getItem("perimeter_profile_cache");
+            const existing = raw ? JSON.parse(raw) : {};
+            window.localStorage.setItem(
+              "perimeter_profile_cache",
+              JSON.stringify({
+                ...existing,
+                user: activeUser,
+                name: existing.name || activeUser.name,
+                phone: existing.phone || activeUser.phone || "",
+                avatarUrl:
+                  existing.avatarUrl !== undefined
+                    ? existing.avatarUrl
+                    : activeUser.image || null,
+                signatureUrl:
+                  existing.signatureUrl !== undefined
+                    ? existing.signatureUrl
+                    : activeUser.signatureUrl || null,
+                updatedAt: Date.now(),
+              })
+            );
+          } catch {}
+        }
+
         return clone(activeUser);
       }
     } catch {

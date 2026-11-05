@@ -60,6 +60,40 @@ import {
 const readOnlyInput =
   "m-0 block w-full cursor-not-allowed rounded-[10px] border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)]/80 px-3.5 py-2.5 text-sm text-[var(--rd-muted)] opacity-85 select-all";
 
+const PROFILE_CACHE_KEY = "perimeter_profile_cache";
+
+interface ProfileCache {
+  user: SessionUser;
+  dbProfile: ProfileData | null;
+  reports?: ReportRecord[];
+  name: string;
+  phone: string;
+  avatarUrl: string | null;
+  signatureUrl: string | null;
+  updatedAt?: number;
+}
+
+function readProfileCache(): ProfileCache | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(PROFILE_CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function writeProfileCache(cache: ProfileCache) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      PROFILE_CACHE_KEY,
+      JSON.stringify({ ...cache, updatedAt: Date.now() })
+    );
+  } catch {}
+}
+
 export default function ProfilePage() {
   const params = useParams<{ locale?: string }>();
   const locale = params?.locale || "id";
@@ -86,6 +120,7 @@ export default function ProfilePage() {
 
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const signatureInputRef = useRef<HTMLInputElement | null>(null);
+  const isFormTouched = useRef(false);
 
   // Sync with local accounts store if available
   const accounts = useAccountsStore((state) => state.accounts);
@@ -93,8 +128,21 @@ export default function ProfilePage() {
 
   useEffect(() => {
     let active = true;
+
+    // Fast-hydrate from localStorage cache on client mount (avoids hydration mismatch)
+    const cached = readProfileCache();
+    if (cached) {
+      if (cached.user) setUser(cached.user);
+      if (cached.dbProfile) setDbProfile(cached.dbProfile);
+      if (cached.reports) setReports(cached.reports);
+      if (cached.name) setName(cached.name);
+      if (cached.phone) setPhone(cached.phone);
+      if (cached.avatarUrl) setAvatarUrl(cached.avatarUrl);
+      if (cached.signatureUrl) setSignatureUrl(cached.signatureUrl);
+      setLoading(false);
+    }
+
     (async () => {
-      setLoading(true);
       try {
         const [session, reportItems, profileRes] = await Promise.all([
           api.getSession(),
@@ -105,34 +153,71 @@ export default function ProfilePage() {
         if (!active) return;
 
         if (!session) {
+          if (typeof window !== "undefined") {
+            try {
+              window.localStorage.removeItem(PROFILE_CACHE_KEY);
+            } catch {}
+          }
           window.location.href = `/${locale}/login`;
           return;
         }
 
         setReports(reportItems);
 
+        let finalName = name;
+        let finalPhone = phone;
+        let finalAvatarUrl = avatarUrl;
+        let finalSignatureUrl = signatureUrl;
+        let nextUser: SessionUser = session;
+        let nextDbProfile: ProfileData | null = null;
+
         if (profileRes.success && profileRes.user) {
           const p = profileRes.user;
-          setUser({
+          nextUser = {
             ...session,
             name: p.name,
             phone: p.phone || undefined,
             unit: p.unit || undefined,
             image: p.image || undefined,
             signatureUrl: p.signatureUrl || undefined,
-          });
+          };
+          nextDbProfile = p;
+          setUser(nextUser);
           setDbProfile(p);
-          setName(p.name);
-          setPhone(p.phone || "");
+
+          if (!isFormTouched.current) {
+            setName(p.name);
+            setPhone(p.phone || "");
+            finalName = p.name;
+            finalPhone = p.phone || "";
+          }
           setAvatarUrl(p.image || null);
           setSignatureUrl(p.signatureUrl || null);
+          finalAvatarUrl = p.image || null;
+          finalSignatureUrl = p.signatureUrl || null;
         } else {
           // Fallback to session
-          setName(session.name);
-          setPhone(session.phone || "");
+          if (!isFormTouched.current) {
+            setName(session.name);
+            setPhone(session.phone || "");
+            finalName = session.name;
+            finalPhone = session.phone || "";
+          }
           setAvatarUrl(session.image || null);
           setSignatureUrl(session.signatureUrl || null);
+          finalAvatarUrl = session.image || null;
+          finalSignatureUrl = session.signatureUrl || null;
         }
+
+        writeProfileCache({
+          user: nextUser,
+          dbProfile: nextDbProfile,
+          name: finalName,
+          phone: finalPhone,
+          avatarUrl: finalAvatarUrl,
+          signatureUrl: finalSignatureUrl,
+          reports: reportItems,
+        });
       } catch (e) {
         if (active) toast.error(message(e));
       } finally {
@@ -246,22 +331,42 @@ export default function ProfilePage() {
       setSignatureUrl(res.user.signatureUrl || null);
       setAvatarPayload(undefined);
       setSignaturePayload(undefined);
+      isFormTouched.current = false;
 
-      setUser((prev) =>
-        prev
-          ? {
-              ...prev,
-              name: res.user!.name,
-              phone: res.user!.phone || undefined,
-              unit: res.user!.unit || undefined,
-              image: res.user!.image || undefined,
-              signatureUrl: res.user!.signatureUrl || undefined,
-            }
-          : null
-      );
+      const nextUser: SessionUser = user
+        ? {
+            ...user,
+            name: res.user.name,
+            phone: res.user.phone || undefined,
+            unit: res.user.unit || undefined,
+            image: res.user.image || undefined,
+            signatureUrl: res.user.signatureUrl || undefined,
+          }
+        : {
+            id: res.user.id,
+            name: res.user.name,
+            email: res.user.email,
+            role: res.user.role,
+            phone: res.user.phone || undefined,
+            unit: res.user.unit,
+            image: res.user.image || undefined,
+            signatureUrl: res.user.signatureUrl || undefined,
+          };
+
+      setUser(nextUser);
+
+      writeProfileCache({
+        user: nextUser,
+        dbProfile: res.user,
+        name: res.user.name,
+        phone: res.user.phone || "",
+        avatarUrl: res.user.image || null,
+        signatureUrl: res.user.signatureUrl || null,
+        reports,
+      });
 
       // Sync local accounts store if available
-      updateStoreProfile(user.id, {
+      updateStoreProfile(nextUser.id, {
         name: res.user.name,
         phone: res.user.phone || "",
         avatarUrl: res.user.image || undefined,
@@ -329,7 +434,10 @@ export default function ProfilePage() {
         containerClassName="max-w-[1700px] min-[1100px]:px-[5%]"
       />
 
-      <main className="mx-auto flex w-full max-w-[1700px] flex-1 flex-col px-3 pt-4 md:px-[3%] md:pt-6 min-[1100px]:px-[5%]">
+      <main
+        suppressHydrationWarning
+        className="mx-auto flex w-full max-w-[1700px] flex-1 flex-col px-3 pt-4 md:px-[3%] md:pt-6 min-[1100px]:px-[5%]"
+      >
         {/* Breadcrumb */}
         <nav
           aria-label="Breadcrumb"
@@ -624,7 +732,11 @@ export default function ProfilePage() {
                       className="hidden"
                     />
 
-                    {processingSignature ? (
+                    {loading ? (
+                      <div className="flex min-h-36 w-full items-center justify-center rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4">
+                        <Skeleton className="h-28 w-full rounded-md" />
+                      </div>
+                    ) : processingSignature ? (
                       <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--rd-link)] bg-[var(--rd-surface)] py-8 text-center">
                         <Loader2
                           size={24}
@@ -655,10 +767,10 @@ export default function ProfilePage() {
 
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex items-center gap-0.5">
-                          <Check className="text-[var(--rd-lime)]" size={14} aria-hidden="true"/>
-                          <span className="text-[11px] font-medium text-[var(--rd-lime)]">
-                            Tanda tangan sudah berhasil diproses, Simpan untuk menerapkan.
-                          </span>
+                            <Check className="text-[var(--rd-lime)]" size={14} aria-hidden="true"/>
+                            <span className="text-[11px] font-medium text-[var(--rd-lime)]">
+                              Tanda tangan sudah berhasil diproses, Simpan untuk menerapkan.
+                            </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <button
@@ -721,7 +833,10 @@ export default function ProfilePage() {
                         type="text"
                         required
                         value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        onChange={(e) => {
+                          isFormTouched.current = true;
+                          setName(e.target.value);
+                        }}
                         placeholder="Masukkan nama lengkap Anda"
                         className={`${fieldControl} !mt-0`}
                       />
@@ -748,7 +863,10 @@ export default function ProfilePage() {
                         required
                         maxLength={13}
                         value={phone}
-                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 13))}
+                        onChange={(e) => {
+                          isFormTouched.current = true;
+                          setPhone(e.target.value.replace(/\D/g, "").slice(0, 13));
+                        }}
                         placeholder="Contoh: 089999999999"
                         className={`${fieldControl} !mt-0 font-mono`}
                       />
