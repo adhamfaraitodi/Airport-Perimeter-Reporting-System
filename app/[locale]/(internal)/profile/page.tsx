@@ -156,7 +156,7 @@ export default function ProfilePage() {
       setAvatarPayload(dataUrl);
       const kb = Math.round(sizeBytes / 1024);
       toast.success("Foto profil siap", {
-        description: `Foto dioptimalkan secara otomatis (~${kb} KB). Simpan untuk menerapkan.`,
+        description: `Foto berhasil ter-upload. Simpan untuk menerapkan.`,
       });
     } catch (err) {
       toast.error(message(err) || "Gagal memproses foto profil.");
@@ -248,7 +248,7 @@ export default function ProfilePage() {
       });
 
       toast.success("Profil berhasil diperbarui", {
-        description: "Data kepegawaian, avatar, dan tanda tangan tersimpan di sistem.",
+        description: "Data berhasil tersimpan di sistem.",
       });
     } catch (err) {
       toast.error(message(err));
@@ -637,7 +637,7 @@ export default function ProfilePage() {
                           <div className="flex items-center gap-0.5">
                           <Check className="text-[var(--rd-lime)]" size={14} aria-hidden="true"/>
                           <span className="text-[11px] font-medium text-[var(--rd-lime)]">
-                            Tanda tangan sudah berhasil diproses, jangan lupa tekan tombol simpan perubahan
+                            Tanda tangan sudah berhasil diproses, Simpan untuk menerapkan.
                           </span>
                           </div>
                           <div className="flex items-center gap-2">
