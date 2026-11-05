@@ -6,26 +6,13 @@ import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { auth, type UserRole } from "@/lib/auth";
 
-export interface DamageItemDto {
-  id: string;
-  name: string;
-  exclusiveGroup?: string;
-}
+import {
+  type CatalogPartDto,
+  type DamageItemDto,
+  slugifyCatalogId,
+} from "./damage-catalog.types";
 
-export interface CatalogPartDto {
-  id: string;
-  name: string;
-  sortOrder?: number;
-  damages: DamageItemDto[];
-}
-
-export function slugifyCatalogId(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
+export type { CatalogPartDto, DamageItemDto };
 
 /**
  * High-performance in-memory cache singleton.
@@ -34,7 +21,7 @@ export function slugifyCatalogId(value: string): string {
  */
 let inMemoryCatalogCache: CatalogPartDto[] | null = null;
 
-export function invalidateDamageCatalogCache() {
+function invalidateDamageCatalogCache() {
   inMemoryCatalogCache = null;
   try {
     revalidatePath("/[locale]/operator/perimeter-damage", "page");

@@ -28,10 +28,10 @@ import {
   updateDamageAction,
   deleteDamageAction,
   resetDamageCatalogAction,
-  slugifyCatalogId,
   type CatalogPartDto as CatalogPart,
   type DamageItemDto as DamageItem,
 } from "./_lib/damage-catalog.actions";
+import { slugifyCatalogId } from "./_lib/damage-catalog.types";
 import { message } from "../../../_lib/draft-store";
 import {
   btnBase,

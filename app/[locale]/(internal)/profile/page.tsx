@@ -193,7 +193,7 @@ export default function ProfilePage() {
       setSignatureUrl(dataUrl);
       setSignaturePayload(dataUrl);
       toast.success("Tanda tangan berhasil diproses", {
-        description: `Gambar berhasil diproses, jangan lupa memastikan hasil sesuai dengan keinginan.`,
+        description: `Gambar berhasil diproses, pastikan hasil sudah sesuai.`,
       });
     } catch (err) {
       toast.error(
