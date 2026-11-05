@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -17,14 +17,21 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   api,
-  type DamageItem,
   type SessionUser,
 } from "../../../_lib/client-api";
 import {
+  getDamageCatalogAction,
+  createPartAction,
+  updatePartAction,
+  deletePartAction,
+  createDamageAction,
+  updateDamageAction,
+  deleteDamageAction,
+  resetDamageCatalogAction,
   slugifyCatalogId,
-  useDamageCatalog,
-  type CatalogPart,
-} from "../../../_lib/damage-catalog-store";
+  type CatalogPartDto as CatalogPart,
+  type DamageItemDto as DamageItem,
+} from "./_lib/damage-catalog.actions";
 import { message } from "../../../_lib/draft-store";
 import {
   btnBase,
@@ -86,16 +93,24 @@ export default function PerimeterDamageMasterPage() {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const {
-    parts,
-    addPart,
-    updatePart,
-    deletePart,
-    addDamage,
-    updateDamage,
-    deleteDamage,
-    resetToDefault,
-  } = useDamageCatalog();
+  const [parts, setParts] = useState<CatalogPart[]>([]);
+  const [actionBusy, setActionBusy] = useState(false);
+
+  const loadCatalog = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await getDamageCatalogAction();
+      if (res.success) {
+        setParts(res.catalog);
+      } else if (res.errorMessage) {
+        toast.error(res.errorMessage);
+      }
+    } catch (e) {
+      toast.error(message(e));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const [viewMode, setViewMode] = useState<ViewMode>("BY_PART");
   const [search, setSearch] = useState("");
@@ -120,7 +135,17 @@ export default function PerimeterDamageMasterPage() {
           window.location.href = `/${locale}/login`;
           return;
         }
+        if (session.role !== "OPERATOR") {
+          window.location.href = `/${locale}/${
+            session.role === "TECHNICIAN" ? "technician" : "reports"
+          }`;
+          return;
+        }
         if (active) setUser(session);
+        const res = await getDamageCatalogAction();
+        if (active && res.success) {
+          setParts(res.catalog);
+        }
       } catch (e) {
         if (active) toast.error(message(e));
       } finally {
@@ -130,7 +155,7 @@ export default function PerimeterDamageMasterPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [locale]);
 
   const totalParts = parts.length;
   const totalDamages = parts.reduce((sum, p) => sum + p.damages.length, 0);
@@ -266,40 +291,61 @@ export default function PerimeterDamageMasterPage() {
     });
   }
 
-  function handleSavePartModal(e: FormEvent) {
+  async function handleSavePartModal(e: FormEvent) {
     e.preventDefault();
-    if (!partModal) return;
+    if (!partModal || actionBusy) return;
+    const cleanedName = partModal.name.trim();
+    if (!cleanedName) {
+      toast.error("Nama bagian pagar wajib diisi.");
+      return;
+    }
+    if (partModal.damages.length === 0) {
+      toast.error("Tambahkan minimal 1 jenis kerusakan untuk bagian pagar ini.");
+      return;
+    }
+
+    setActionBusy(true);
     try {
-      const cleanedName = partModal.name.trim();
-      if (!cleanedName) {
-        toast.error("Nama bagian pagar wajib diisi.");
-        return;
-      }
-      if (partModal.damages.length === 0) {
-        toast.error("Tambahkan minimal 1 jenis kerusakan untuk bagian pagar ini.");
-        return;
-      }
       if (partModal.mode === "CREATE") {
-        const created = addPart({
+        const res = await createPartAction({
           name: cleanedName,
-          damages: partModal.damages,
+          damages: partModal.damages.map((d) => ({
+            name: d.name,
+            exclusiveGroup: d.exclusiveGroup,
+          })),
         });
-        toast.success("Bagian pagar ditambahkan", {
-          description: `"${created.name}" beserta ${created.damages.length} jenis kerusakan berhasil disimpan.`,
-        });
+        if (res.success && res.part) {
+          toast.success("Bagian pagar ditambahkan", {
+            description: `"${res.part.name}" beserta ${res.part.damages.length} jenis kerusakan berhasil disimpan.`,
+          });
+          await loadCatalog();
+        } else {
+          toast.error(res.errorMessage || "Gagal menambahkan bagian pagar.");
+        }
       } else if (partModal.partId) {
-        updatePart(partModal.partId, {
+        const res = await updatePartAction(partModal.partId, {
           name: cleanedName,
-          damages: partModal.damages,
+          damages: partModal.damages.map((d) => ({
+            id: d.id,
+            name: d.name,
+            exclusiveGroup: d.exclusiveGroup,
+          })),
         });
-        toast.success("Bagian pagar diperbarui", {
-          description: `Perubahan pada "${cleanedName}" berhasil disimpan.`,
-        });
+        if (res.success && res.part) {
+          toast.success("Bagian pagar diperbarui", {
+            description: `Perubahan pada "${cleanedName}" berhasil disimpan.`,
+          });
+          await loadCatalog();
+        } else {
+          toast.error(res.errorMessage || "Gagal memperbarui bagian pagar.");
+        }
       }
       setConfirmDiscardPart(false);
       setPartModal(null);
     } catch (err) {
       toast.error(message(err));
+    } finally {
+      setActionBusy(false);
     }
   }
 
@@ -354,18 +400,19 @@ export default function PerimeterDamageMasterPage() {
     setDamageModal(null);
   }
 
-  function handleSaveDamageModal(e: FormEvent) {
+  async function handleSaveDamageModal(e: FormEvent) {
     e.preventDefault();
-    if (!damageModal) return;
-    try {
-      const cleanedName = damageModal.name.trim();
-      if (!cleanedName) {
-        toast.error("Nama jenis kerusakan wajib diisi.");
-        return;
-      }
-      const exclusiveGroup = damageModal.exclusiveKorosi ? "korosi" : undefined;
-      const targetPart = parts.find((p) => p.id === damageModal.partId);
+    if (!damageModal || actionBusy) return;
+    const cleanedName = damageModal.name.trim();
+    if (!cleanedName) {
+      toast.error("Nama jenis kerusakan wajib diisi.");
+      return;
+    }
+    const exclusiveGroup = damageModal.exclusiveKorosi ? "korosi" : undefined;
+    const targetPart = parts.find((p) => p.id === damageModal.partId);
 
+    setActionBusy(true);
+    try {
       if (damageModal.mode === "CREATE") {
         if (
           targetPart?.damages.some(
@@ -375,48 +422,79 @@ export default function PerimeterDamageMasterPage() {
           )
         ) {
           toast.error("Jenis kerusakan tersebut sudah terdaftar di bagian ini.");
+          setActionBusy(false);
           return;
         }
-        addDamage(damageModal.partId, {
+        const res = await createDamageAction({
+          partId: damageModal.partId,
           name: cleanedName,
           exclusiveGroup,
         });
-        toast.success("Jenis kerusakan ditambahkan", {
-          description: `"${cleanedName}" ditambahkan ke bagian ${targetPart?.name || ""}.`,
-        });
+        if (res.success && res.damage) {
+          toast.success("Jenis kerusakan ditambahkan", {
+            description: `"${cleanedName}" ditambahkan ke bagian ${targetPart?.name || ""}.`,
+          });
+          await loadCatalog();
+        } else {
+          toast.error(res.errorMessage || "Gagal menambahkan jenis kerusakan.");
+        }
       } else if (damageModal.damageId) {
-        updateDamage(damageModal.partId, damageModal.damageId, {
+        const res = await updateDamageAction(damageModal.partId, damageModal.damageId, {
           name: cleanedName,
           exclusiveGroup,
         });
-        toast.success("Jenis kerusakan diperbarui", {
-          description: `"${cleanedName}" pada ${targetPart?.name || ""} berhasil diperbarui.`,
-        });
+        if (res.success && res.damage) {
+          toast.success("Jenis kerusakan diperbarui", {
+            description: `"${cleanedName}" pada ${targetPart?.name || ""} berhasil diperbarui.`,
+          });
+          await loadCatalog();
+        } else {
+          toast.error(res.errorMessage || "Gagal memperbarui jenis kerusakan.");
+        }
       }
       setConfirmDiscardDamage(false);
       setDamageModal(null);
     } catch (err) {
       toast.error(message(err));
+    } finally {
+      setActionBusy(false);
     }
   }
 
-  function handleConfirmDelete() {
-    if (!deleteTarget) return;
-    if (deleteTarget.type === "PART") {
-      deletePart(deleteTarget.partId);
-      if (partFilter === deleteTarget.partId) {
-        setPartFilter("ALL");
+  async function handleConfirmDelete() {
+    if (!deleteTarget || actionBusy) return;
+    setActionBusy(true);
+    try {
+      if (deleteTarget.type === "PART") {
+        const res = await deletePartAction(deleteTarget.partId);
+        if (res.success) {
+          if (partFilter === deleteTarget.partId) {
+            setPartFilter("ALL");
+          }
+          toast.success("Bagian pagar dihapus", {
+            description: `"${deleteTarget.partName}" telah dihapus dari daftar data master.`,
+          });
+          await loadCatalog();
+        } else {
+          toast.error(res.errorMessage || "Gagal menghapus bagian pagar.");
+        }
+      } else if (deleteTarget.damageId) {
+        const res = await deleteDamageAction(deleteTarget.partId, deleteTarget.damageId);
+        if (res.success) {
+          toast.success("Jenis kerusakan dihapus", {
+            description: `"${deleteTarget.damageName}" dihapus dari ${deleteTarget.partName}.`,
+          });
+          await loadCatalog();
+        } else {
+          toast.error(res.errorMessage || "Gagal menghapus jenis kerusakan.");
+        }
       }
-      toast.success("Bagian pagar dihapus", {
-        description: `"${deleteTarget.partName}" telah dihapus dari daftar data master.`,
-      });
-    } else if (deleteTarget.damageId) {
-      deleteDamage(deleteTarget.partId, deleteTarget.damageId);
-      toast.success("Jenis kerusakan dihapus", {
-        description: `"${deleteTarget.damageName}" dihapus dari ${deleteTarget.partName}.`,
-      });
+    } catch (err) {
+      toast.error(message(err));
+    } finally {
+      setActionBusy(false);
+      setDeleteTarget(null);
     }
-    setDeleteTarget(null);
   }
 
   return (
@@ -1361,10 +1439,23 @@ export default function PerimeterDamageMasterPage() {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  resetToDefault();
-                  setConfirmReset(false);
-                  toast.success("Data master dikembalikan ke setelan bawaan.");
+                disabled={actionBusy}
+                onClick={async () => {
+                  setActionBusy(true);
+                  try {
+                    const res = await resetDamageCatalogAction();
+                    if (res.success) {
+                      setParts(res.catalog);
+                      toast.success("Data master dikembalikan ke setelan bawaan.");
+                    } else {
+                      toast.error(res.errorMessage || "Gagal mengembalikan data master.");
+                    }
+                  } catch (err) {
+                    toast.error(message(err));
+                  } finally {
+                    setActionBusy(false);
+                    setConfirmReset(false);
+                  }
                 }}
                 className={btnPrimary}
               >

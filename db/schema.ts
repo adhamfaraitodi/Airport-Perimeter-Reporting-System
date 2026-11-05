@@ -6,6 +6,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -157,12 +158,12 @@ export const perimeterParts = pgTable("perimeter_parts", {
 export const damageTypes = pgTable(
   "damage_types",
   {
-    id: text("id").primaryKey(), // slug identifier (e.g. 'berkarat-berat')
+    id: text("id").notNull(), // slug identifier (e.g. 'berkarat-berat')
     partId: text("part_id")
       .notNull()
       .references(() => perimeterParts.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
-    exclusiveGroup: text("exclusive_group"), // e.g., "rust_severity" for Berkarat sedang vs berat
+    exclusiveGroup: text("exclusive_group"), // e.g., "korosi" for Berkarat sedang vs berat
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -171,7 +172,10 @@ export const damageTypes = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [index("damage_types_part_id_idx").on(table.partId)]
+  (table) => [
+    primaryKey({ columns: [table.partId, table.id] }),
+    index("damage_types_part_id_idx").on(table.partId),
+  ]
 );
 
 // ============================================================================
@@ -370,4 +374,15 @@ export const reportsRelations = relations(reports, ({ one, many }) => ({
   }),
   history: many(reportStatusHistory),
   photos: many(reportPhotos),
+}));
+
+export const perimeterPartsRelations = relations(perimeterParts, ({ many }) => ({
+  damages: many(damageTypes),
+}));
+
+export const damageTypesRelations = relations(damageTypes, ({ one }) => ({
+  part: one(perimeterParts, {
+    fields: [damageTypes.partId],
+    references: [perimeterParts.id],
+  }),
 }));

@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { Check, LocateFixed, Plus, Trash2, X } from "lucide-react";
+import { getDamageCatalogAction } from "../../operator/perimeter-damage/_lib/damage-catalog.actions";
 import catalog from "../../../_data/damage-catalog.json";
 import {
   api,
@@ -119,6 +120,35 @@ function ReporterFormSession({
   const selection = draft?.selection || {};
   const narrative = draft?.narrative || "";
   const id = useId();
+
+  const [parts, setParts] = useState<CatalogPart[]>(() =>
+    (catalog as CatalogPart[]).map((part) => ({
+      ...part,
+      damages: [...part.damages].sort((a, b) => a.name.localeCompare(b.name, "id")),
+    }))
+  );
+
+  useEffect(() => {
+    let active = true;
+    getDamageCatalogAction()
+      .then((res) => {
+        if (active && res.success && res.catalog.length > 0) {
+          setParts(
+            res.catalog.map((part) => ({
+              id: part.id,
+              name: part.name,
+              damages: [...part.damages].sort((a, b) =>
+                a.name.localeCompare(b.name, "id")
+              ),
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const [files, setFiles] = useState<PendingFile[]>([]);
   const [point, setPoint] = useState<LatLngPoint | null>(null);

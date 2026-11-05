@@ -6,7 +6,7 @@ import {
   type UploadedFilePayload,
 } from "../(internal)/operator/_lib/operator-reports.actions";
 import { authClient } from "@/lib/auth-client";
-import damageCatalog from "../_data/damage-catalog.json";
+import { getDamageCatalogAction, type CatalogPartDto } from "../(internal)/operator/perimeter-damage/_lib/damage-catalog.actions";
 
 export type UserRole = "REPORTER" | "OPERATOR" | "TECHNICIAN";
 export type LifecycleStatus = "OPEN" | "IN_PROGRESS" | "RESOLVED";
@@ -244,9 +244,11 @@ export const api = {
         fail("Bagian pagar belum dipilih.");
       }
       if (payload.findings) {
+        const catRes = await getDamageCatalogAction();
+        const catalogList = catRes.catalog;
         const partIds = new Set<string>();
         for (const finding of payload.findings) {
-          const part = damageCatalog.find((item) => item.id === finding.partId);
+          const part = catalogList.find((item) => item.id === finding.partId);
           if (!part || partIds.has(part.id) || !finding.damages?.length) {
             fail("Pilihan bagian/kerusakan tidak valid.");
           }
@@ -372,6 +374,11 @@ export const api = {
   finalizeSubmission: async (params: {
     submissionId: string;
   }): Promise<ReportRecord> => api.commitSubmission(params),
+
+  getDamageCatalog: async (): Promise<CatalogPartDto[]> => {
+    const res = await getDamageCatalogAction();
+    return res.catalog;
+  },
 
   getImage: async ({
     imageId,
