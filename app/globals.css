@@ -20,6 +20,12 @@
     background: #f7f9fa;
   }
 
+  html[data-theme="dark"] body,
+  html.dark body {
+    color: #e8ecee;
+    background: #121618;
+  }
+
   :root {
     --rd-coral: #F43F5E;
     --rd-muted: #6b7280;
@@ -100,7 +106,9 @@
   --rd-muted: #6b7280;
 }
 
-.login-page[data-theme="dark"] {
+.login-page[data-theme="dark"],
+html[data-theme="dark"] .login-page,
+html.dark .login-page {
   --login-primary-hover: #1a9aa5;
   --login-link: #4ec4c6;
   --login-panel: #2b2f33;
@@ -146,7 +154,11 @@
 }
 
 .reporter-dashboard[data-theme="dark"],
-.operator-dashboard[data-theme="dark"] {
+.operator-dashboard[data-theme="dark"],
+html[data-theme="dark"] .reporter-dashboard,
+html[data-theme="dark"] .operator-dashboard,
+html.dark .reporter-dashboard,
+html.dark .operator-dashboard {
   --rd-primary-hover: #1a9aa5;
   --rd-link: #4ec4c6;
   --rd-bg: #121618;

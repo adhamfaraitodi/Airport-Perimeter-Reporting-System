@@ -13,6 +13,11 @@ function readClientTheme(): Theme {
   if (cachedTheme) return cachedTheme;
   if (typeof window === "undefined") return "light";
   try {
+    const domTheme = document.documentElement.getAttribute("data-theme");
+    if (domTheme === "light" || domTheme === "dark") {
+      cachedTheme = domTheme;
+      return domTheme;
+    }
     const saved = window.localStorage.getItem(STORAGE_KEY);
     if (saved === "light" || saved === "dark") {
       cachedTheme = saved;
@@ -58,6 +63,7 @@ function updateTheme(next: Theme) {
   if (typeof window !== "undefined") {
     try {
       window.localStorage.setItem(STORAGE_KEY, next);
+      document.cookie = `${STORAGE_KEY}=${next}; path=/; max-age=31536000; SameSite=Lax`;
     } catch {
       /* Theme remains usable without persistence. */
     }

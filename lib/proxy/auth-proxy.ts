@@ -139,11 +139,7 @@ export async function handleAuthProxy(
       );
     }
 
-    if (
-      routeSegment === "technician" &&
-      role !== "TECHNICIAN" &&
-      role !== "OPERATOR"
-    ) {
+    if (routeSegment === "technician" && role !== "TECHNICIAN") {
       return NextResponse.redirect(
         new URL(getHomeRouteForRole(locale, role), request.url)
       );

@@ -49,6 +49,12 @@ export default function TechnicianDashboardPage() {
         window.location.href = `/${locale}/login`;
         return;
       }
+      if (session.role !== "TECHNICIAN") {
+        window.location.href = `/${locale}/${
+          session.role === "OPERATOR" ? "operator" : "reports"
+        }`;
+        return;
+      }
       setUser(session);
       const data = await api.listReports();
       setReports(data);

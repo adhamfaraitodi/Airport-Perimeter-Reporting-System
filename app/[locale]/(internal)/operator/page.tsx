@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   api,
   type ReportRecord,
@@ -48,6 +47,12 @@ export default function DashboardPage() {
         window.location.href = `/${locale}/login`;
         return;
       }
+      if (session.role !== "OPERATOR") {
+        window.location.href = `/${locale}/${
+          session.role === "TECHNICIAN" ? "technician" : "reports"
+        }`;
+        return;
+      }
       setUser(session);
       const data = await api.listReports();
       setReports(data);
@@ -64,36 +69,51 @@ export default function DashboardPage() {
 
   async function cancelSubmission(options?: { abandonedSubmissionId?: string }) {
     setAction(null);
+    setLocked(false);
     if (options?.abandonedSubmissionId) {
       setAbandonedSubmissionId(options.abandonedSubmissionId);
+      setSelectedId(null);
+      setFilter("ALL");
+      setSearch("");
+      await load();
     }
   }
 
-  function success(payload: { id: string; status: ReportRecord["status"] }) {
+  function success(report: ReportRecord) {
+    setReports((old) => [
+      report,
+      ...old.filter((item) => item.id !== report.id),
+    ]);
     setAction(null);
-    setSelectedId(payload.id);
-    load();
-    toast.success("Status laporan diperbarui", {
-      description: `Laporan #${payload.id} kini berstatus ${payload.status}.`,
+    setLocked(false);
+    setSelectedId(report.id);
+    toast.success("Perubahan berhasil disimpan", {
+      description: "Status laporan dan bukti foto telah dikonfirmasi.",
     });
   }
 
-  const activeReports = reports.filter((r) => !r.deletedAt);
-  const countOpen = activeReports.filter((r) => r.status === "OPEN").length;
-  const countInProgress = activeReports.filter(
-    (r) => r.status === "IN_PROGRESS"
-  ).length;
-  const countResolved = activeReports.filter(
-    (r) => r.status === "RESOLVED"
-  ).length;
+  const visible = reports.filter((report) => {
+    if (report.deletedAt) return false;
+    if (filter !== "ALL" && report.status !== filter) return false;
+    if (!search.trim()) return true;
 
-  const visible = reports.filter((r) => {
-    if (r.deletedAt) return false;
-    if (filter === "ALL") return true;
-    return r.status === filter;
+    const findingsText = (report.findings || [])
+      .flatMap((f) => [
+        f.partName,
+        ...(Array.isArray(f.damages)
+          ? f.damages.map((d) => (typeof d === "string" ? d : d.name))
+          : []),
+      ])
+      .join(" ");
+
+    return `${report.side || ""} ${report.segmentCode || ""} ${
+      report.narrative || ""
+    } ${report.reporterName || ""} ${report.id} ${findingsText}`
+      .toLocaleLowerCase("id")
+      .includes(search.toLocaleLowerCase("id"));
   });
 
-  const selected = reports.find((r) => r.id === selectedId) || null;
+  const selected = reports.find((report) => report.id === selectedId) || null;
 
   return (
     <div
@@ -108,95 +128,16 @@ export default function DashboardPage() {
         containerClassName="max-w-[1700px] min-[1100px]:px-[5%]"
       />
       <main className="mx-auto flex w-full max-w-[1700px] flex-1 flex-col px-3 pt-4 md:px-[3%] md:pt-6 min-[1100px]:px-[5%]">
-        <div className="mb-[18px] md:mb-[26px]">
-          <h1 className="m-0 mb-1.5 text-xl leading-tight font-normal sm:text-3xl">
-            Area Perimeter Bandara,
-          </h1>
-          <p className="m-0 text-xs text-[var(--rd-muted)] sm:text-sm">
-            Pantau sebaran kerusakan fisik dan perkembangan tindak lanjut regu
-            teknisi secara real-time.
-          </p>
-        </div>
-
-        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-          <div className="flex items-center gap-3 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 shadow-xs">
-            <span
-              data-status="OPEN"
-              className="rd-status flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)]"
-            >
-              <span className="size-2 rounded-full bg-current" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <span className="block text-[10px] text-[var(--rd-muted)] sm:text-xs">
-                Perlu Tindakan
-              </span>
-              {loading ? (
-                <Skeleton className="mt-1 h-5 w-10 rounded" />
-              ) : (
-                <span className="text-base font-bold sm:text-lg">
-                  {countOpen}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-3 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 shadow-xs">
-            <span
-              data-status="IN_PROGRESS"
-              className="rd-status flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)]"
-            >
-              <span className="size-2 rounded-full bg-current" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <span className="block text-[10px] text-[var(--rd-muted)] sm:text-xs">
-                Sedang Ditangani
-              </span>
-              {loading ? (
-                <Skeleton className="mt-1 h-5 w-10 rounded" />
-              ) : (
-                <span className="text-base font-bold sm:text-lg">
-                  {countInProgress}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-3 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 shadow-xs">
-            <span
-              data-status="RESOLVED"
-              className="rd-status flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)]"
-            >
-              <span className="size-2 rounded-full bg-current" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <span className="block text-[10px] text-[var(--rd-muted)] sm:text-xs">
-                Selesai Diperbaiki
-              </span>
-              {loading ? (
-                <Skeleton className="mt-1 h-5 w-10 rounded" />
-              ) : (
-                <span className="text-base font-bold sm:text-lg">
-                  {countResolved}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-3 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-3 shadow-xs">
-            <span className="rd-status flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--rd-tint)] text-[var(--rd-status)]">
-              <span className="size-2 rounded-full bg-current" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <span className="block text-[10px] text-[var(--rd-muted)] sm:text-xs">
-                Total Seluruh Laporan
-              </span>
-              {loading ? (
-                <Skeleton className="mt-1 h-5 w-10 rounded" />
-              ) : (
-                <span className="text-base font-bold sm:text-lg">
-                  {activeReports.length}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
+        <nav
+          aria-label="Breadcrumb"
+          className="mb-3 flex items-center gap-2 text-xs md:text-[13px]"
+        >
+          <span className="text-[var(--rd-muted)]">Dashboard</span>
+          <span className="text-[var(--rd-muted)]/50 select-none">/</span>
+          <span className="font-medium text-[var(--rd-link)]">
+            Pantau Perimeter
+          </span>
+        </nav>
 
         {abandonedSubmissionId && (
           <div className={alertBox} role="status">
@@ -226,8 +167,7 @@ export default function DashboardPage() {
             </button>
           </div>
         )}
-
-        <div className="flex h-[calc(100dvh-240px)] min-h-[550px] flex-col md:grid md:h-[calc(100dvh-330px)] md:grid-cols-[minmax(0,1fr)_420px] md:gap-3 min-[1100px]:grid-cols-[minmax(0,1fr)_580px] min-[1100px]:gap-5">
+        <div className="flex h-[calc(100dvh-184px)] min-h-[550px] flex-col md:grid md:h-[calc(100dvh-280px)] md:grid-cols-[minmax(0,1fr)_400px] md:gap-3 min-[1100px]:grid-cols-[minmax(0,1fr)_580px] min-[1100px]:gap-5">
           <PerimeterMap
             reports={visible}
             selectedId={selectedId}
@@ -237,7 +177,7 @@ export default function DashboardPage() {
           />
           <section
             className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-b-xl border border-t-0 border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] shadow-[0_-4px_15px_rgba(36,74,53,0.06)] md:rounded-[14px] md:border-t md:shadow-none"
-            aria-label="Panel informasi dan riwayat laporan"
+            aria-label="Panel laporan operator"
             aria-busy={loading}
           >
             {action && user ? (
@@ -254,13 +194,13 @@ export default function DashboardPage() {
               <ReportDetailSheet
                 report={selected}
                 operator
-                onAction={(next) => setAction(next)}
+                onAction={setAction}
                 onBack={() => setSelectedId(null)}
               />
             ) : (
               <ReportHistoryPanel
                 title="Riwayat Laporan"
-                reports={activeReports}
+                reports={reports}
                 loading={loading}
                 selectedId={selectedId}
                 onSelect={(r) => {
