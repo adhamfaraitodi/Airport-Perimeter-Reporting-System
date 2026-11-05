@@ -42,87 +42,6 @@ export interface NotificationItem {
   read: boolean;
 }
 
-const initialOperatorNotifications: NotificationItem[] = [
-  {
-    id: "notif-1",
-    title: "Laporan Baru · Pagar Harmonika / BRC",
-    description: "Berlubang & klem terlepas di Sisi Selatan (Grid M14).",
-    time: "5 menit lalu",
-    status: "OPEN",
-    read: false,
-  },
-  {
-    id: "notif-2",
-    title: "Laporan Baru · Kawat Duri / Razor",
-    description: "Kawat duri terlepas di Sisi Barat (Grid K3).",
-    time: "28 menit lalu",
-    status: "OPEN",
-    read: false,
-  },
-  {
-    id: "notif-3",
-    title: "Status Diperbarui · Ditangani",
-    description: "Perbaikan tiang pagar miring di Sisi Timur (Grid L25) sedang berlangsung.",
-    time: "1 jam lalu",
-    status: "IN_PROGRESS",
-    read: true,
-  },
-  {
-    id: "notif-4",
-    title: "Perbaikan Selesai · Pondasi",
-    description: "Celah pondasi Sisi Utara (Grid I12) telah ditutup dan diverifikasi.",
-    time: "Kemarin, 16:40 WIB",
-    status: "RESOLVED",
-    read: true,
-  },
-];
-
-const initialTechnicianNotifications: NotificationItem[] = [
-  {
-    id: "notif-t1",
-    title: "Tugas Perbaikan Baru · Pagar Harmonika / BRC",
-    description: "Perlu perbaikan segera di Sisi Selatan (Grid M14).",
-    time: "5 menit lalu",
-    status: "OPEN",
-    read: false,
-  },
-  {
-    id: "notif-t2",
-    title: "Tugas Perbaikan Baru · Kawat Duri / Razor",
-    description: "Kawat duri terlepas di Sisi Barat (Grid K3).",
-    time: "28 menit lalu",
-    status: "OPEN",
-    read: false,
-  },
-  {
-    id: "notif-t3",
-    title: "Sedang Dikerjakan · Tiang Pagar",
-    description: "Perbaikan tiang pagar miring di Sisi Timur (Grid L25) menunggu foto selesai.",
-    time: "1 jam lalu",
-    status: "IN_PROGRESS",
-    read: true,
-  },
-];
-
-const initialReporterNotifications: NotificationItem[] = [
-  {
-    id: "notif-r1",
-    title: "Laporan Anda Sedang Ditangani",
-    description: "Tim teknisi menindaklanjuti laporan Pagar Harmonika di Sisi Selatan (Grid M14).",
-    time: "12 menit lalu",
-    status: "IN_PROGRESS",
-    read: false,
-  },
-  {
-    id: "notif-r2",
-    title: "Laporan Selesai Diverifikasi",
-    description: "Perbaikan pondasi bercelah di Sisi Utara (Grid I12) telah dinyatakan selesai.",
-    time: "Kemarin, 16:40 WIB",
-    status: "RESOLVED",
-    read: true,
-  },
-];
-
 export interface AppHeaderProps {
   user?: SessionUser | null;
   dark: boolean;
@@ -184,13 +103,7 @@ export function AppHeader({
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifFilter, setNotifFilter] = useState<"ALL" | "UNREAD">("ALL");
-  const [notifications, setNotifications] = useState<NotificationItem[]>(() =>
-    isOperator
-      ? initialOperatorNotifications
-      : isTechnician
-        ? initialTechnicianNotifications
-        : initialReporterNotifications
-  );
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   const dataMasterRef = useRef<HTMLDivElement | null>(null);
   const profileRef = useRef<HTMLDivElement | null>(null);

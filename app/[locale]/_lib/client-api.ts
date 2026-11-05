@@ -106,299 +106,32 @@ function readStoredRole(): UserRole {
 
 const users: Record<UserRole, SessionUser> = {
   REPORTER: {
-    id: "demo-reporter",
-    name: "Raka Mahendra",
-    email: "raka.mahendra@injourneyairports.id",
+    id: "a948831d-be68-4b58-be90-8ffb21a1c924",
+    name: "Budi Santoso",
+    email: "199001012020011001@perimeter.yia.id",
+    nip: "199001012020011001",
     role: "REPORTER",
   },
   OPERATOR: {
-    id: "demo-operator",
-    name: "Dian Pradipta",
-    email: "19940218@injourneyairports.id",
+    id: "5c53d0ac-b8d6-42bc-ad95-1e853d00f14e",
+    name: "Siti Rahma",
+    email: "198505152010121002@perimeter.yia.id",
+    nip: "198505152010121002",
     role: "OPERATOR",
   },
   TECHNICIAN: {
-    id: "demo-technician",
-    name: "Bima Saputra",
-    email: "bima.saputra@injourneyairports.id",
+    id: "95c21624-7b6c-421a-b888-d813ebda26a8",
+    name: "Agus Setiawan",
+    email: "198808202015021003@perimeter.yia.id",
+    nip: "198808202015021003",
     role: "TECHNICIAN",
   },
 };
 
-function makePlaceholderPhoto(
-  title: string,
-  subtitle: string,
-  accent: string
-): string {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
-    <defs>
-      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#14281d"/>
-        <stop offset="100%" stop-color="#1f3b2c"/>
-      </linearGradient>
-    </defs>
-    <rect width="800" height="600" fill="url(#bg)"/>
-    <g stroke="#2e5440" stroke-width="2" opacity="0.55">
-      <line x1="0" y1="120" x2="800" y2="120"/>
-      <line x1="0" y1="240" x2="800" y2="240"/>
-      <line x1="0" y1="360" x2="800" y2="360"/>
-      <line x1="0" y1="480" x2="800" y2="480"/>
-      <line x1="160" y1="0" x2="160" y2="600"/>
-      <line x1="320" y1="0" x2="320" y2="600"/>
-      <line x1="480" y1="0" x2="480" y2="600"/>
-      <line x1="640" y1="0" x2="640" y2="600"/>
-    </g>
-    <rect x="48" y="48" width="704" height="504" rx="20" fill="none" stroke="${accent}" stroke-width="3" stroke-dasharray="10 8"/>
-    <circle cx="400" cy="240" r="46" fill="${accent}" fill-opacity="0.18" stroke="${accent}" stroke-width="3"/>
-    <text x="400" y="250" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-size="26" font-weight="bold">YIA</text>
-    <text x="400" y="345" text-anchor="middle" fill="#f3f7f4" font-family="sans-serif" font-size="26" font-weight="bold">${title}</text>
-    <text x="400" y="385" text-anchor="middle" fill="#a6bfb0" font-family="sans-serif" font-size="18">${subtitle}</text>
-  </svg>`;
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-}
+const initialImages: Array<[string, string]> = [];
+const initialReports: ReportRecord[] = [];
 
-const initialImages: Array<[string, string]> = [
-  [
-    "img-yia-m14-1",
-    makePlaceholderPhoto(
-      "Pagar Harmonika / BRC · Berlubang",
-      "Sisi Selatan (Grid M14) · Dokumentasi Awal",
-      "#e05a47"
-    ),
-  ],
-  [
-    "img-yia-m14-2",
-    makePlaceholderPhoto(
-      "Klem Tiang Terlepas · Detail Segmen",
-      "Sisi Selatan (Grid M14) · Dokumentasi Awal",
-      "#e05a47"
-    ),
-  ],
-  [
-    "img-yia-l25-1",
-    makePlaceholderPhoto(
-      "Tiang Pagar Miring & Kawat Duri Terlepas",
-      "Sisi Timur (Grid L25) · Dokumentasi Awal",
-      "#d9822b"
-    ),
-  ],
-  [
-    "img-yia-l25-2",
-    makePlaceholderPhoto(
-      "Penanganan Lapangan oleh Tim Teknisi",
-      "Sisi Timur (Grid L25) · Progres Perbaikan",
-      "#d9822b"
-    ),
-  ],
-  [
-    "img-yia-i12-1",
-    makePlaceholderPhoto(
-      "Pondasi Bercelah · Sebelum Perbaikan",
-      "Sisi Utara (Grid I12) · Dokumentasi Awal",
-      "#47a76a"
-    ),
-  ],
-  [
-    "img-yia-i12-2",
-    makePlaceholderPhoto(
-      "Pengecoran Ulang Pondasi Selesai",
-      "Sisi Utara (Grid I12) · Bukti Penyelesaian",
-      "#47a76a"
-    ),
-  ],
-  [
-    "img-yia-k03-1",
-    makePlaceholderPhoto(
-      "Tiang Penyangga Kawat Duri Patah",
-      "Sisi Barat (Grid K3) · Laporan Duplikat Ditutup",
-      "#7e8f85"
-    ),
-  ],
-];
-
-const initialReports: ReportRecord[] = [
-  {
-    id: "rpt-2026-m14a91",
-    reporterId: "demo-reporter",
-    reporterName: "Raka Mahendra",
-    createdAt: "2026-10-31T08:15:00.000Z",
-    side: "Selatan",
-    segmentCode: "M14",
-    findings: [
-      {
-        partId: "pagar-harmonika-brc",
-        partName: "Pagar Harmonika / BRC",
-        damages: [
-          { id: "berlubang", name: "Berlubang" },
-          { id: "klem-terlepas", name: "Klem terlepas" },
-        ],
-      },
-      {
-        partId: "kawat-duri-razor",
-        partName: "Kawat Duri / Razor",
-        damages: [{ id: "terlepas", name: "Terlepas" }],
-      },
-    ],
-    narrative:
-      "Ditemukan lubang sekitar 35 cm pada jaring bawah Pagar Harmonika dekat patok selatan Grid M14 serta 3 klem pengikat tiang terlepas akibat korosi angin laut.",
-    latitude: -7.911467,
-    longitude: 110.069599,
-    gps: {
-      latitude: -7.911467,
-      longitude: 110.069599,
-      accuracy: 4.2,
-    },
-    locationSource: "GPS",
-    status: "OPEN",
-    deletedAt: null,
-    deletionReason: "",
-    images: [{ id: "img-yia-m14-1" }, { id: "img-yia-m14-2" }],
-    history: [],
-  },
-  {
-    id: "rpt-2026-l25b42",
-    reporterId: "demo-reporter",
-    reporterName: "Raka Mahendra",
-    createdAt: "2026-10-30T14:20:00.000Z",
-    side: "Timur",
-    segmentCode: "L25",
-    findings: [
-      {
-        partId: "tiang-utama",
-        partName: "Tiang Utama",
-        damages: [{ id: "miring", name: "Miring" }],
-      },
-      {
-        partId: "kawat-duri-razor",
-        partName: "Kawat Duri / Razor",
-        damages: [{ id: "kendur", name: "Kendur" }],
-      },
-    ],
-    narrative:
-      "Bentangan kawat duri bagian atas kendur sepanjang 12 meter dan satu tiang pembagi condong ke arah luar perimeter bandara.",
-    latitude: -7.906782,
-    longitude: 110.074321,
-    gps: {
-      latitude: -7.906782,
-      longitude: 110.074321,
-      accuracy: 5.1,
-    },
-    locationSource: "GPS",
-    status: "IN_PROGRESS",
-    deletedAt: null,
-    deletionReason: "",
-    images: [{ id: "img-yia-l25-1" }],
-    history: [
-      {
-        id: "hst-2026-l25-01",
-        status: "IN_PROGRESS",
-        previousStatus: "OPEN",
-        narrative:
-          "Tim teknisi shift siang telah memasang perancah dan penarik sling kawat baja untuk menegakkan tiang kembali.",
-        createdAt: "2026-10-30T16:00:00.000Z",
-        actorId: "demo-technician",
-        actorName: "Bima Saputra",
-        images: [{ id: "img-yia-l25-2" }],
-      },
-    ],
-  },
-  {
-    id: "rpt-2026-i12c88",
-    reporterId: "demo-reporter",
-    reporterName: "Raka Mahendra",
-    createdAt: "2026-10-29T07:10:00.000Z",
-    side: "Utara",
-    segmentCode: "I12",
-    findings: [
-      {
-        partId: "pondasi",
-        partName: "Pondasi",
-        damages: [{ id: "bercelah", name: "Bercelah" }],
-      },
-    ],
-    narrative:
-      "Terdapat celah di bawah balok pondasi beton sepanjang 80 cm yang berpotensi menjadi jalur masuk hewan liar ke area airside utara.",
-    latitude: -7.901649,
-    longitude: 110.061437,
-    gps: {
-      latitude: -7.901649,
-      longitude: 110.061437,
-      accuracy: 3.5,
-    },
-    locationSource: "GPS",
-    status: "RESOLVED",
-    deletedAt: null,
-    deletionReason: "",
-    images: [{ id: "img-yia-i12-1" }],
-    history: [
-      {
-        id: "hst-2026-i12-01",
-        status: "IN_PROGRESS",
-        previousStatus: "OPEN",
-        narrative:
-          "Material beton instan dan kawat ram penutup celah telah dibawa ke lokasi Grid I12.",
-        createdAt: "2026-10-29T10:05:00.000Z",
-        actorId: "demo-technician",
-        actorName: "Bima Saputra",
-        images: [{ id: "img-yia-i12-1" }],
-      },
-      {
-        id: "hst-2026-i12-02",
-        status: "RESOLVED",
-        previousStatus: "IN_PROGRESS",
-        narrative:
-          "Celah pondasi telah dicor ulang dan ditutup rapat sesuai standar keselamatan airside.",
-        createdAt: "2026-10-29T15:45:00.000Z",
-        actorId: "demo-technician",
-        actorName: "Bima Saputra",
-        images: [{ id: "img-yia-i12-2" }],
-      },
-    ],
-  },
-  {
-    id: "rpt-2026-k03d15",
-    reporterId: "demo-reporter",
-    reporterName: "Raka Mahendra",
-    createdAt: "2026-10-28T13:30:00.000Z",
-    side: "Barat",
-    segmentCode: "K3",
-    findings: [
-      {
-        partId: "tiang-penyangga-kawat-duri",
-        partName: "Tiang Penyangga Kawat Duri",
-        damages: [{ id: "patah", name: "Patah" }],
-      },
-    ],
-    narrative:
-      "Lengan Y-arm penyangga kawat duri atas patah pada satu titik tiang di sisi barat dekat pos jaga.",
-    latitude: -7.898498,
-    longitude: 110.036607,
-    gps: null,
-    locationSource: "MANUAL",
-    status: "OPEN",
-    deletedAt: "2026-10-28T16:00:00.000Z",
-    deletionReason:
-      "Laporan duplikat — titik kerusakan yang sama telah digabung ke tiket pemeliharaan berkala sektor barat.",
-    images: [{ id: "img-yia-k03-1" }],
-    history: [
-      {
-        id: "hst-2026-k03-01",
-        status: "CLOSED",
-        previousStatus: "OPEN",
-        narrative:
-          "Laporan duplikat — titik kerusakan yang sama telah digabung ke tiket pemeliharaan berkala sektor barat.",
-        createdAt: "2026-10-28T16:00:00.000Z",
-        actorId: "demo-operator",
-        actorName: "Dian Pradipta",
-        images: [{ id: "img-yia-k03-1" }],
-      },
-    ],
-  },
-];
-
-const reports = new Map<string, ReportRecord>(
-  initialReports.map((item) => [item.id, item])
-);
+const reports = new Map<string, ReportRecord>();
 const submissions = new Map<
   string,
   {
@@ -408,7 +141,7 @@ const submissions = new Map<
     committed: boolean;
   }
 >();
-const images = new Map<string, string>(initialImages);
+const images = new Map<string, string>();
 
 const clone = <T>(value: T): T => structuredClone(value);
 
@@ -474,8 +207,7 @@ export const api = {
       [...reports.values()].filter(
         (r) =>
           role !== "REPORTER" ||
-          r.reporterId === users[role].id ||
-          r.reporterId === "demo-reporter"
+          r.reporterId === users[role].id
       )
     ),
 
@@ -622,6 +354,19 @@ export const api = {
         images: evidence,
         history: [],
       };
+
+      // Realtime notification dispatch on new report
+      const firstFinding = report.findings?.[0];
+      const partName = firstFinding?.partName || `Perimeter sisi ${report.side || "-"}`;
+      dispatchReportNotificationAction({
+        reportId: report.id,
+        action: "CREATE",
+        partName,
+        side: report.side,
+        segmentCode: report.segmentCode,
+        actorName: report.reporterName,
+        reporterId: report.reporterId,
+      }).catch(() => {});
     } else {
       const existing = p.reportId ? reports.get(p.reportId) : undefined;
       if (
@@ -637,8 +382,37 @@ export const api = {
       if (p.action === "DELETE") {
         report.deletedAt = now;
         report.deletionReason = p.narrative;
+
+        // Realtime notification dispatch on closed report
+        const firstFinding = report.findings?.[0];
+        const partName = firstFinding?.partName || `Perimeter sisi ${report.side || "-"}`;
+        dispatchReportNotificationAction({
+          reportId: report.id,
+          action: "DELETE",
+          status: "CLOSED",
+          partName,
+          side: report.side,
+          segmentCode: report.segmentCode,
+          narrative: p.narrative,
+          actorName: submission.actor.name,
+          reporterId: report.reporterId,
+        }).catch(() => {});
       } else if (p.status) {
         report.status = p.status;
+
+        // Realtime notification dispatch on status change
+        const firstFinding = report.findings?.[0];
+        const partName = firstFinding?.partName || `Perimeter sisi ${report.side || "-"}`;
+        dispatchReportNotificationAction({
+          reportId: report.id,
+          action: "STATUS",
+          status: p.status,
+          partName,
+          side: report.side,
+          segmentCode: report.segmentCode,
+          actorName: submission.actor.name,
+          reporterId: report.reporterId,
+        }).catch(() => {});
       }
       report.history.push({
         id: p.id,
@@ -662,8 +436,7 @@ export const api = {
     const visible = [...reports.values()].some(
       (r) =>
         (role !== "REPORTER" ||
-          r.reporterId === users[role].id ||
-          r.reporterId === "demo-reporter") &&
+          r.reporterId === users[role].id) &&
         [...r.images, ...r.history.flatMap((h) => h.images)].some(
           (i) => i.id === imageId
         )

@@ -25,10 +25,10 @@ export const roleLabels: Record<UserRole, string> = {
 
 const defaultAccounts: ManagedAccount[] = [
   {
-    id: "demo-operator",
-    nip: "19900314201601",
-    name: "Operator Demo",
-    email: "operator@injourneyairports.id",
+    id: "5c53d0ac-b8d6-42bc-ad95-1e853d00f14e",
+    nip: "198505152010121002",
+    name: "Siti Rahma",
+    email: "198505152010121002@perimeter.yia.id",
     phone: "0811-2640-101",
     avatarUrl: null,
     role: "OPERATOR",
@@ -37,10 +37,10 @@ const defaultAccounts: ManagedAccount[] = [
     createdAt: "2026-01-10T08:00:00.000Z",
   },
   {
-    id: "demo-reporter",
-    nip: "19940721201902",
-    name: "Petugas Demo",
-    email: "reporter@injourneyairports.id",
+    id: "a948831d-be68-4b58-be90-8ffb21a1c924",
+    nip: "199001012020011001",
+    name: "Budi Santoso",
+    email: "199001012020011001@perimeter.yia.id",
     phone: "0812-3456-7890",
     avatarUrl: null,
     role: "REPORTER",
@@ -49,28 +49,16 @@ const defaultAccounts: ManagedAccount[] = [
     createdAt: "2026-01-12T09:15:00.000Z",
   },
   {
-    id: "demo-technician",
-    nip: "19921105201803",
-    name: "Teknisi Demo",
-    email: "technician@injourneyairports.id",
+    id: "95c21624-7b6c-421a-b888-d813ebda26a8",
+    nip: "198808202015021003",
+    name: "Agus Setiawan",
+    email: "198808202015021003@perimeter.yia.id",
     phone: "0813-8899-7766",
     avatarUrl: null,
     role: "TECHNICIAN",
     unit: "Airport Maintenance & Civil",
     status: "ACTIVE",
     createdAt: "2026-01-15T10:30:00.000Z",
-  },
-  {
-    id: "usr-avsec-02",
-    nip: "19960218202101",
-    name: "Budi Santoso",
-    email: "budi.santoso@injourneyairports.id",
-    phone: "0812-8765-4321",
-    avatarUrl: null,
-    role: "REPORTER",
-    unit: "Airport Security (AVSEC)",
-    status: "ACTIVE",
-    createdAt: "2026-02-03T07:45:00.000Z",
   },
   {
     id: "usr-avsec-03",
@@ -264,7 +252,7 @@ export const useAccountsStore = create<AccountsState>()(
       },
     }),
     {
-      name: "perimeter-accounts-master-v1",
+      name: "perimeter-accounts-master-v3",
       merge: (persistedState, currentState) => {
         const typed = persistedState as Partial<AccountsState> | undefined;
         if (!typed?.accounts) return currentState;

@@ -13,6 +13,7 @@ import {
   Building2,
   Calendar,
   CheckCircle2,
+  Check,
   ClipboardCheck,
   ClipboardClock,
   ClipboardPen,
@@ -24,7 +25,6 @@ import {
   MapPin,
   Phone,
   ShieldCheck,
-  Sparkles,
   Trash2,
   Upload,
   UserRound,
@@ -176,12 +176,12 @@ export default function ProfilePage() {
 
     setProcessingSignature(true);
     try {
-      toast.info("Memproses tanda tangan secara otomatis...");
+      toast.info("Memproses tanda tangan...");
       const { dataUrl, width, height } = await processSignaturePhoto(file);
       setSignatureUrl(dataUrl);
       setSignaturePayload(dataUrl);
       toast.success("Tanda tangan berhasil diproses", {
-        description: `Background dihapus transparan, tinta dipertajam (${width}x${height}px). Simpan untuk menerapkan ke dokumen PDF.`,
+        description: `Gambar berhasil diproses, jangan lupa memastikan hasil sesuai dengan keinginan.`,
       });
     } catch (err) {
       toast.error(
@@ -584,17 +584,11 @@ export default function ProfilePage() {
                           Tanda Tangan Basah Digital
                         </span>
                       </div>
-                      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--rd-tint)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--rd-link)]">
-                        <Sparkles size={12} aria-hidden="true" />
-                        Autonomous Auto-Trim
-                      </span>
                     </div>
 
                     <p className="m-0 mb-3 text-xs leading-relaxed text-[var(--rd-muted)]">
-                      Cukup foto tanda tangan Anda di atas kertas putih dengan HP.
-                      Sistem akan otomatis menghapus bayangan kertas, mengubah
-                      latar belakang menjadi transparan, dan mempertajam tinta
-                      untuk dokumen PDF resmi.
+                      Cukup kirimkan foto tanda tangan Anda berlatar kertas putih dan pencahayaan yang cukup.
+                      Sistem akan otomatis melakukan proses penyesuaian gambar.
                     </p>
 
                     <input
@@ -635,9 +629,12 @@ export default function ProfilePage() {
                         </div>
 
                         <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-0.5">
+                          <Check className="text-[var(--rd-lime)]" size={14} aria-hidden="true"/>
                           <span className="text-[11px] font-medium text-[var(--rd-lime)]">
-                            ✓ Latar belakang transparan & siap dicetak pada PDF
+                            Tanda tangan sudah berhasil diproses, jangan lupa tekan tombol simpan perubahan
                           </span>
+                          </div>
                           <div className="flex items-center gap-2">
                             <button
                               type="button"
@@ -673,7 +670,7 @@ export default function ProfilePage() {
                             Unggah Foto Tanda Tangan
                           </p>
                           <p className="m-0 mt-0.5 text-[11px] text-[var(--rd-muted)]">
-                            Ambil foto tanda tangan di kertas putih · Terima beres
+                            Ambil foto tanda tangan di kertas putih dengan pencahayaan yang baik.
                           </p>
                         </div>
                       </div>
