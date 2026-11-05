@@ -210,7 +210,7 @@ export default function TechnicianDashboardPage() {
             </span>
             <div className="min-w-0 flex-1">
               <span className="block text-[10px] text-[var(--rd-muted)] sm:text-xs">
-                Total Tugas Aktif
+                Total Seluruh Laporan
               </span>
               {loading ? (
                 <Skeleton className="mt-1 h-5 w-10 rounded" />
