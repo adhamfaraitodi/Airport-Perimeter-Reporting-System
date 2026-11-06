@@ -108,8 +108,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
       const result = await loginAction(parsed.data);
 
       if (result.success && result.redirectTo) {
-        router.push(result.redirectTo);
-        router.refresh();
+        window.location.href = result.redirectTo;
         return;
       }
 
