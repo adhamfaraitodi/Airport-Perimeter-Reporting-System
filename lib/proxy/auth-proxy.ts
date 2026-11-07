@@ -6,6 +6,14 @@ import { AUTH_SECRET, type UserRole } from "@/lib/auth";
 
 export const ROLE_COOKIE_NAME = "perimeter_session_role";
 
+const AUTH_COOKIES_TO_CLEAR = [
+  ROLE_COOKIE_NAME,
+  "better-auth.session_token",
+  "better-auth.session_data",
+  "__Secure-better-auth.session_token",
+  "__Secure-better-auth.session_data",
+] as const;
+
 export const PROTECTED_ROUTE_SEGMENTS = [
   "reports",
   "operator",
@@ -88,21 +96,74 @@ export function verifyRoleCookie(cookieValue?: string | null): UserRole | null {
 }
 
 /**
+ * Verifies the Better-Auth `better-auth.session_token` HMAC-SHA256 signature
+ * (`<token>.<44-char base64 signature>`).
+ * Returns the raw token if valid, or null if forged/signed with an old secret.
+ */
+export function verifySessionTokenCookie(
+  rawCookieValue?: string | null
+): string | null {
+  if (!rawCookieValue) return null;
+
+  let decoded = rawCookieValue;
+  try {
+    decoded = decodeURIComponent(rawCookieValue);
+  } catch {
+    return null;
+  }
+
+  const dotIdx = decoded.lastIndexOf(".");
+  if (dotIdx < 1) return null;
+
+  const tokenValue = decoded.slice(0, dotIdx);
+  const signature = decoded.slice(dotIdx + 1);
+  if (signature.length !== 44 || !signature.endsWith("=")) {
+    return null;
+  }
+
+  const expectedSig = createHmac("sha256", AUTH_SECRET)
+    .update(tokenValue)
+    .digest("base64");
+
+  const sigBuf = Buffer.from(signature);
+  const expectedBuf = Buffer.from(expectedSig);
+  if (sigBuf.length !== expectedBuf.length) return null;
+
+  if (!timingSafeEqual(sigBuf, expectedBuf)) {
+    return null;
+  }
+
+  return tokenValue;
+}
+
+function clearAuthCookiesOnResponse(response: NextResponse): NextResponse {
+  for (const name of AUTH_COOKIES_TO_CLEAR) {
+    response.cookies.delete(name);
+  }
+  return response;
+}
+
+/**
  * Resolves the active session token and user role from Better-Auth cookies.
  */
 export async function resolveProxySession(request: NextRequest): Promise<{
   isAuthenticated: boolean;
   role: UserRole | null;
+  hasStaleCookies: boolean;
 }> {
-  const sessionToken = getSessionCookie(request);
+  const rawSessionCookie = getSessionCookie(request);
+  const verifiedToken = verifySessionTokenCookie(rawSessionCookie);
   const verifiedRoleCookie = verifyRoleCookie(
     request.cookies.get(ROLE_COOKIE_NAME)?.value
   );
 
-  if (!sessionToken) {
+  if (!verifiedToken) {
     return {
       isAuthenticated: false,
-      role: verifiedRoleCookie,
+      role: null,
+      hasStaleCookies: Boolean(
+        rawSessionCookie || request.cookies.get(ROLE_COOKIE_NAME)?.value
+      ),
     };
   }
 
@@ -114,6 +175,7 @@ export async function resolveProxySession(request: NextRequest): Promise<{
       return {
         isAuthenticated: false,
         role: null,
+        hasStaleCookies: true,
       };
     }
 
@@ -122,15 +184,26 @@ export async function resolveProxySession(request: NextRequest): Promise<{
       return {
         isAuthenticated: true,
         role: cachedRole,
+        hasStaleCookies: false,
       };
     }
   } catch {
     // Fallback to verified HMAC-signed role cookie if cookie cache decoding is unavailable
   }
 
+  // Require either a valid cookie cache or a valid HMAC-signed role cookie
+  if (!verifiedRoleCookie) {
+    return {
+      isAuthenticated: false,
+      role: null,
+      hasStaleCookies: true,
+    };
+  }
+
   return {
     isAuthenticated: true,
-    role: verifiedRoleCookie ?? "REPORTER",
+    role: verifiedRoleCookie,
+    hasStaleCookies: false,
   };
 }
 
@@ -146,7 +219,8 @@ export async function handleAuthProxy(
   const { locale, routeSegment } = context;
   const { pathname, search } = request.nextUrl;
 
-  const { isAuthenticated, role } = await resolveProxySession(request);
+  const { isAuthenticated, role, hasStaleCookies } =
+    await resolveProxySession(request);
 
   // 1. Legacy `/[locale]/dashboard` alias -> redirect to role-appropriate home
   if (routeSegment === "dashboard") {
@@ -166,7 +240,8 @@ export async function handleAuthProxy(
           : getHomeRouteForRole(locale, role);
       return NextResponse.redirect(new URL(destination, request.url));
     }
-    return NextResponse.next();
+    const response = NextResponse.next();
+    return hasStaleCookies ? clearAuthCookiesOnResponse(response) : response;
   }
 
   // 3. Protected routes: ALWAYS enforce authentication -> kick unauthenticated to login
@@ -177,7 +252,8 @@ export async function handleAuthProxy(
   if (isProtected && !isAuthenticated) {
     const loginUrl = new URL(`/${locale}/login`, request.url);
     loginUrl.searchParams.set("callbackUrl", `${pathname}${search}`);
-    return NextResponse.redirect(loginUrl);
+    const response = NextResponse.redirect(loginUrl);
+    return hasStaleCookies ? clearAuthCookiesOnResponse(response) : response;
   }
 
   // 4. Role-Based Access Control (RBAC) when user is authenticated with a known role
