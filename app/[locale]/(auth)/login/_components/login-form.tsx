@@ -170,12 +170,20 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
           {/* Language Switcher */}
           <button
             type="button"
-            className={`${buttonClasses} inline-flex h-[40px] items-center gap-1.5 rounded-full border border-current/25 bg-transparent px-3 text-[12px] font-semibold text-[var(--login-panel-text)] hover:bg-[var(--login-theme-hover)]`}
+            className={`${buttonClasses} inline-flex h-[44px] items-center gap-1.5 rounded-full border-0 bg-transparent px-2.5 text-xs font-semibold text-[var(--login-panel-text)] hover:bg-[var(--login-theme-hover)] sm:px-3`}
             onClick={handleToggleLanguage}
-            aria-label={t.header.changeLang}
-            title={t.header.changeLang}
+            aria-label={
+              locale === "id"
+                ? "Beralih ke Bahasa Inggris"
+                : "Switch to Indonesian"
+            }
+            title={
+              locale === "id"
+                ? "Beralih ke Bahasa Inggris"
+                : "Switch to Indonesian"
+            }
           >
-            <Languages size={17} strokeWidth={1.8} />
+            <Languages size={18} strokeWidth={1.8} aria-hidden="true" />
             <span className="tracking-wider">{locale.toUpperCase()}</span>
           </button>
 
