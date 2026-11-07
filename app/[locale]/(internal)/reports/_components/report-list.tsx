@@ -94,7 +94,9 @@ export function ReportList({
   const owned = user
     ? reports.filter(
         (report) =>
-          report.reporterId === user.id || report.reporterId === "demo-reporter"
+          user.role === "OPERATOR" ||
+          report.reporterId === user.id ||
+          report.reporterId === "demo-reporter"
       )
     : [];
 
@@ -375,6 +377,8 @@ export function ReportList({
                 loading={loading}
                 selectedId={selectedReportId}
                 onSelect={(report) => onSelect(report.id)}
+                activeFilter={filter}
+                onFilterChange={onFilter}
                 pageSize={5}
               />
             </section>

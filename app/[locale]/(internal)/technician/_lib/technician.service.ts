@@ -1,6 +1,7 @@
+import crypto from "crypto";
 import fs from "fs";
 import path from "path";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import type { FindingItem, LifecycleStatus, ReportRecord } from "../../../_lib/client-api";
 import { dispatchReportNotificationAction } from "../../../_lib/notifications.actions";
@@ -37,12 +38,13 @@ export function canTechnicianTransitionStatus(
 
 /**
  * Helper to write uploaded base64 photos to the server filesystem under /public/uploads/reports/
+ * Always generates a server-controlled UUID filename to prevent path traversal.
  */
 export function saveTechnicianPhotoFile(
-  photoId: string,
   mimeType: string,
   base64Data: string
-): { filePath: string; sizeBytes: number } {
+): { photoId: string; filePath: string; sizeBytes: number } {
+  const photoId = crypto.randomUUID();
   const cleaned = base64Data.replace(/^data:image\/\w+;base64,/, "");
   const buffer = Buffer.from(cleaned, "base64");
   const ext =
@@ -63,6 +65,7 @@ export function saveTechnicianPhotoFile(
   fs.writeFileSync(fullPath, buffer);
 
   return {
+    photoId,
     filePath: `/uploads/reports/${fileName}`,
     sizeBytes: buffer.length,
   };
@@ -106,15 +109,11 @@ export async function executeTechnicianStatusUpdate(
     );
   }
 
-  // Save all uploaded photos to server disk
+  // Save all uploaded photos to server disk using server-generated UUIDs
   const savedPhotos = input.photos.map((photo) => {
-    const saved = saveTechnicianPhotoFile(
-      photo.id,
-      photo.mimeType,
-      photo.base64
-    );
+    const saved = saveTechnicianPhotoFile(photo.mimeType, photo.base64);
     return {
-      id: photo.id,
+      id: saved.photoId,
       filePath: saved.filePath,
       mimeType: photo.mimeType,
       sizeBytes: saved.sizeBytes,

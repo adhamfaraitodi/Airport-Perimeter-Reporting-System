@@ -17,12 +17,18 @@ export const gpsPointSchema = z.object({
   accuracy: z.number().nonnegative(),
 });
 
+// Max ~5MB binary image in base64 (~7,000,000 characters)
+const MAX_BASE64_PHOTO_LENGTH = 7 * 1024 * 1024;
+
 export const uploadedFileSchema = z.object({
-  id: z.string().min(1, "ID file tidak boleh kosong."),
+  id: z.string().min(1, "ID file tidak boleh kosong.").max(128, "ID file terlalu panjang."),
   mimeType: z.enum(["image/jpeg", "image/png", "image/webp"], {
     message: "Format foto tidak didukung. Hanya JPEG, PNG, dan WebP.",
   }),
-  base64: z.string().min(1, "Data foto tidak boleh kosong."),
+  base64: z
+    .string()
+    .min(1, "Data foto tidak boleh kosong.")
+    .max(MAX_BASE64_PHOTO_LENGTH, "Ukuran data foto maksimal 5MB."),
 });
 
 export const beginSubmissionPayloadSchema = z
@@ -77,7 +83,7 @@ export const beginSubmissionPayloadSchema = z
 
 export const commitReportSubmissionInputSchema = z.object({
   payload: beginSubmissionPayloadSchema,
-  files: z.array(uploadedFileSchema),
+  files: z.array(uploadedFileSchema).max(10, "Maksimal 10 foto per pengiriman."),
 });
 
 export type FindingDamage = z.infer<typeof findingDamageSchema>;

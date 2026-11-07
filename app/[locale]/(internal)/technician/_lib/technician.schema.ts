@@ -17,12 +17,18 @@ export const TECHNICIAN_STATUS_LABELS: Record<TechnicianStatus, string> = {
 
 export const technicianStatusSchema = z.enum(TECHNICIAN_ALLOWED_STATUSES);
 
+// Max ~5MB binary image in base64 (~7,000,000 characters)
+const MAX_BASE64_PHOTO_LENGTH = 7 * 1024 * 1024;
+
 export const uploadedPhotoSchema = z.object({
-  id: z.string().min(1, "ID foto wajib disertakan"),
+  id: z.string().min(1, "ID foto wajib disertakan").max(128, "ID foto terlalu panjang"),
   mimeType: z.enum(["image/jpeg", "image/png", "image/webp"], {
     message: "Format foto harus JPG, PNG, atau WebP.",
   }),
-  base64: z.string().min(1, "Data foto tidak boleh kosong."),
+  base64: z
+    .string()
+    .min(1, "Data foto tidak boleh kosong.")
+    .max(MAX_BASE64_PHOTO_LENGTH, "Ukuran data foto maksimal 5MB."),
 });
 
 export const updateTechnicianStatusSchema = z.object({

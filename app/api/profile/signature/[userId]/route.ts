@@ -18,12 +18,23 @@ export async function GET(
     const reqHeaders = await headers();
     const session = await auth.api.getSession({ headers: reqHeaders }).catch(() => null);
 
-    // If no active session, reject unauthorized
-    if (!session?.user) {
-      // In development / demo environment, allow if requested with proper header or local dev
-      if (process.env.NODE_ENV === "production") {
-        return new NextResponse("Unauthorized", { status: 401 });
-      }
+    if (!session?.user?.id) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const userRecord = session.user as Record<string, unknown>;
+    if (userRecord.status === "INACTIVE") {
+      return new NextResponse("Forbidden: Account inactive", { status: 403 });
+    }
+
+    // Enforce BOLA/IDOR protection: owner, OPERATOR, or TECHNICIAN (for official PDF report generation)
+    const callerRole = userRecord.role as string | undefined;
+    if (
+      session.user.id !== userId &&
+      callerRole !== "OPERATOR" &&
+      callerRole !== "TECHNICIAN"
+    ) {
+      return new NextResponse("Forbidden", { status: 403 });
     }
 
     // Path to private signature
@@ -44,7 +55,7 @@ export async function GET(
     return new NextResponse(fileBuffer, {
       headers: {
         "Content-Type": "image/png",
-        "Cache-Control": "private, max-age=3600, stale-while-revalidate=86400",
+        "Cache-Control": "private, no-cache, must-revalidate",
       },
     });
   } catch (err) {

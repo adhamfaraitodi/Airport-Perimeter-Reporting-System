@@ -21,7 +21,7 @@ export function PerimeterMap({
   onSelect,
 }: PerimeterMapProps) {
   return (
-    <section className="relative h-[42%] min-h-[210px] min-w-0 shrink-0 overflow-hidden rounded-t-xl border border-solid border-[var(--rd-border)] md:h-full md:min-h-0 md:rounded-[14px]">
+    <section className="relative isolate h-[260px] min-h-[210px] min-w-0 shrink-0 overflow-hidden rounded-t-xl border border-solid border-[var(--rd-border)] sm:h-[300px] md:h-full md:min-h-0 md:rounded-[14px]">
       <MapView
         fill
         reports={reports}

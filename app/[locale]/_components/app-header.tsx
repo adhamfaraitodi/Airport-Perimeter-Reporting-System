@@ -36,6 +36,7 @@ import type { SessionUser } from "../_lib/client-api";
 
 export interface NotificationItem {
   id: string;
+  reportId?: string | null;
   title: string;
   description: string;
   time: string;
@@ -129,6 +130,31 @@ export function AppHeader({
   const [notifFilter, setNotifFilter] = useState<"ALL" | "UNREAD">("ALL");
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
+  useEffect(() => {
+    let active = true;
+    if (!user?.id) return;
+    getNotificationsAction(locale)
+      .then((res) => {
+        if (active && res.success) {
+          setNotifications(
+            res.items.map((item) => ({
+              id: item.id,
+              reportId: item.reportId,
+              title: item.title,
+              description: item.description,
+              time: item.time,
+              status: item.status,
+              read: item.read,
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [user?.id, locale, notifOpen]);
+
   const dataMasterRef = useRef<HTMLDivElement | null>(null);
   const profileRef = useRef<HTMLDivElement | null>(null);
 
@@ -186,6 +212,7 @@ export function AppHeader({
 
   function markAllAsRead() {
     setNotifications((prev) => prev.map((item) => ({ ...item, read: true })));
+    markAllNotificationsReadAction().catch(() => {});
   }
 
   function getHomeRoute() {
@@ -198,6 +225,7 @@ export function AppHeader({
     setNotifications((prev) =>
       prev.map((item) => (item.id === id ? { ...item, read: true } : item))
     );
+    markNotificationReadAction(id).catch(() => {});
     setNotifOpen(false);
     const targetRoute = getHomeRoute();
     if (pathname !== targetRoute) {
@@ -226,7 +254,7 @@ export function AppHeader({
   }
 
   return (
-    <header className="border-b border-[var(--rd-border)] bg-[var(--rd-panel)]">
+    <header className="relative z-30 border-b border-[var(--rd-border)] bg-[var(--rd-panel)]">
       <div
         className={`mx-auto flex h-[72px] items-center justify-between gap-2 px-3 sm:h-[86px] sm:gap-3 md:px-[3%] min-[1100px]:px-[5%] ${containerClassName}`}
       >
@@ -402,7 +430,7 @@ export function AppHeader({
             <PopoverContent
               align="end"
               sideOffset={10}
-              className="w-[320px] p-0 sm:w-[360px]"
+              className="max-sm:-right-11 w-[min(320px,calc(100vw-24px))] p-0 sm:w-[360px]"
             >
               {/* Popover Header */}
               <PopoverHeader className="border-b border-solid border-[var(--rd-border)] px-4 pt-3.5 pb-3">

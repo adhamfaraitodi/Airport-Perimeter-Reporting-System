@@ -1,5 +1,10 @@
+import { Suspense } from "react";
 import { LoginForm } from "./_components/login-form";
 
 export default function LoginPage() {
-  return <LoginForm allowDemo />;
+  return (
+    <Suspense fallback={null}>
+      <LoginForm allowDemo />
+    </Suspense>
+  );
 }

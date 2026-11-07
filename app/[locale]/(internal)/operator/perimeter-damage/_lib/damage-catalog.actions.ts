@@ -2,9 +2,9 @@
 
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
-import { auth, type UserRole } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 
 import {
   type CatalogPartDto,
@@ -47,7 +47,12 @@ async function verifyOperatorSession() {
     throw new Error("Sesi tidak valid. Silakan login kembali.");
   }
 
-  const role = (session.user as Record<string, unknown>).role as string | undefined;
+  const userRecord = session.user as Record<string, unknown>;
+  if (userRecord.status === "INACTIVE") {
+    throw new Error("Akun Anda telah dinonaktifkan.");
+  }
+
+  const role = userRecord.role as string | undefined;
   if (role !== "OPERATOR") {
     throw new Error("Akses ditolak. Hanya Operator yang dapat mengelola data master.");
   }

@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getCookieCache, getSessionCookie } from "better-auth/cookies";
@@ -48,6 +49,45 @@ function isValidRole(value: unknown): value is UserRole {
 }
 
 /**
+ * Signs the user's role using HMAC-SHA256 with AUTH_SECRET so the role cookie
+ * cannot be forged or tampered with by the client.
+ */
+export function signRoleCookie(role: UserRole): string {
+  const sig = createHmac("sha256", AUTH_SECRET)
+    .update(role)
+    .digest("base64url");
+  return `${role}.${sig}`;
+}
+
+/**
+ * Verifies and extracts the role from a signed role cookie.
+ * Returns null if unsigned, malformed, or tampered.
+ */
+export function verifyRoleCookie(cookieValue?: string | null): UserRole | null {
+  if (!cookieValue) return null;
+  const dotIdx = cookieValue.indexOf(".");
+  if (dotIdx === -1) return null;
+
+  const rawRole = cookieValue.slice(0, dotIdx);
+  const sig = cookieValue.slice(dotIdx + 1);
+  if (!isValidRole(rawRole) || !sig) return null;
+
+  const expectedSig = createHmac("sha256", AUTH_SECRET)
+    .update(rawRole)
+    .digest("base64url");
+
+  const sigBuf = Buffer.from(sig);
+  const expectedBuf = Buffer.from(expectedSig);
+  if (sigBuf.length !== expectedBuf.length) return null;
+
+  if (!timingSafeEqual(sigBuf, expectedBuf)) {
+    return null;
+  }
+
+  return rawRole;
+}
+
+/**
  * Resolves the active session token and user role from Better-Auth cookies.
  */
 export async function resolveProxySession(request: NextRequest): Promise<{
@@ -55,20 +95,29 @@ export async function resolveProxySession(request: NextRequest): Promise<{
   role: UserRole | null;
 }> {
   const sessionToken = getSessionCookie(request);
-  const roleCookie = request.cookies.get(ROLE_COOKIE_NAME)?.value;
+  const verifiedRoleCookie = verifyRoleCookie(
+    request.cookies.get(ROLE_COOKIE_NAME)?.value
+  );
 
   if (!sessionToken) {
     return {
       isAuthenticated: false,
-      role: isValidRole(roleCookie) ? roleCookie : null,
+      role: verifiedRoleCookie,
     };
   }
 
   // Attempt to read signed Better-Auth cookie cache for role verification
   try {
     const cached = await getCookieCache(request, { secret: AUTH_SECRET });
-    const cachedRole = (cached?.user as Record<string, unknown> | undefined)
-      ?.role;
+    const cachedUser = cached?.user as Record<string, unknown> | undefined;
+    if (cachedUser?.status === "INACTIVE") {
+      return {
+        isAuthenticated: false,
+        role: null,
+      };
+    }
+
+    const cachedRole = cachedUser?.role;
     if (isValidRole(cachedRole)) {
       return {
         isAuthenticated: true,
@@ -76,12 +125,12 @@ export async function resolveProxySession(request: NextRequest): Promise<{
       };
     }
   } catch {
-    // Fallback to role cookie if cookie cache decoding is unavailable
+    // Fallback to verified HMAC-signed role cookie if cookie cache decoding is unavailable
   }
 
   return {
     isAuthenticated: true,
-    role: isValidRole(roleCookie) ? roleCookie : "REPORTER",
+    role: verifiedRoleCookie ?? "REPORTER",
   };
 }
 

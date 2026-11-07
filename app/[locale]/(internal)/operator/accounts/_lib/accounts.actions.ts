@@ -26,7 +26,14 @@ async function verifyOperatorSession() {
     throw new Error("Sesi tidak valid. Silakan login kembali.");
   }
 
-  const role = (session.user as Record<string, unknown>).role as string | undefined;
+  const userRecord = session.user as Record<string, unknown>;
+  const role = userRecord.role as string | undefined;
+  const status = userRecord.status as string | undefined;
+
+  if (status === "INACTIVE") {
+    throw new Error("Akun Anda telah dinonaktifkan.");
+  }
+
   if (role !== "OPERATOR") {
     throw new Error("Akses ditolak. Hanya Operator yang dapat mengelola akun.");
   }
@@ -123,10 +130,8 @@ export async function createAccountAction(
         password,
         name,
         nip,
-        role,
         unit,
         phone: phone || undefined,
-        status,
       },
     });
 
@@ -135,10 +140,12 @@ export async function createAccountAction(
       return { success: false, errorMessage: "Gagal membuat akun melalui Better-Auth." };
     }
 
-    // Sync username & displayUsername for username plugin
+    // Explicitly set role, status, username & displayUsername in database
     await db
       .update(schema.user)
       .set({
+        role,
+        status,
         username: nip,
         displayUsername: name,
       })
@@ -200,21 +207,28 @@ export async function updateAccountAction(
 
     const email = nipToEmail(nip);
 
-    await db
-      .update(schema.user)
-      .set({
-        name,
-        nip,
-        email,
-        phone: phone || null,
-        role,
-        unit,
-        status,
-        username: nip,
-        displayUsername: name,
-        updatedAt: new Date(),
-      })
-      .where(eq(schema.user.id, id));
+    await db.transaction(async (tx) => {
+      await tx
+        .update(schema.user)
+        .set({
+          name,
+          nip,
+          email,
+          phone: phone || null,
+          role,
+          unit,
+          status,
+          username: nip,
+          displayUsername: name,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.user.id, id));
+
+      // Revoke active sessions if status becomes INACTIVE
+      if (status === "INACTIVE") {
+        await tx.delete(schema.session).where(eq(schema.session.userId, id));
+      }
+    });
 
     const updated: ManagedAccount = {
       id,
@@ -263,13 +277,20 @@ export async function toggleAccountStatusAction(
       };
     }
 
-    await db
-      .update(schema.user)
-      .set({
-        status: parsed.data.newStatus,
-        updatedAt: new Date(),
-      })
-      .where(eq(schema.user.id, id));
+    await db.transaction(async (tx) => {
+      await tx
+        .update(schema.user)
+        .set({
+          status: parsed.data.newStatus,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.user.id, id));
+
+      // Immediately revoke all active sessions when an account is deactivated
+      if (parsed.data.newStatus === "INACTIVE") {
+        await tx.delete(schema.session).where(eq(schema.session.userId, id));
+      }
+    });
 
     return { success: true, status: parsed.data.newStatus };
   } catch (err: unknown) {
@@ -300,14 +321,19 @@ export async function resetAccountPasswordAction(
 
     const hashedPassword = await hashPassword(parsed.data.newPassword);
 
-    // Update password in Better-Auth account table
-    await db
-      .update(schema.account)
-      .set({
-        password: hashedPassword,
-        updatedAt: new Date(),
-      })
-      .where(eq(schema.account.userId, id));
+    await db.transaction(async (tx) => {
+      // Update password in Better-Auth account table
+      await tx
+        .update(schema.account)
+        .set({
+          password: hashedPassword,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.account.userId, id));
+
+      // Revoke existing sessions on password reset
+      await tx.delete(schema.session).where(eq(schema.session.userId, id));
+    });
 
     return { success: true };
   } catch (err: unknown) {

@@ -164,10 +164,11 @@ export default function ProfilePage() {
 
         setReports(reportItems);
 
-        let finalName = name;
-        let finalPhone = phone;
-        let finalAvatarUrl = avatarUrl;
-        let finalSignatureUrl = signatureUrl;
+        let finalName = cached?.name || session.name || "";
+        let finalPhone = cached?.phone || session.phone || "";
+        let finalAvatarUrl = cached?.avatarUrl ?? session.image ?? null;
+        let finalSignatureUrl =
+          cached?.signatureUrl ?? session.signatureUrl ?? null;
         let nextUser: SessionUser = session;
         let nextDbProfile: ProfileData | null = null;
 
@@ -188,36 +189,38 @@ export default function ProfilePage() {
           if (!isFormTouched.current) {
             setName(p.name);
             setPhone(p.phone || "");
+            setAvatarUrl(p.image || null);
+            setSignatureUrl(p.signatureUrl || null);
             finalName = p.name;
             finalPhone = p.phone || "";
+            finalAvatarUrl = p.image || null;
+            finalSignatureUrl = p.signatureUrl || null;
           }
-          setAvatarUrl(p.image || null);
-          setSignatureUrl(p.signatureUrl || null);
-          finalAvatarUrl = p.image || null;
-          finalSignatureUrl = p.signatureUrl || null;
         } else {
           // Fallback to session
           if (!isFormTouched.current) {
             setName(session.name);
             setPhone(session.phone || "");
+            setAvatarUrl(session.image || null);
+            setSignatureUrl(session.signatureUrl || null);
             finalName = session.name;
             finalPhone = session.phone || "";
+            finalAvatarUrl = session.image || null;
+            finalSignatureUrl = session.signatureUrl || null;
           }
-          setAvatarUrl(session.image || null);
-          setSignatureUrl(session.signatureUrl || null);
-          finalAvatarUrl = session.image || null;
-          finalSignatureUrl = session.signatureUrl || null;
         }
 
-        writeProfileCache({
-          user: nextUser,
-          dbProfile: nextDbProfile,
-          name: finalName,
-          phone: finalPhone,
-          avatarUrl: finalAvatarUrl,
-          signatureUrl: finalSignatureUrl,
-          reports: reportItems,
-        });
+        if (!isFormTouched.current) {
+          writeProfileCache({
+            user: nextUser,
+            dbProfile: nextDbProfile,
+            name: finalName,
+            phone: finalPhone,
+            avatarUrl: finalAvatarUrl,
+            signatureUrl: finalSignatureUrl,
+            reports: reportItems,
+          });
+        }
       } catch (e) {
         if (active) toast.error(message(e));
       } finally {
@@ -228,7 +231,7 @@ export default function ProfilePage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [locale]);
 
   // Autonomous Avatar handler (Zero-config, WebP < 30KB)
   async function handleSelectAvatar(event: ChangeEvent<HTMLInputElement>) {
@@ -243,10 +246,10 @@ export default function ProfilePage() {
 
     try {
       toast.info("Mengompresi foto profil...");
-      const { dataUrl, sizeBytes } = await compressAvatarPhoto(file);
+      const { dataUrl } = await compressAvatarPhoto(file);
+      isFormTouched.current = true;
       setAvatarUrl(dataUrl);
       setAvatarPayload(dataUrl);
-      const kb = Math.round(sizeBytes / 1024);
       toast.success("Foto profil siap", {
         description: `Foto berhasil ter-upload. Simpan untuk menerapkan.`,
       });
@@ -256,6 +259,7 @@ export default function ProfilePage() {
   }
 
   function handleRemoveAvatar() {
+    isFormTouched.current = true;
     setAvatarUrl(null);
     setAvatarPayload(null);
   }
@@ -274,7 +278,8 @@ export default function ProfilePage() {
     setProcessingSignature(true);
     try {
       toast.info("Memproses tanda tangan...");
-      const { dataUrl, width, height } = await processSignaturePhoto(file);
+      const { dataUrl } = await processSignaturePhoto(file);
+      isFormTouched.current = true;
       setSignatureUrl(dataUrl);
       setSignaturePayload(dataUrl);
       toast.success("Tanda tangan berhasil diproses", {
@@ -291,6 +296,7 @@ export default function ProfilePage() {
   }
 
   function handleRemoveSignature() {
+    isFormTouched.current = true;
     setSignatureUrl(null);
     setSignaturePayload(null);
   }

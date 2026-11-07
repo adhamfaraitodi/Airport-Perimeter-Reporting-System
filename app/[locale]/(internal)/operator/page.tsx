@@ -93,8 +93,12 @@ export default function DashboardPage() {
   }
 
   const visible = reports.filter((report) => {
-    if (report.deletedAt) return false;
-    if (filter !== "ALL" && report.status !== filter) return false;
+    if (filter === "CLOSED") {
+      if (!report.deletedAt) return false;
+    } else {
+      if (report.deletedAt) return false;
+      if (filter !== "ALL" && report.status !== filter) return false;
+    }
     if (!search.trim()) return true;
 
     const findingsText = (report.findings || [])
@@ -167,7 +171,7 @@ export default function DashboardPage() {
             </button>
           </div>
         )}
-        <div className="flex h-[calc(100dvh-184px)] min-h-[550px] flex-col md:grid md:h-[calc(100dvh-280px)] md:grid-cols-[minmax(0,1fr)_400px] md:gap-3 min-[1100px]:grid-cols-[minmax(0,1fr)_580px] min-[1100px]:gap-5">
+        <div className="flex h-auto min-h-0 flex-col md:grid md:h-[calc(100dvh-280px)] md:min-h-[550px] md:grid-cols-[minmax(0,1fr)_400px] md:gap-3 min-[1100px]:grid-cols-[minmax(0,1fr)_580px] min-[1100px]:gap-5">
           <PerimeterMap
             reports={visible}
             selectedId={selectedId}
@@ -176,7 +180,7 @@ export default function DashboardPage() {
             }}
           />
           <section
-            className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-b-xl border border-t-0 border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] shadow-[0_-4px_15px_rgba(36,74,53,0.06)] md:rounded-[14px] md:border-t md:shadow-none"
+            className="min-h-0 flex-1 overflow-visible rounded-b-xl border border-t-0 border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] shadow-[0_-4px_15px_rgba(36,74,53,0.06)] md:overflow-y-auto md:overscroll-contain md:rounded-[14px] md:border-t md:shadow-none"
             aria-label="Panel laporan operator"
             aria-busy={loading}
           >

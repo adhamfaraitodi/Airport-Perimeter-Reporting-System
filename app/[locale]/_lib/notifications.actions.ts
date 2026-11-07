@@ -1,7 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
-import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, desc, eq, isNull, or } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { auth, type UserRole } from "@/lib/auth";
 import {
@@ -58,8 +58,8 @@ function formatRelativeTimeId(date: Date, locale: string = "id"): string {
 }
 
 /**
- * Resolve authenticated user ID and role from Better-Auth session,
- * with fallback for local demo.
+ * Resolve authenticated user ID and role strictly from Better-Auth session.
+ * Rejects unauthenticated or deactivated accounts.
  */
 async function resolveCurrentActor(): Promise<{
   userId: string;
@@ -70,22 +70,18 @@ async function resolveCurrentActor(): Promise<{
     const session = await auth.api.getSession({ headers: reqHeaders }).catch(() => null);
 
     if (session?.user?.id) {
-      const rawRole = (session.user as Record<string, unknown>).role as string | undefined;
+      const userRecord = session.user as Record<string, unknown>;
+      if (userRecord.status === "INACTIVE") {
+        return null;
+      }
+
+      const rawRole = userRecord.role as string | undefined;
       const role: UserRole =
         rawRole === "OPERATOR" || rawRole === "TECHNICIAN" ? rawRole : "REPORTER";
       return { userId: session.user.id, role };
     }
   } catch {
     // ignore
-  }
-
-  // Fallback for development if no session cookie
-  const fallback = await db.query.user.findFirst();
-  if (fallback) {
-    return {
-      userId: fallback.id,
-      role: fallback.role as UserRole,
-    };
   }
 
   return null;
@@ -104,7 +100,7 @@ export async function getNotificationsAction(
   try {
     const actor = await resolveCurrentActor();
     if (!actor) {
-      return { success: true, items: [], unreadCount: 0 };
+      return { success: false, items: [], unreadCount: 0, errorMessage: "Unauthorized" };
     }
 
     const rows = await db
@@ -286,6 +282,11 @@ export async function createNotificationEvent(payload: {
   targetRole?: UserRole | "ALL" | null;
   targetUserId?: string | null;
 }): Promise<string> {
+  const actor = await resolveCurrentActor();
+  if (!actor) {
+    throw new Error("Unauthorized");
+  }
+
   const [created] = await db
     .insert(schema.notification)
     .values({
@@ -330,6 +331,11 @@ export async function dispatchReportNotificationAction(params: {
   actorName?: string;
 }): Promise<void> {
   try {
+    const actor = await resolveCurrentActor();
+    if (!actor) {
+      return;
+    }
+
     const part = params.partName || "Perimeter";
     const side = params.side || "-";
     const grid = params.segmentCode || "";
@@ -372,6 +378,10 @@ export async function dispatchReportNotificationAction(params: {
         targetRole: "TECHNICIAN",
       });
     } else if (params.action === "STATUS") {
+      if (actor.role !== "OPERATOR" && actor.role !== "TECHNICIAN") {
+        return;
+      }
+
       // 1. Personal Notification specifically for the reporter of this report
       if (reporterUserId) {
         await createNotificationEvent({
@@ -422,6 +432,10 @@ export async function dispatchReportNotificationAction(params: {
         targetRole: "TECHNICIAN",
       });
     } else if (params.action === "DELETE") {
+      if (actor.role !== "OPERATOR") {
+        return;
+      }
+
       // 1. Personal to reporter
       if (reporterUserId) {
         await createNotificationEvent({

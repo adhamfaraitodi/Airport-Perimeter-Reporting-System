@@ -161,7 +161,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
           />
           <p className="m-0 text-center text-[16px] leading-[1.45] max-[360px]:text-[15px] min-[600px]:text-[19px] min-[900px]:max-w-[350px] min-[900px]:text-[25px] min-[900px]:leading-[1.5] min-[900px]:text-balance">
             {" "}
-            <span className="whitespace-nowrap">
+            <span className="sm:whitespace-nowrap">
               Airport Perimeter Reporting System
             </span>
           </p>
@@ -198,7 +198,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
               </h1>
               <p className="m-0 mb-[19px] text-[12px] leading-[1.5] text-[var(--login-muted)] min-[900px]:mb-[28px] min-[900px]:text-[14px]">
                 Selamat datang{" "}
-                <span className="whitespace-nowrap">
+                <span className="sm:whitespace-nowrap">
                   di Airport Perimeter Reporting System
                 </span>
                 <br />

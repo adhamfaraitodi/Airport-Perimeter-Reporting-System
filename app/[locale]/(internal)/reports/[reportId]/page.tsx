@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileWarning } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   api,
@@ -37,8 +37,11 @@ export default function ReportDetailPage() {
         const found = items.find((r) => r.id === reportId) || null;
         setReport(found);
       })
+      .catch(() => {
+        setReport(null);
+      })
       .finally(() => setLoading(false));
-  }, [reportId]);
+  }, [reportId, locale]);
 
   return (
     <div
@@ -133,11 +136,31 @@ export default function ReportDetailPage() {
               </div>
             </div>
           </article>
-        ) : (
+        ) : report ? (
           <ReportDetail
-            report={report!}
+            report={report}
             onBack={() => router.push(`/${locale}/reports`)}
           />
+        ) : (
+          <article className="flex flex-col items-center justify-center rounded-2xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] px-4 py-14 text-center text-[var(--rd-text)] sm:p-10">
+            <span className="mb-3 grid size-12 place-items-center rounded-2xl bg-[var(--rd-coral)]/15 text-[var(--rd-coral)]">
+              <FileWarning size={24} aria-hidden="true" />
+            </span>
+            <h2 className="m-0 text-base font-semibold sm:text-lg">
+              Laporan Tidak Ditemukan
+            </h2>
+            <p className="m-0 mt-1.5 max-w-md text-xs leading-relaxed text-[var(--rd-muted)] sm:text-sm">
+              Data laporan yang Anda cari tidak tersedia atau Anda tidak memiliki akses ke laporan tersebut.
+            </p>
+            <button
+              type="button"
+              onClick={() => router.push(`/${locale}/reports`)}
+              className="mt-5 inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[var(--rd-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--rd-primary-hover)]"
+            >
+              <ArrowLeft size={16} aria-hidden="true" />
+              Kembali ke Daftar Laporan
+            </button>
+          </article>
         )}
         <ReportFooter />
       </main>

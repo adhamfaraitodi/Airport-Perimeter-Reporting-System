@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { ArrowLeft, Check, Download, MapPin } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { ArrowLeft, Check, Download, Loader2, MapPin } from "lucide-react";
 import Gallery from "../../../_components/photo-gallery";
 import MapView from "../../../_components/perimeter-map-view";
 import type { ReportRecord } from "../../../_lib/client-api";
@@ -52,6 +52,18 @@ export function ReportDetailSheet({
   onAction,
   onBack,
 }: ReportDetailSheetProps) {
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  async function handleDownloadPdf() {
+    if (downloadingPdf) return;
+    setDownloadingPdf(true);
+    try {
+      await downloadReportDocument(report);
+    } finally {
+      setDownloadingPdf(false);
+    }
+  }
+
   const findingLabel = report.findings?.length
     ? report.findings.map((f) => f.partName).join(", ")
     : `Perimeter sisi ${report.side || "belum ditentukan"}`;
@@ -156,11 +168,16 @@ export function ReportDetailSheet({
           )}
           <button
             type="button"
-            className={`${canUpdateStatus && !statusActionDisabled ? btnSecondary : btnPrimary} flex-1 text-xs`}
-            onClick={() => downloadReportDocument(report)}
+            disabled={downloadingPdf}
+            className={`${canUpdateStatus && !statusActionDisabled ? btnSecondary : btnPrimary} flex-1 text-xs disabled:cursor-not-allowed disabled:opacity-60`}
+            onClick={handleDownloadPdf}
           >
-            <Download size={14} className="mr-1.5" aria-hidden="true" />
-            Unduh Laporan
+            {downloadingPdf ? (
+              <Loader2 size={14} className="mr-1.5 animate-spin" aria-hidden="true" />
+            ) : (
+              <Download size={14} className="mr-1.5" aria-hidden="true" />
+            )}
+            {downloadingPdf ? "Menyiapkan PDF…" : "Unduh Laporan"}
           </button>
           {canDelete && onAction && (
             <button
@@ -177,11 +194,16 @@ export function ReportDetailSheet({
         <div className="my-5 flex flex-wrap gap-2">
           <button
             type="button"
-            className={`${btnPrimary} flex-1 text-xs`}
-            onClick={() => downloadReportDocument(report)}
+            disabled={downloadingPdf}
+            className={`${btnPrimary} flex-1 text-xs disabled:cursor-not-allowed disabled:opacity-60`}
+            onClick={handleDownloadPdf}
           >
-            <Download size={14} className="mr-1.5" aria-hidden="true" />
-            Unduh Arsip Laporan
+            {downloadingPdf ? (
+              <Loader2 size={14} className="mr-1.5 animate-spin" aria-hidden="true" />
+            ) : (
+              <Download size={14} className="mr-1.5" aria-hidden="true" />
+            )}
+            {downloadingPdf ? "Menyiapkan PDF…" : "Unduh Arsip Laporan"}
           </button>
         </div>
       )}
@@ -223,10 +245,10 @@ export function ReportDetailSheet({
 
 function HistoryItem({ children }: { children: ReactNode }) {
   return (
-    <li className="relative ml-[5px] border-l border-solid border-[var(--rd-border)] pb-5 pl-[23px] text-xs last:border-transparent">
+    <li className="relative border-l border-solid border-[var(--rd-border)] pb-5 pl-[18px] last:pb-0">
       <span
+        className="absolute top-1 -left-[5px] size-[9px] rounded-full border-2 border-solid border-[var(--rd-surface)] bg-[var(--rd-link)]"
         aria-hidden="true"
-        className="absolute top-0.5 -left-[5px] size-[9px] rounded-full border-2 border-solid border-[var(--rd-surface)] bg-[var(--rd-link)] outline-1 outline-solid outline-[var(--rd-border)]"
       />
       {children}
     </li>

@@ -26,7 +26,12 @@ async function verifyTechnicianSession(): Promise<SessionUser> {
     throw new Error("Sesi tidak valid. Silakan login kembali.");
   }
 
-  const role = (session.user as Record<string, unknown>).role as
+  const userRecord = session.user as Record<string, unknown>;
+  if (userRecord.status === "INACTIVE") {
+    throw new Error("Akun Anda telah dinonaktifkan.");
+  }
+
+  const role = userRecord.role as
     | UserRole
     | undefined;
 
@@ -41,11 +46,11 @@ async function verifyTechnicianSession(): Promise<SessionUser> {
     name: session.user.name || "Petugas",
     email: session.user.email || "",
     role: role,
-    nip: (session.user as Record<string, unknown>).nip as string | undefined,
-    phone: (session.user as Record<string, unknown>).phone as string | undefined,
-    unit: (session.user as Record<string, unknown>).unit as string | undefined,
-    image: (session.user as Record<string, unknown>).image as string | undefined,
-    signatureUrl: (session.user as Record<string, unknown>).signatureUrl as
+    nip: userRecord.nip as string | undefined,
+    phone: userRecord.phone as string | undefined,
+    unit: userRecord.unit as string | undefined,
+    image: userRecord.image as string | undefined,
+    signatureUrl: userRecord.signatureUrl as
       | string
       | undefined,
   };

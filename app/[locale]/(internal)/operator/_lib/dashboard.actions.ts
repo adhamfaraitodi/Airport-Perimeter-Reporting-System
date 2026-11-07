@@ -18,7 +18,12 @@ async function verifyAuth(allowedRoles: UserRole[]) {
     throw new Error("Sesi tidak valid. Silakan login kembali.");
   }
 
-  const role = (session.user as Record<string, unknown>).role as UserRole | undefined;
+  const userRecord = session.user as Record<string, unknown>;
+  if (userRecord.status === "INACTIVE") {
+    throw new Error("Akun Anda telah dinonaktifkan.");
+  }
+
+  const role = userRecord.role as UserRole | undefined;
   if (!role || !allowedRoles.includes(role)) {
     throw new Error("Akses ditolak. Anda tidak memiliki izin untuk tindakan ini.");
   }

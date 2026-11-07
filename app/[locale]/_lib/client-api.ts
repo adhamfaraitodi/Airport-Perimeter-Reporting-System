@@ -412,6 +412,9 @@ export const api = {
 
       if (res.success && res.report) {
         submission.committed = true;
+        for (const imgId of p.expectedImageIds) {
+          images.delete(imgId);
+        }
         reports.set(res.report.id, res.report);
         return clone(res.report);
       } else if (res.errorMessage) {
@@ -439,15 +442,17 @@ export const api = {
   }: {
     imageId: string;
   }): Promise<{ url: string }> => {
-    const visible = [...reports.values()].some(
-      (r) =>
-        (role !== "REPORTER" || r.reporterId === users[role].id) &&
-        [...r.images, ...r.history.flatMap((h) => h.images)].some(
-          (i) => i.id === imageId
-        )
-    );
-    const url = images.get(imageId);
-    if (!visible || !url) fail("Foto tidak tersedia.");
-    return { url };
+    for (const r of reports.values()) {
+      if (role === "REPORTER" && r.reporterId !== users[role].id) continue;
+      const allImgs = [...r.images, ...r.history.flatMap((h) => h.images)];
+      const found = allImgs.find((i) => i.id === imageId);
+      if (found) {
+        const url = found.url || images.get(imageId);
+        if (url) return { url };
+      }
+    }
+    const fallbackUrl = images.get(imageId);
+    if (fallbackUrl) return { url: fallbackUrl };
+    fail("Foto tidak tersedia.");
   },
 };

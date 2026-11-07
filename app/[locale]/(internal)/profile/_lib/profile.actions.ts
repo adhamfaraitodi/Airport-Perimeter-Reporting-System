@@ -57,8 +57,8 @@ export async function getProfileAction(): Promise<{
       where: eq(schema.user.id, targetUserId),
     });
 
-    if (!record) {
-      return { success: false, errorMessage: "Data profil tidak ditemukan." };
+    if (!record || record.status === "INACTIVE") {
+      return { success: false, errorMessage: "Data profil tidak ditemukan atau akun nonaktif." };
     }
 
     return {
@@ -117,8 +117,8 @@ export async function updateProfileAction(
       where: eq(schema.user.id, targetUserId),
     });
 
-    if (!existing) {
-      return { success: false, errorMessage: "Akun pengguna tidak ditemukan." };
+    if (!existing || existing.status === "INACTIVE") {
+      return { success: false, errorMessage: "Akun pengguna tidak ditemukan atau nonaktif." };
     }
 
     let finalImageUrl = existing.image;
@@ -221,11 +221,33 @@ export async function updateProfileAction(
 
 /**
  * Retrieve user's signature as Base64 Data URL for embedding into generated PDF reports.
+ * Enforces ownership, Operator, or Technician privilege.
  */
 export async function getUserSignatureDataUrl(
   userId: string
 ): Promise<string | null> {
   try {
+    const reqHeaders = await headers();
+    const session = await auth.api.getSession({ headers: reqHeaders }).catch(() => null);
+
+    if (!session?.user?.id) {
+      return null;
+    }
+
+    const userRecord = session.user as Record<string, unknown>;
+    if (userRecord.status === "INACTIVE") {
+      return null;
+    }
+
+    const callerRole = userRecord.role as string | undefined;
+    if (
+      session.user.id !== userId &&
+      callerRole !== "OPERATOR" &&
+      callerRole !== "TECHNICIAN"
+    ) {
+      return null;
+    }
+
     const safeUserId = userId.replace(/[^a-zA-Z0-9_-]/g, "");
     const signPath = path.join(
       process.cwd(),

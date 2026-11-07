@@ -14,7 +14,7 @@ export const createAccountSchema = z.object({
     .trim()
     .min(3, "NIP minimal 3 karakter.")
     .max(30, "NIP maksimal 30 karakter.")
-    .regex(/^[a-zA-Z0-9]+$/, "NIP hanya boleh berisi huruf dan angka tanpa spasi."),
+    .regex(/^[0-9]+$/, "NIP hanya boleh berisi angka tanpa spasi."),
   name: z
     .string()
     .trim()
@@ -40,7 +40,7 @@ export const createAccountSchema = z.object({
   password: z
     .string()
     .trim()
-    .min(6, "Password minimal 6 karakter.")
+    .min(8, "Password minimal 8 karakter.")
     .max(100, "Password maksimal 100 karakter."),
   avatarUrl: z.string().nullable().optional(),
 });
@@ -52,7 +52,7 @@ export const updateAccountSchema = z.object({
     .trim()
     .min(3, "NIP minimal 3 karakter.")
     .max(30, "NIP maksimal 30 karakter.")
-    .regex(/^[a-zA-Z0-9]+$/, "NIP hanya boleh berisi huruf dan angka tanpa spasi."),
+    .regex(/^[0-9]+$/, "NIP hanya boleh berisi angka tanpa spasi."),
   name: z
     .string()
     .trim()
@@ -88,7 +88,7 @@ export const resetPasswordSchema = z.object({
   newPassword: z
     .string()
     .trim()
-    .min(6, "Password baru minimal 6 karakter.")
+    .min(8, "Password baru minimal 8 karakter.")
     .max(100, "Password baru maksimal 100 karakter."),
 });
 

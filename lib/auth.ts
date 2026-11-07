@@ -7,9 +7,13 @@ import { db, schema } from "@/db";
 export type UserRole = "REPORTER" | "OPERATOR" | "TECHNICIAN";
 export type AccountStatus = "ACTIVE" | "INACTIVE";
 
-export const AUTH_SECRET =
-  process.env.BETTER_AUTH_SECRET ||
-  "airport-perimeter-reporting-system-yia-secret-key-2026";
+if (!process.env.BETTER_AUTH_SECRET) {
+  throw new Error(
+    "FATAL: Environment variable BETTER_AUTH_SECRET wajib dikonfigurasi di .env.local / environment server."
+  );
+}
+
+export const AUTH_SECRET = process.env.BETTER_AUTH_SECRET;
 
 /**
  * Helper to derive a deterministic internal email from NIP when Better-Auth
@@ -38,8 +42,8 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    autoSignIn: true,
-    minPasswordLength: 6,
+    autoSignIn: false,
+    minPasswordLength: 8,
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
@@ -82,7 +86,7 @@ export const auth = betterAuth({
       signatureUrl: {
         type: "string",
         required: false,
-        input: true,
+        input: false,
       },
     },
   },

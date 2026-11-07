@@ -1,9 +1,10 @@
 "use server";
 
+import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import { headers } from "next/headers";
-import { eq, desc, isNull, sql } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { auth, type UserRole } from "@/lib/auth";
 import type {
@@ -20,6 +21,9 @@ import {
 
 export type { UploadedFilePayload };
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * Verify session for authenticated internal users.
  */
@@ -31,17 +35,23 @@ async function verifySession() {
     throw new Error("Sesi tidak valid. Silakan login kembali.");
   }
 
+  const userRecord = session.user as Record<string, unknown>;
+  if (userRecord.status === "INACTIVE") {
+    throw new Error("Akun Anda telah dinonaktifkan.");
+  }
+
   return session.user;
 }
 
 /**
- * Helper to save base64 image to public/uploads/reports/ and return public URL.
+ * Helper to save base64 image to public/uploads/reports/ using a server-generated UUID.
+ * Prevents path traversal / arbitrary file overwrite attacks.
  */
 function saveReportPhotoFile(
-  photoId: string,
   mimeType: string,
   base64Data: string
-): { filePath: string; sizeBytes: number } {
+): { photoId: string; filePath: string; sizeBytes: number } {
+  const photoId = crypto.randomUUID();
   const cleaned = base64Data.replace(/^data:image\/\w+;base64,/, "");
   const buffer = Buffer.from(cleaned, "base64");
   const ext = mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : "jpg";
@@ -56,6 +66,7 @@ function saveReportPhotoFile(
   fs.writeFileSync(fullPath, buffer);
 
   return {
+    photoId,
     filePath: `/uploads/reports/${fileName}`,
     sizeBytes: buffer.length,
   };
@@ -195,6 +206,18 @@ export async function getReportsAction(): Promise<{
   }
 }
 
+function saveBatchPhotos(files: UploadedFilePayload[]) {
+  return files.map((f) => {
+    const saved = saveReportPhotoFile(f.mimeType, f.base64);
+    return {
+      id: saved.photoId,
+      filePath: saved.filePath,
+      mimeType: f.mimeType,
+      sizeBytes: saved.sizeBytes,
+    };
+  });
+}
+
 /**
  * Commit a full submission (CREATE, STATUS update, or DELETE/close) to PostgreSQL.
  * Uses atomic transactions and bulk photo batching for integrity.
@@ -218,23 +241,13 @@ export async function commitReportSubmissionAction(input: CommitReportSubmission
 
     const { payload, files } = parsed.data;
 
-    // Save photos to disk first
-    const savedPhotos = files.map((f) => {
-      const saved = saveReportPhotoFile(f.id, f.mimeType, f.base64);
-      return {
-        id: f.id,
-        filePath: saved.filePath,
-        mimeType: f.mimeType,
-        sizeBytes: saved.sizeBytes,
-      };
-    });
-
     if (payload.action === "CREATE") {
       if (userRole !== "REPORTER" && userRole !== "OPERATOR") {
         throw new Error("Hanya Pelapor (Reporter) atau Operator yang dapat membuat laporan baru.");
       }
 
-      const reportId = payload.id;
+      const savedPhotos = saveBatchPhotos(files);
+      const reportId = UUID_REGEX.test(payload.id) ? payload.id : crypto.randomUUID();
       const findingsJson = payload.findings || [];
 
       // Atomic transaction: Insert new report + batch insert initial photos
@@ -305,11 +318,20 @@ export async function commitReportSubmissionAction(input: CommitReportSubmission
     const report = existingReport[0];
     const previousStatus = report.status;
 
+    if (report.deletedAt || report.status === "CLOSED") {
+      throw new Error("Laporan telah ditutup dan tidak dapat diubah statusnya.");
+    }
+
+    if (payload.expectedStatus && report.status !== payload.expectedStatus) {
+      throw new Error("Status laporan telah berubah. Silakan muat ulang halaman.");
+    }
+
     if (payload.action === "DELETE") {
       if (userRole !== "OPERATOR") {
         throw new Error("Hanya Operator yang dapat menutup / menghapus laporan.");
       }
 
+      const savedPhotos = saveBatchPhotos(files);
       const historyId = crypto.randomUUID();
       const now = new Date();
 
@@ -378,12 +400,7 @@ export async function commitReportSubmissionAction(input: CommitReportSubmission
         );
       }
 
-      if (report.deletedAt || report.status === "CLOSED") {
-        throw new Error(
-          "Laporan telah ditutup dan tidak dapat diubah statusnya."
-        );
-      }
-
+      const savedPhotos = saveBatchPhotos(files);
       const historyId = crypto.randomUUID();
       const now = new Date();
 

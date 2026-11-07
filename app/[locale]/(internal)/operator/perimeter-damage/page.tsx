@@ -635,18 +635,18 @@ export default function PerimeterDamageMasterPage() {
         >
           {/* Toolbar: View Switcher, Part Filter, Search */}
           <div className="flex flex-col gap-3 border-b border-solid border-[var(--rd-border)] p-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               <div
                 role="tablist"
                 aria-label="Mode tampilan tabel"
-                className="inline-flex rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] p-1"
+                className="inline-flex max-w-full overflow-x-auto rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] p-1 scrollbar-none"
               >
                 <button
                   type="button"
                   role="tab"
                   aria-selected={viewMode === "BY_PART"}
                   onClick={() => setViewMode("BY_PART")}
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${focusRing} ${
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${focusRing} ${
                     viewMode === "BY_PART"
                       ? "bg-[var(--rd-surface)] text-[var(--rd-link)] shadow-xs"
                       : "text-[var(--rd-muted)] hover:text-[var(--rd-text)]"
@@ -660,7 +660,7 @@ export default function PerimeterDamageMasterPage() {
                   role="tab"
                   aria-selected={viewMode === "BY_DAMAGE"}
                   onClick={() => setViewMode("BY_DAMAGE")}
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${focusRing} ${
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${focusRing} ${
                     viewMode === "BY_DAMAGE"
                       ? "bg-[var(--rd-surface)] text-[var(--rd-link)] shadow-xs"
                       : "text-[var(--rd-muted)] hover:text-[var(--rd-text)]"
@@ -707,7 +707,7 @@ export default function PerimeterDamageMasterPage() {
 
           {/* Table Content */}
           {viewMode === "BY_PART" ? (
-            <Table>
+            <Table className="min-w-[680px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-14 text-center">No</TableHead>
@@ -875,7 +875,7 @@ export default function PerimeterDamageMasterPage() {
               </TableBody>
             </Table>
           ) : (
-            <Table>
+            <Table className="min-w-[680px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-14 text-center">No</TableHead>
@@ -1175,13 +1175,18 @@ export default function PerimeterDamageMasterPage() {
               <div className="flex justify-end gap-2.5 pt-2">
                 <button
                   type="button"
+                  disabled={actionBusy}
                   onClick={requestClosePartModal}
                   className={btnCancelCoral}
                 >
                   Batal
                 </button>
-                <button type="submit" className={btnPrimary}>
-                  Simpan Bagian Pagar
+                <button
+                  type="submit"
+                  disabled={actionBusy}
+                  className={`${btnPrimary} disabled:opacity-50`}
+                >
+                  {actionBusy ? "Menyimpan…" : "Simpan Bagian Pagar"}
                 </button>
               </div>
             </form>
@@ -1314,13 +1319,18 @@ export default function PerimeterDamageMasterPage() {
               <div className="flex justify-end gap-2.5">
                 <button
                   type="button"
+                  disabled={actionBusy}
                   onClick={requestCloseDamageModal}
                   className={btnCancelCoral}
                 >
                   Batal
                 </button>
-                <button type="submit" className={btnPrimary}>
-                  Simpan Jenis Kerusakan
+                <button
+                  type="submit"
+                  disabled={actionBusy}
+                  className={`${btnPrimary} disabled:opacity-50`}
+                >
+                  {actionBusy ? "Menyimpan…" : "Simpan Jenis Kerusakan"}
                 </button>
               </div>
             </form>
@@ -1387,6 +1397,7 @@ export default function PerimeterDamageMasterPage() {
             <div className="flex justify-end gap-2.5">
               <button
                 type="button"
+                disabled={actionBusy}
                 onClick={() => setDeleteTarget(null)}
                 className={btnCancelCoral}
               >
@@ -1394,10 +1405,11 @@ export default function PerimeterDamageMasterPage() {
               </button>
               <button
                 type="button"
+                disabled={actionBusy}
                 onClick={handleConfirmDelete}
-                className={btnDanger}
+                className={`${btnDanger} disabled:opacity-50`}
               >
-                Ya, Hapus
+                {actionBusy ? "Menghapus…" : "Ya, Hapus"}
               </button>
             </div>
           </div>

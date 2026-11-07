@@ -286,8 +286,8 @@ export default function ManageAccountsPage() {
     setActionBusy(true);
     try {
       if (accountModal.mode === "CREATE") {
-        if (accountModal.password.trim().length < 6) {
-          toast.error("Password awal minimal terdiri dari 6 karakter.");
+        if (accountModal.password.trim().length < 8) {
+          toast.error("Password awal minimal terdiri dari 8 karakter.");
           setActionBusy(false);
           return;
         }
@@ -372,8 +372,8 @@ export default function ManageAccountsPage() {
     e.preventDefault();
     if (!passwordModal || actionBusy) return;
 
-    if (passwordModal.newPassword.trim().length < 6) {
-      toast.error("Password baru minimal 6 karakter.");
+    if (passwordModal.newPassword.trim().length < 8) {
+      toast.error("Password baru minimal 8 karakter.");
       return;
     }
     if (passwordModal.newPassword !== passwordModal.confirmPassword) {
@@ -559,16 +559,16 @@ export default function ManageAccountsPage() {
         {/* Content Section: Table & Filters */}
         <section
           aria-label="Tabel daftar akun personel"
-          className="mb-8 rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] shadow-xs"
+          className="mb-8 overflow-hidden rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] shadow-xs"
         >
           {/* Controls Bar */}
           <div className="flex flex-col gap-3 border-b border-solid border-[var(--rd-border)] p-4 sm:flex-row sm:items-center sm:justify-between">
             {/* Filter by Role Pills */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               <div
                 role="tablist"
                 aria-label="Filter peran akses"
-                className="flex rounded-xl bg-[var(--rd-bg)] p-1 text-xs"
+                className="flex max-w-full overflow-x-auto rounded-xl bg-[var(--rd-bg)] p-1 text-xs scrollbar-none"
               >
                 {(
                   [
@@ -584,7 +584,7 @@ export default function ManageAccountsPage() {
                     role="tab"
                     aria-selected={roleFilter === value}
                     onClick={() => setRoleFilter(value)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${focusRing} ${
+                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${focusRing} ${
                       roleFilter === value
                         ? "bg-[var(--rd-surface)] text-[var(--rd-link)] shadow-xs"
                         : "text-[var(--rd-muted)] hover:text-[var(--rd-text)]"
@@ -629,7 +629,7 @@ export default function ManageAccountsPage() {
           </div>
 
           {/* Accounts Table */}
-          <Table>
+          <Table className="min-w-[760px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-14 text-center">No</TableHead>
@@ -703,9 +703,17 @@ export default function ManageAccountsPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-border)] text-xs font-bold text-[var(--rd-text)]">
-                              {initials}
-                            </span>
+                            {account.avatarUrl ? (
+                              <img
+                                src={account.avatarUrl}
+                                alt={account.name}
+                                className="size-9 shrink-0 rounded-xl object-cover"
+                              />
+                            ) : (
+                              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-border)] text-xs font-bold text-[var(--rd-text)]">
+                                {initials}
+                              </span>
+                            )}
                             <div className="min-w-0">
                               <span className="block truncate text-sm font-semibold">
                                 {account.name}
@@ -890,12 +898,16 @@ export default function ManageAccountsPage() {
                   NIP (Nomor Induk Pegawai)
                   <input
                     type="text"
+                    inputMode="numeric"
                     required
                     placeholder="Contoh: 19950412202101"
                     value={accountModal.nip}
                     onChange={(e) => {
                       setConfirmDiscardAccount(false);
-                      setAccountModal({ ...accountModal, nip: e.target.value });
+                      setAccountModal({
+                        ...accountModal,
+                        nip: e.target.value.replace(/\D/g, "").slice(0, 30),
+                      });
                     }}
                     className={fieldControl}
                   />
@@ -983,8 +995,8 @@ export default function ManageAccountsPage() {
                   <input
                     type="password"
                     required
-                    minLength={6}
-                    placeholder="Minimal 6 karakter"
+                    minLength={8}
+                    placeholder="Minimal 8 karakter"
                     value={accountModal.password}
                     onChange={(e) => {
                       setConfirmDiscardAccount(false);
@@ -1101,8 +1113,8 @@ export default function ManageAccountsPage() {
                 <input
                   type="password"
                   required
-                  minLength={6}
-                  placeholder="Minimal 6 karakter"
+                  minLength={8}
+                  placeholder="Minimal 8 karakter"
                   value={passwordModal.newPassword}
                   onChange={(e) => {
                     setConfirmDiscardPassword(false);
@@ -1120,7 +1132,7 @@ export default function ManageAccountsPage() {
                 <input
                   type="password"
                   required
-                  minLength={6}
+                  minLength={8}
                   placeholder="Ketik ulang password baru"
                   value={passwordModal.confirmPassword}
                   onChange={(e) => {
