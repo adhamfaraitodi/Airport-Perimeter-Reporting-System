@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslation } from "@/lib/i18n";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -100,6 +101,7 @@ function initialsOfName(name: string, email = "") {
 export default function ManageAccountsPage() {
   const params = useParams<{ locale?: string }>();
   const locale = params?.locale || "id";
+  const { t } = useTranslation();
   const { theme, dark, toggleTheme } = useTheme();
 
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -435,7 +437,6 @@ export default function ManageAccountsPage() {
         user={user}
         dark={dark}
         onToggleTheme={toggleTheme}
-        roleLabel="Operator perimeter"
         containerClassName="max-w-[1700px] min-[1100px]:px-[5%]"
       />
 
@@ -751,7 +752,7 @@ export default function ManageAccountsPage() {
                           <span
                             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${roleBadgeClass}`}
                           >
-                            {roleLabels[account.role]}
+                            {t.header.roles[account.role] || roleLabels[account.role]}
                           </span>
                         </TableCell>
                         <TableCell className="text-center">

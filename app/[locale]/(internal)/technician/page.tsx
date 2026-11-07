@@ -164,7 +164,6 @@ export default function TechnicianDashboardPage() {
         user={user}
         dark={dark}
         onToggleTheme={toggleTheme}
-        roleLabel="Teknisi pemeliharaan"
         containerClassName="max-w-[1700px] min-[1100px]:px-[5%]"
       />
       <main className="mx-auto flex w-full max-w-[1700px] flex-1 flex-col px-3 pt-4 md:px-[3%] md:pt-6 min-[1100px]:px-[5%]">

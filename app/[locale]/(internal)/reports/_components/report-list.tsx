@@ -23,6 +23,7 @@ import { useTheme } from "../../../_lib/use-theme";
 import { AppHeader } from "../../../_components/app-header";
 import { ReportFooter } from "./report-footer";
 import { ReportHistoryPanel } from "../../../_components/report-history-panel";
+import { useTranslation } from "@/lib/i18n";
 
 const states: Record<
   string,
@@ -90,6 +91,7 @@ export function ReportList({
   const params = useParams<{ locale?: string }>();
   const locale = params?.locale || "id";
   const { theme, dark, toggleTheme } = useTheme();
+  const { t } = useTranslation();
 
   const owned = user
     ? reports.filter(
@@ -104,29 +106,29 @@ export function ReportList({
     [
       "ALL",
       owned.length,
-      "Total laporan",
-      "Seluruh laporan yang telah dikirim",
+      t.status.totalReports,
+      locale === "en" ? "All submitted reports" : "Seluruh laporan yang telah dikirim",
     ],
     [
       "OPEN",
       owned.filter(
         (r) => !r.deletedAt && ["OPEN", "IN_PROGRESS"].includes(r.status)
       ).length,
-      "Perlu Tindak Lanjut",
-      "Laporan baru & sedang ditangani",
+      t.status.followUpRequired,
+      locale === "en" ? "New & in-progress reports" : "Laporan baru & sedang ditangani",
     ],
     [
       "RESOLVED",
       owned.filter((r) => !r.deletedAt && r.status === "RESOLVED").length,
-      "Selesai",
-      "Telah diperbaiki oleh teknisi",
+      t.status.RESOLVED,
+      locale === "en" ? "Repaired by technicians" : "Telah diperbaiki oleh teknisi",
     ],
   ];
 
   const subPageLabel = formOpen
-    ? "Buat Laporan"
+    ? t.reports.createReport
     : selectedReportId
-      ? `Detail Laporan #${String(selectedReportId).slice(-6).toUpperCase()}`
+      ? `${locale === "en" ? "Report Detail" : "Detail Laporan"} #${String(selectedReportId).slice(-6).toUpperCase()}`
       : null;
 
   return (
@@ -138,7 +140,6 @@ export function ReportList({
         user={user}
         dark={dark}
         onToggleTheme={toggleTheme}
-        roleLabel="Pelapor perimeter"
         containerClassName="max-w-[1700px] min-[1100px]:px-[5%]"
       />
 
@@ -157,7 +158,7 @@ export function ReportList({
                 onClick={onBackToList}
                 className="border-0 bg-transparent p-0 text-[var(--rd-muted)] transition-colors hover:text-[var(--rd-link)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
               >
-                Laporan Saya
+                {t.reports.title}
               </button>
               <span className="text-[var(--rd-muted)]/50 select-none">/</span>
               <span className="font-medium text-[var(--rd-link)]">
@@ -166,7 +167,7 @@ export function ReportList({
             </>
           ) : (
             <span className="font-medium text-[var(--rd-link)]">
-              Laporan Saya
+              {t.reports.title}
             </span>
           )}
         </nav>
@@ -175,11 +176,12 @@ export function ReportList({
         <div className="mb-4 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h1 className="m-0 text-xl font-normal tracking-tight sm:text-2xl">
-              Laporan Saya
+              {t.reports.title}
             </h1>
             <p className="m-0 mt-1 text-xs text-[var(--rd-muted)] sm:text-sm">
-              Mulai laporkan kerusakan atau kejadian pelanggaran pembatas
-              perimeter bandara.
+              {locale === "en"
+                ? "Report perimeter fence damage or airport boundary security incidents."
+                : "Mulai laporkan kerusakan atau kejadian pelanggaran pembatas perimeter bandara."}
             </p>
           </div>
           <div className="flex w-full gap-4 sm:w-auto sm:shrink-0">
@@ -190,15 +192,15 @@ export function ReportList({
               className={`${button} flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-[var(--rd-primary)] px-4 py-2 text-xs font-semibold text-white hover:bg-[var(--rd-primary-hover)] sm:flex-none sm:text-sm`}
             >
               <Plus size={16} strokeWidth={2.4} aria-hidden="true" />
-              Buat Laporan
+              {t.reports.createReport}
             </button>
 
             <button
               type="button"
               disabled={loading || formOpen}
               onClick={onRefresh}
-              aria-label="Segarkan laporan"
-              title="Segarkan laporan"
+              aria-label={t.common.refresh}
+              title={t.common.refresh}
               className={`${button} grid min-h-10 w-11 shrink-0 place-items-center rounded-[10px] border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-0 text-[var(--rd-link)] hover:bg-[var(--rd-hover)]`}
             >
               <RefreshCw
@@ -225,7 +227,7 @@ export function ReportList({
           >
             {error}
             <p className="m-0 mt-1 text-xs">
-              Gunakan tombol segarkan untuk mencoba kembali.
+              {locale === "en" ? "Use the refresh button to try again." : "Gunakan tombol segarkan untuk mencoba kembali."}
             </p>
           </div>
         )}
@@ -234,18 +236,18 @@ export function ReportList({
             role="status"
             className="mb-5 rounded-lg border border-[var(--rd-border)] p-3 text-xs leading-relaxed"
           >
-            <strong>Pengiriman sebelumnya belum pasti.</strong>
+            <strong>{locale === "en" ? "Previous submission pending confirmation." : "Pengiriman sebelumnya belum pasti."}</strong>
             <p className="my-2 break-all">
-              Transaksi {abandonedSubmissionId}. Periksa laporan sebelum
-              mengirim ulang; meninggalkan form tidak membatalkan transaksi
-              server.
+              {locale === "en"
+                ? `Transaction ${abandonedSubmissionId}. Check report before resubmitting; leaving form does not cancel server transaction.`
+                : `Transaksi ${abandonedSubmissionId}. Periksa laporan sebelum mengirim ulang; meninggalkan form tidak membatalkan transaksi server.`}
             </p>
             <button
               type="button"
               onClick={onDismissAbandoned}
               className={`${button} rounded-lg bg-[var(--rd-active)] px-3 py-1.5 text-[var(--rd-link)]`}
             >
-              Saya sudah memeriksa
+              {locale === "en" ? "I have checked" : "Saya sudah memeriksa"}
             </button>
           </div>
         )}
@@ -262,10 +264,10 @@ export function ReportList({
               >
                 <div className="hidden lg:block lg:pb-1">
                   <h2 className="m-0 text-base font-normal text-[var(--rd-text)]">
-                    Ringkasan Laporan
+                    {t.operator.summaryTitle}
                   </h2>
                   <p className="m-0 mt-0.5 text-xs text-[var(--rd-muted)]">
-                    Rekapitulasi status laporan Anda saat ini
+                    {locale === "en" ? "Summary of your current reports status" : "Rekapitulasi status laporan Anda saat ini"}
                   </p>
                 </div>
                 {stats.map(([status, count, label, desc]) => (
@@ -274,7 +276,7 @@ export function ReportList({
                     className="rounded-xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] px-2 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:p-4 lg:border lg:bg-[var(--rd-bg)]/50 lg:px-4 lg:py-3.5"
                     title={
                       status === "OPEN"
-                        ? "Laporan baru dan sedang ditangani, tidak termasuk laporan ditutup"
+                        ? locale === "en" ? "New and ongoing reports, excluding closed" : "Laporan baru dan sedang ditangani, tidak termasuk laporan ditutup"
                         : label
                     }
                   >
@@ -309,23 +311,23 @@ export function ReportList({
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="m-0 truncate text-sm font-bold text-[var(--rd-text)]">
-                      {user?.name || "Petugas Pelapor"}
+                      {user?.name || (locale === "en" ? "Field Reporter" : "Petugas Pelapor")}
                     </p>
                     <p className="m-0 text-xs text-[var(--rd-muted)]">
-                      Yogyakarta International Airport
+                      {t.common.airportName}
                     </p>
                   </div>
                   <Link
                     href={`/${locale}/profile`}
                     className="rounded-lg border border-[var(--rd-border)] bg-[var(--rd-bg)] px-2.5 py-1 text-xs font-semibold text-[var(--rd-link)] transition-colors hover:bg-[var(--rd-active)]"
                   >
-                    Profil
+                    {t.profile.title}
                   </Link>
                 </div>
 
                 <h3 className="m-0 mb-3 flex items-center gap-1.5 text-xs font-bold tracking-wide text-[var(--rd-muted)] uppercase">
                   <ShieldAlert size={14} className="text-[var(--rd-link)]" aria-hidden="true" />
-                  <span>Panduan Pelaporan</span>
+                  <span>{locale === "en" ? "Reporting Guidelines" : "Panduan Pelaporan"}</span>
                 </h3>
                 <ul className="m-0 list-none space-y-2.5 p-0 text-xs leading-relaxed text-[var(--rd-muted)]">
                   <li className="flex items-start gap-2">
@@ -335,8 +337,9 @@ export function ReportList({
                       aria-hidden="true"
                     />
                     <span>
-                      Lampirkan foto bukti kerusakan pagar yang jelas (maksimal 8
-                      foto, maks 3 MB/foto).
+                      {locale === "en"
+                        ? "Attach clear photos of fence damage (up to 8 photos, max 3 MB/photo)."
+                        : "Lampirkan foto bukti kerusakan pagar yang jelas (maksimal 8 foto, maks 3 MB/foto)."}
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
@@ -346,8 +349,9 @@ export function ReportList({
                       aria-hidden="true"
                     />
                     <span>
-                      Pastikan pin lokasi GPS pada peta sesuai dengan segmen
-                      pagar perimeter yang diperiksa.
+                      {locale === "en"
+                        ? "Ensure the GPS location pin on the map matches the inspected perimeter fence segment."
+                        : "Pastikan pin lokasi GPS pada peta sesuai dengan segmen pagar perimeter yang diperiksa."}
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
@@ -357,8 +361,9 @@ export function ReportList({
                       aria-hidden="true"
                     />
                     <span>
-                      Pilih bagian pagar serta tingkat kerusakan secara spesifik
-                      untuk mempercepat tindak lanjut teknisi.
+                      {locale === "en"
+                        ? "Select specific fence parts and damage severity to expedite technician response."
+                        : "Pilih bagian pagar serta tingkat kerusakan secara spesifik untuk mempercepat tindak lanjut teknisi."}
                     </span>
                   </li>
                 </ul>
@@ -372,7 +377,7 @@ export function ReportList({
               className="flex min-w-0 flex-col rounded-2xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] p-3.5 sm:p-6"
             >
               <ReportHistoryPanel
-                title="Riwayat Laporan"
+                title={locale === "en" ? "Reports History" : "Riwayat Laporan"}
                 reports={owned}
                 loading={loading}
                 selectedId={selectedReportId}

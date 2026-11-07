@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Info, MoonStar, Sun, X } from "lucide-react";
+import { Info, Languages, MoonStar, Sun, X } from "lucide-react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useTheme } from "../../../_lib/use-theme";
 import { loginAction } from "../_lib/auth.actions";
@@ -9,6 +9,7 @@ import { loginSchema } from "../_lib/auth.schema";
 import {
   btnCloseCoral,
 } from "../../../_lib/ui-classes";
+import { useTranslation, type SupportedLocale } from "@/lib/i18n";
 
 const focusClasses =
   "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--login-link)]";
@@ -31,6 +32,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
   const callbackUrl = searchParams.get("callbackUrl") || undefined;
 
   const { theme, dark, toggleTheme } = useTheme();
+  const { t } = useTranslation();
   const [help, setHelp] = useState(false);
   const dialog = useRef<HTMLDialogElement | null>(null);
 
@@ -54,61 +56,78 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
     if (!help && dialog.current.open) dialog.current.close();
   }, [help]);
 
+  function handleToggleLanguage() {
+    const nextLocale: SupportedLocale = locale === "id" ? "en" : "id";
+    const currentPath = window.location.pathname;
+    const segments = currentPath.split("/");
+    if (segments[1] === "id" || segments[1] === "en") {
+      segments[1] = nextLocale;
+    } else {
+      segments.splice(1, 0, nextLocale);
+    }
+    const targetUrl = `${segments.join("/")}${window.location.search}`;
+    router.push(targetUrl);
+  }
+
   function handleNipChange(raw: string) {
     // Hanya izinkan karakter angka (0-9) dan maksimal 30 digit
     setNipState(raw.replace(/\D+/g, "").slice(0, 30));
     setNotice("");
-    setFieldErrors((prev) => ({ ...prev, nip: undefined }));
+    if (fieldErrors.nip) {
+      setFieldErrors((prev) => ({ ...prev, nip: undefined }));
+    }
   }
 
   function handlePasswordChange(val: string) {
     setPasswordState(val);
     setNotice("");
-    setFieldErrors((prev) => ({ ...prev, password: undefined }));
+    if (fieldErrors.password) {
+      setFieldErrors((prev) => ({ ...prev, password: undefined }));
+    }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    // Allow instant demo entry in development only when both fields are empty
-    if (!nip.trim() && !password && demoEnabled) {
-      if (onDemo) {
-        onDemo();
-      } else {
-        router.push(callbackUrl || `/${locale}/reports`);
+    const validation = loginSchema.safeParse({
+      nip,
+      password,
+      rememberMe: remember,
+    });
+
+    if (!validation.success) {
+      const flattened = validation.error.flatten().fieldErrors;
+      setFieldErrors({
+        nip: flattened.nip?.[0],
+        password: flattened.password?.[0],
+      });
+      const firstError = flattened.nip?.[0] || flattened.password?.[0];
+      if (firstError) {
+        setNotice(firstError);
       }
       return;
     }
 
-    // Validate form inputs with Zod
-    const parsed = loginSchema.safeParse({
-      nip,
-      password,
-      rememberMe: remember,
-      locale,
-      callbackUrl,
-    });
-
-    if (!parsed.success) {
-      const flattened = parsed.error.flatten().fieldErrors;
-      const errors = {
-        nip: flattened.nip?.[0],
-        password: flattened.password?.[0],
-      };
-      setFieldErrors(errors);
-      setNotice(errors.nip || errors.password || "Data login tidak valid.");
-      return;
-    }
-
-    setFieldErrors({});
-    setNotice("");
     setSubmitting(true);
+    setNotice("");
+    setFieldErrors({});
 
     try {
-      const result = await loginAction(parsed.data);
+      const result = await loginAction({
+        nip: validation.data.nip,
+        password: validation.data.password,
+        rememberMe: validation.data.rememberMe,
+        locale,
+        callbackUrl,
+      });
 
-      if (result.success && result.redirectTo) {
-        window.location.href = result.redirectTo;
+      if (result.success) {
+        if (result.redirectTo) {
+          window.location.href = result.redirectTo;
+          return;
+        }
+        router.push(callbackUrl || `/${locale}/reports`);
+        router.refresh();
         return;
       }
 
@@ -122,10 +141,17 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
       }
 
       setNotice(
-        result.errorMessage || "NIP atau password yang Anda masukkan salah."
+        result.errorMessage ||
+          (locale === "en"
+            ? "The Employee ID or password you entered is incorrect."
+            : "NIP atau password yang Anda masukkan salah.")
       );
     } catch {
-      setNotice("Terjadi kesalahan saat menghubungi layanan autentikasi.");
+      setNotice(
+        locale === "en"
+          ? "An error occurred while connecting to the authentication service."
+          : "Terjadi kesalahan saat menghubungi layanan autentikasi."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -140,19 +166,35 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
         className="relative h-[269px] bg-[var(--login-brand-bg)] text-[var(--login-panel-text)] min-[900px]:h-auto min-[900px]:min-h-dvh"
         aria-label="InJourney Airports"
       >
-        <button
-          type="button"
-          className={`${buttonClasses} absolute top-[34px] right-[26px] grid h-[44px] min-h-[44px] w-[44px] place-items-center rounded-full border-0 bg-transparent p-0 text-[var(--login-panel-text)] hover:bg-[var(--login-theme-hover)] min-[900px]:top-[30px] min-[900px]:right-[30px]`}
-          onClick={toggleTheme}
-          aria-label={dark ? "Aktifkan light mode" : "Aktifkan dark mode"}
-          title={dark ? "Light mode" : "Dark mode"}
-        >
-          {dark ? (
-            <Sun size={27} strokeWidth={1.7} />
-          ) : (
-            <MoonStar size={29} strokeWidth={1.7} />
-          )}
-        </button>
+        <div className="absolute top-[34px] right-[26px] z-10 flex items-center gap-2 min-[900px]:top-[30px] min-[900px]:right-[30px]">
+          {/* Language Switcher */}
+          <button
+            type="button"
+            className={`${buttonClasses} inline-flex h-[40px] items-center gap-1.5 rounded-full border border-current/25 bg-transparent px-3 text-[12px] font-semibold text-[var(--login-panel-text)] hover:bg-[var(--login-theme-hover)]`}
+            onClick={handleToggleLanguage}
+            aria-label={t.header.changeLang}
+            title={t.header.changeLang}
+          >
+            <Languages size={17} strokeWidth={1.8} />
+            <span className="tracking-wider">{locale.toUpperCase()}</span>
+          </button>
+
+          {/* Theme Toggle Button */}
+          <button
+            type="button"
+            className={`${buttonClasses} grid h-[44px] min-h-[44px] w-[44px] place-items-center rounded-full border-0 bg-transparent p-0 text-[var(--login-panel-text)] hover:bg-[var(--login-theme-hover)]`}
+            onClick={toggleTheme}
+            aria-label={dark ? "Aktifkan light mode" : "Aktifkan dark mode"}
+            title={dark ? "Light mode" : "Dark mode"}
+          >
+            {dark ? (
+              <Sun size={27} strokeWidth={1.7} />
+            ) : (
+              <MoonStar size={29} strokeWidth={1.7} />
+            )}
+          </button>
+        </div>
+
         <div className="flex h-full flex-col items-center justify-end gap-[35px] px-[20px] pt-0 pb-[40px] min-[900px]:justify-center min-[900px]:gap-[40px] min-[900px]:px-[40px] min-[900px]:py-[70px]">
           <img
             className="block h-auto w-[120px] object-contain min-[600px]:w-[145px] min-[900px]:w-[210px]"
@@ -197,13 +239,16 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
                 Sign in
               </h1>
               <p className="m-0 mb-[19px] text-[12px] leading-[1.5] text-[var(--login-muted)] min-[900px]:mb-[28px] min-[900px]:text-[14px]">
-                Selamat datang{" "}
+                {locale === "en" ? "Welcome" : "Selamat datang"}{" "}
                 <span className="sm:whitespace-nowrap">
-                  di Airport Perimeter Reporting System
+                  {locale === "en"
+                    ? "to Airport Perimeter Reporting System"
+                    : "di Airport Perimeter Reporting System"}
                 </span>
                 <br />
-                anda dapat langsung melaporkan kerusakan atau pelanggaran
-                setelah masuk.
+                {locale === "en"
+                  ? "you can report damage or violations immediately after signing in."
+                  : "anda dapat langsung melaporkan kerusakan atau pelanggaran setelah masuk."}
               </p>{" "}
             </header>
             <form onSubmit={submit} noValidate className="m-0">
@@ -220,7 +265,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
                   autoComplete="username"
                   autoCapitalize="none"
                   spellCheck={false}
-                  placeholder="Masukkan NIP"
+                  placeholder={locale === "en" ? "Enter NIP" : "Masukkan NIP"}
                   value={nip}
                   aria-invalid={!!fieldErrors.nip}
                   required={!demoEnabled}
@@ -257,7 +302,13 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
                     aria-pressed={showPassword}
                     onClick={() => setShowPassword((prev) => !prev)}
                   >
-                    {showPassword ? "Sembunyi" : "Lihat"}
+                    {showPassword
+                      ? locale === "en"
+                        ? "Hide"
+                        : "Sembunyi"
+                      : locale === "en"
+                      ? "Show"
+                      : "Lihat"}
                   </button>
                 </div>
               </div>
@@ -269,7 +320,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
                     checked={remember}
                     onChange={(event) => setRemember(event.target.checked)}
                   />
-                  <span>Tetap masuk</span>
+                  <span>{locale === "en" ? "Stay signed in" : "Tetap masuk"}</span>
                 </label>
               </div>
               {notice && (
@@ -290,16 +341,24 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
                 type="submit"
                 disabled={submitting}
               >
-                {submitting ? "Memproses…" : "Masuk"}
+                {submitting
+                  ? locale === "en"
+                    ? "Processing…"
+                    : "Memproses…"
+                  : locale === "en"
+                  ? "Sign In"
+                  : "Masuk"}
               </button>
               <p className="m-0 mt-[12px] text-center text-[11px] leading-[1.5] text-[var(--login-muted)] min-[900px]:mt-[20px] min-[900px]:text-[12px]">
-                Butuh akses?{" "}
+                {locale === "en" ? "Need access?" : "Butuh akses?"}{" "}
                 <button
                   className={`${buttonClasses} inline min-h-[28px] rounded-[2px] border-0 bg-transparent p-0 text-[length:inherit] font-normal text-inherit hover:underline`}
                   type="button"
                   onClick={() => setHelp(true)}
                 >
-                  Hubungi operator website.
+                  {locale === "en"
+                    ? "Contact website operator."
+                    : "Hubungi operator website."}
                 </button>
               </p>
             </form>
@@ -334,20 +393,22 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
           id="login-help-title"
           className="mt-[14px] mb-[10px] font-[inherit] text-[24px] leading-[1.35] font-bold tracking-normal"
         >
-          Help Info Akun
+          {locale === "en" ? "Account Help" : "Help Info Akun"}
         </h2>
         <p
           id="login-help-description"
           className="mt-0 mb-[22px] text-[14px] leading-[1.6] text-[var(--login-muted)]"
         >
-          Hubungi operator website untuk akses akun dan bantuan password.
+          {locale === "en"
+            ? "Contact website operator for account access and password assistance."
+            : "Hubungi operator website untuk akses akun dan bantuan password."}
         </p>
         <button
           type="button"
           className={submitClasses}
           onClick={() => setHelp(false)}
         >
-          Mengerti
+          {locale === "en" ? "Understood" : "Mengerti"}
         </button>
       </dialog>
     </main>

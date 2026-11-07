@@ -15,6 +15,7 @@ import {
   ClipboardPen,
   Database,
   Fence,
+  Languages,
   LogOut,
   MoonStar,
   SquareChartGantt,
@@ -33,6 +34,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { logoutAction } from "../(auth)/login/_lib/auth.actions";
 import { useAccountsStore } from "../_lib/accounts-store";
 import type { SessionUser } from "../_lib/client-api";
+import { useTranslation, type SupportedLocale } from "@/lib/i18n";
 
 export interface NotificationItem {
   id: string;
@@ -86,6 +88,7 @@ export function AppHeader({
   const pathname = usePathname();
   const router = useRouter();
   const locale = params?.locale || "id";
+  const { t } = useTranslation();
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -179,6 +182,18 @@ export function AppHeader({
     (mounted ? managedAccount?.avatarUrl : null) ||
     null;
 
+  const resolvedRoleLabel =
+    (user?.role && t.header.roles[user.role]) ||
+    (roleLabel && (roleLabel.toLowerCase().includes("operator")
+      ? t.header.roles.OPERATOR
+      : roleLabel.toLowerCase().includes("teknisi")
+        ? t.header.roles.TECHNICIAN
+        : roleLabel.toLowerCase().includes("reporter") || roleLabel.toLowerCase().includes("pelapor")
+          ? t.header.roles.REPORTER
+          : roleLabel)) ||
+    roleLabel ||
+    t.header.roles.REPORTER;
+
   const unreadCount = notifications.filter((n) => !n.read).length;
   const showUnreadDot =
     hasNotification !== undefined ? hasNotification : unreadCount > 0;
@@ -219,6 +234,18 @@ export function AppHeader({
     if (isOperator) return `/${locale}/operator`;
     if (isTechnician) return `/${locale}/technician`;
     return `/${locale}/reports`;
+  }
+
+  function handleToggleLanguage() {
+    const nextLocale: SupportedLocale = locale === "id" ? "en" : "id";
+    const segments = pathname.split("/");
+    if (segments[1] === "id" || segments[1] === "en") {
+      segments[1] = nextLocale;
+    } else {
+      segments.splice(1, 0, nextLocale);
+    }
+    const targetUrl = `${segments.join("/")}${window.location.search}`;
+    router.push(targetUrl);
   }
 
   function handleSelectNotification(id: string) {
@@ -289,7 +316,7 @@ export function AppHeader({
               >
                 <SquareChartGantt size={20} strokeWidth={1.8} aria-hidden="true" />
                 <span className="block text-[13px] font-medium">
-                  Pantau Perimeter
+                  {t.header.monitorPerimeter}
                 </span>
               </Link>
 
@@ -312,7 +339,7 @@ export function AppHeader({
                 >
                   <Database size={20} strokeWidth={1.8} aria-hidden="true" />
                   <span className="block text-[13px] font-medium">
-                    Data Master
+                    {t.header.dataMaster}
                   </span>
                   <ChevronDown
                     size={14}
@@ -349,7 +376,7 @@ export function AppHeader({
                         aria-hidden="true"
                       />
                       <span className="block text-[13px] font-medium">
-                        Kerusakan perimeter
+                        {t.header.perimeterDamage}
                       </span>
                     </Link>
                     <Link
@@ -373,7 +400,7 @@ export function AppHeader({
                         aria-hidden="true"
                       />
                       <span className="block text-[13px] font-medium">
-                        Kelola akun
+                        {t.header.accounts}
                       </span>
                     </Link>
                   </div>
@@ -385,11 +412,26 @@ export function AppHeader({
 
         {/* Right: Theme, Notification Popover & User Account Menu */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+          {/* Language Switcher */}
+          <button
+            type="button"
+            onClick={handleToggleLanguage}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-transparent px-2.5 text-xs font-semibold text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-active)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] sm:h-10 sm:px-3"
+            aria-label={
+              locale === "id"
+                ? "Beralih ke Bahasa Inggris"
+                : "Switch to Indonesian"
+            }
+          >
+            <Languages size={21} strokeWidth={1.8} aria-hidden="true" />
+            <span className="tracking-wider">{locale.toUpperCase()}</span>
+          </button>
+
           <button
             type="button"
             onClick={onToggleTheme}
             className="grid size-9 place-items-center rounded-full bg-transparent p-0 text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-active)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] sm:size-10"
-            aria-label={dark ? "Aktifkan light mode" : "Aktifkan dark mode"}
+            aria-label={dark ? t.header.lightMode : t.header.darkMode}
           >
             {dark ? (
               <Sun size={21} strokeWidth={1.8} />
@@ -411,7 +453,7 @@ export function AppHeader({
             }}
           >
             <PopoverTrigger
-              aria-label="Notifikasi"
+              aria-label={t.header.notifications}
               className={`relative grid size-9 place-items-center rounded-full p-0 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] sm:size-10 ${
                 notifOpen
                   ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
@@ -437,11 +479,11 @@ export function AppHeader({
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <PopoverTitle className="text-sm font-semibold">
-                      Notifikasi
+                      {t.header.notifications}
                     </PopoverTitle>
                     {unreadCount > 0 && (
                       <span className="inline-flex items-center rounded-full bg-[var(--rd-coral)]/15 px-2 py-0.5 text-[11px] font-semibold text-[var(--rd-coral)]">
-                        {unreadCount} baru
+                        {unreadCount} {locale === "en" ? "new" : "baru"}
                       </span>
                     )}
                   </div>
@@ -452,7 +494,7 @@ export function AppHeader({
                       className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-[var(--rd-link)] transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
                     >
                       <CheckCheck size={13} aria-hidden="true" />
-                      <span>Tandai dibaca</span>
+                      <span>{t.header.markAllRead}</span>
                     </button>
                   )}
                 </div>
@@ -468,7 +510,7 @@ export function AppHeader({
                         : "text-[var(--rd-muted)] hover:bg-[var(--rd-hover)]"
                     }`}
                   >
-                    Semua ({notifications.length})
+                    {t.header.allNotif} ({notifications.length})
                   </button>
                   <button
                     type="button"
@@ -479,7 +521,7 @@ export function AppHeader({
                         : "text-[var(--rd-muted)] hover:bg-[var(--rd-hover)]"
                     }`}
                   >
-                    Belum dibaca ({unreadCount})
+                    {t.header.unreadNotif} ({unreadCount})
                   </button>
                 </div>
               </PopoverHeader>
@@ -554,12 +596,12 @@ export function AppHeader({
                       aria-hidden="true"
                     />
                     <p className="m-0 text-xs font-medium text-[var(--rd-text)]">
-                      Tidak ada notifikasi
+                      {t.header.noNotif}
                     </p>
                     <p className="m-0 mt-0.5 text-[11px] text-[var(--rd-muted)]">
                       {notifFilter === "UNREAD"
-                        ? "Semua pemberitahuan sudah dibaca."
-                        : "Belum ada aktivitas terbaru."}
+                        ? t.header.noNotifUnreadDesc
+                        : t.header.noNotifAllDesc}
                     </p>
                   </div>
                 )}
@@ -576,10 +618,10 @@ export function AppHeader({
                   className="block w-full rounded-xl py-2 text-center text-xs font-semibold text-[var(--rd-link)] transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
                 >
                   {isOperator
-                    ? "Lihat Semua Laporan Perimeter"
+                    ? t.header.viewAllOperatorReports
                     : isTechnician
-                      ? "Lihat Daftar Tugas Perbaikan"
-                      : "Buka Daftar Laporan Saya"}
+                      ? t.header.viewAllTechnicianTasks
+                      : t.header.viewAllMyReports}
                 </button>
               </div>
             </PopoverContent>
@@ -631,7 +673,7 @@ export function AppHeader({
                   <Skeleton className="mb-1 h-3.5 w-24 rounded-md" />
                 )}
                 <span className="block text-[11px] text-[var(--rd-muted)]">
-                  {roleLabel || "Pelapor"}
+                  {resolvedRoleLabel}
                 </span>
               </div>
             </button>
@@ -648,7 +690,7 @@ export function AppHeader({
                     {displayName}
                   </p>
                   <p className="m-0 mt-0.5 text-[11px] text-[var(--rd-muted)]">
-                    {roleLabel || "Pelapor"}
+                    {resolvedRoleLabel}
                   </p>
                 </div>
 
@@ -676,7 +718,7 @@ export function AppHeader({
                         aria-hidden="true"
                       />
                       <span className="block text-[13px] font-medium">
-                        Pantau Perimeter
+                        {t.header.monitorPerimeter}
                       </span>
                     </Link>
 
@@ -694,7 +736,7 @@ export function AppHeader({
                           aria-hidden="true"
                         />
                         <span className="block text-[13px] font-medium text-[var(--rd-text)]">
-                          Data Master
+                          {t.header.dataMaster}
                         </span>
                       </span>
                       <ChevronDown
@@ -732,7 +774,7 @@ export function AppHeader({
                             aria-hidden="true"
                           />
                           <span className="block text-xs font-medium">
-                            Kerusakan perimeter
+                            {t.header.perimeterDamage}
                           </span>
                         </Link>
                         <Link
@@ -759,7 +801,7 @@ export function AppHeader({
                             aria-hidden="true"
                           />
                           <span className="block text-xs font-medium">
-                            Kelola akun
+                            {t.header.accounts}
                           </span>
                         </Link>
                       </div>
@@ -788,7 +830,7 @@ export function AppHeader({
                     aria-hidden="true"
                   />
                   <span className="block text-[13px] font-medium">
-                    Profil saya
+                    {t.header.profile}
                   </span>
                 </Link>
 
@@ -805,7 +847,7 @@ export function AppHeader({
                     aria-hidden="true"
                   />
                   <span className="block text-[13px] font-medium">
-                    Keluar
+                    {t.header.logout}
                   </span>
                 </button>
               </div>

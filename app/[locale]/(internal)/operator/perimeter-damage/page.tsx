@@ -506,7 +506,6 @@ export default function PerimeterDamageMasterPage() {
         user={user}
         dark={dark}
         onToggleTheme={toggleTheme}
-        roleLabel="Operator perimeter"
         containerClassName="max-w-[1700px] min-[1100px]:px-[5%]"
       />
 

@@ -20,7 +20,7 @@ export interface ManagedAccount {
 export const roleLabels: Record<UserRole, string> = {
   OPERATOR: "Operator Perimeter",
   REPORTER: "Pelapor Lapangan",
-  TECHNICIAN: "Teknisi",
+  TECHNICIAN: "Teknisi Pemeliharaan",
 };
 
 const defaultAccounts: ManagedAccount[] = [];

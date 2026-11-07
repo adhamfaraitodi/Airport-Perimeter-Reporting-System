@@ -36,6 +36,7 @@ import {
   type SessionUser,
 } from "../../_lib/client-api";
 import { roleLabels, useAccountsStore } from "../../_lib/accounts-store";
+import { useTranslation } from "@/lib/i18n";
 import { dateText, message } from "../../_lib/draft-store";
 import {
   btnPrimary,
@@ -97,6 +98,7 @@ function writeProfileCache(cache: ProfileCache) {
 export default function ProfilePage() {
   const params = useParams<{ locale?: string }>();
   const locale = params?.locale || "id";
+  const { t } = useTranslation();
   const { theme, dark, toggleTheme } = useTheme();
 
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -436,7 +438,6 @@ export default function ProfilePage() {
         user={user}
         dark={dark}
         onToggleTheme={toggleTheme}
-        roleLabel={roleCaption}
         containerClassName="max-w-[1700px] min-[1100px]:px-[5%]"
       />
 
@@ -507,7 +508,7 @@ export default function ProfilePage() {
                       {displayName}
                     </h2>
                     <span className="inline-flex items-center rounded-md border border-solid border-[var(--rd-link)]/30 bg-[var(--rd-active)] px-2 py-0.5 text-[11px] font-semibold text-[var(--rd-link)]">
-                      {roleLabels[role]}
+                      {t.header.roles[role] || roleLabels[role]}
                     </span>
                   </div>
                   <p className="m-0 mt-1 text-xs text-[var(--rd-muted)]">
@@ -958,7 +959,7 @@ export default function ProfilePage() {
                           type="text"
                           disabled
                           readOnly
-                          value={roleLabels[role]}
+                          value={t.header.roles[role] || roleLabels[role]}
                           className={readOnlyInput}
                         />
                       )}
