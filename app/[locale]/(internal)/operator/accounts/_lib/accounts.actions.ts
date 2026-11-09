@@ -61,6 +61,7 @@ export async function getAccountsAction(): Promise<{
         phone: schema.user.phone,
         avatarUrl: schema.user.image,
         role: schema.user.role,
+        position: schema.user.position,
         unit: schema.user.unit,
         status: schema.user.status,
         createdAt: schema.user.createdAt,
@@ -76,6 +77,7 @@ export async function getAccountsAction(): Promise<{
       phone: r.phone || "-",
       avatarUrl: r.avatarUrl,
       role: r.role as UserRole,
+      position: r.position || "Officer",
       unit: r.unit,
       status: r.status as AccountStatus,
       createdAt: r.createdAt.toISOString(),
@@ -108,7 +110,7 @@ export async function createAccountAction(
       return { success: false, errorMessage: firstError || "Data akun baru tidak valid." };
     }
 
-    const { nip, name, phone, unit, role, status, password } = parsed.data;
+    const { nip, name, phone, unit, role, position, status, password } = parsed.data;
 
     // Check duplicate NIP
     const existing = await db
@@ -122,6 +124,7 @@ export async function createAccountAction(
     }
 
     const email = nipToEmail(nip);
+    const resolvedPosition = position || "Officer";
 
     // Create via Better-Auth signUpEmail
     const res = await auth.api.signUpEmail({
@@ -131,6 +134,7 @@ export async function createAccountAction(
         name,
         nip,
         unit,
+        position: resolvedPosition,
         phone: phone || undefined,
       },
     });
@@ -140,14 +144,14 @@ export async function createAccountAction(
       return { success: false, errorMessage: "Gagal membuat akun melalui Better-Auth." };
     }
 
-    // Explicitly set role, status, username & displayUsername in database
+    // Explicitly set role, status, position, username in database
     await db
       .update(schema.user)
       .set({
         role,
         status,
+        position: resolvedPosition,
         username: nip,
-        displayUsername: name,
       })
       .where(eq(schema.user.id, newUserId));
 
@@ -159,6 +163,7 @@ export async function createAccountAction(
       phone: phone || "-",
       avatarUrl: null,
       role,
+      position: resolvedPosition,
       unit,
       status,
       createdAt: new Date().toISOString(),
@@ -192,7 +197,7 @@ export async function updateAccountAction(
       return { success: false, errorMessage: firstError || "Data pembaruan akun tidak valid." };
     }
 
-    const { nip, name, phone, unit, role, status } = parsed.data;
+    const { nip, name, phone, unit, role, position, status } = parsed.data;
 
     // Check duplicate NIP if changed
     const existingNip = await db
@@ -206,6 +211,7 @@ export async function updateAccountAction(
     }
 
     const email = nipToEmail(nip);
+    const resolvedPosition = position || "Officer";
 
     await db.transaction(async (tx) => {
       await tx
@@ -216,10 +222,10 @@ export async function updateAccountAction(
           email,
           phone: phone || null,
           role,
+          position: resolvedPosition,
           unit,
           status,
           username: nip,
-          displayUsername: name,
           updatedAt: new Date(),
         })
         .where(eq(schema.user.id, id));
@@ -238,6 +244,7 @@ export async function updateAccountAction(
       phone: phone || "-",
       avatarUrl: input.avatarUrl ?? null,
       role,
+      position: resolvedPosition,
       unit,
       status,
       createdAt: new Date().toISOString(),

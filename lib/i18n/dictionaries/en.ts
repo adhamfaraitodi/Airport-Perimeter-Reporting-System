@@ -65,7 +65,7 @@ export const en: typeof id = {
     darkMode: "Switch to dark mode",
     changeLang: "Switch Language (ID/EN)",
     roles: {
-      OPERATOR: "Airport Operator",
+      OPERATOR: "Operator Perimeter",
       TECHNICIAN: "Maintenance Technician",
       REPORTER: "Field Reporter",
     },

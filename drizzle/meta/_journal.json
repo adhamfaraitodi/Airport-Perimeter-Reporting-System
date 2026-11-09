@@ -8,6 +8,13 @@
       "when": 1794017520778,
       "tag": "0000_petite_blazing_skull",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794017600000,
+      "tag": "0001_rename_display_username_to_position",
+      "breakpoints": true
     }
   ]
 }

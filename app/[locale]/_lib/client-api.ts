@@ -16,6 +16,7 @@ export interface SessionUser {
   name: string;
   email: string;
   role: UserRole;
+  position?: string | null;
   nip?: string;
   phone?: string;
   unit?: string;
@@ -105,6 +106,7 @@ const users: Record<UserRole, SessionUser> = {
     email: "1234567@perimeter.yia.id",
     nip: "1234567",
     role: "REPORTER",
+    position: "Officer",
   },
   OPERATOR: {
     id: "usr-admin-operator",
@@ -112,6 +114,7 @@ const users: Record<UserRole, SessionUser> = {
     email: "1234567@perimeter.yia.id",
     nip: "1234567",
     role: "OPERATOR",
+    position: "Officer",
   },
   TECHNICIAN: {
     id: "usr-admin-technician",
@@ -119,6 +122,7 @@ const users: Record<UserRole, SessionUser> = {
     email: "1234567@perimeter.yia.id",
     nip: "1234567",
     role: "TECHNICIAN",
+    position: "Officer",
   },
 };
 
@@ -179,6 +183,7 @@ export const api = {
           name: (sessionUser.name as string) || "-",
           email: (sessionUser.email as string) || "-",
           role: resolvedRole,
+          position: (sessionUser.position as string) || "Officer",
           nip: (sessionUser.nip as string) || undefined,
           phone: (sessionUser.phone as string) || undefined,
           unit: (sessionUser.unit as string) || undefined,

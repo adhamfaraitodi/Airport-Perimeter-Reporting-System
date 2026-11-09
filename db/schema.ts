@@ -29,6 +29,16 @@ export const accountStatusEnum = pgEnum("account_status", [
   "INACTIVE",
 ]);
 
+export const USER_POSITIONS = [
+  "Officer",
+  "Chief",
+  "Chief Assistant",
+  "Departement Head",
+  "Supervisor",
+] as const;
+
+export type UserPosition = (typeof USER_POSITIONS)[number];
+
 export const reportStatusEnum = pgEnum("report_status", [
   "OPEN",
   "IN_PROGRESS",
@@ -58,10 +68,10 @@ export const user = pgTable(
     image: text("image"),
     // Better-Auth username plugin fields (mapped to NIP)
     username: text("username").unique(),
-    displayUsername: text("display_username"),
     // Custom Airport Perimeter fields
     nip: text("nip").notNull().unique(),
     role: userRoleEnum("role").notNull().default("REPORTER"),
+    position: text("position").default("Officer"),
     phone: text("phone"),
     unit: text("unit").notNull().default("Operasional Bandara"),
     status: accountStatusEnum("status").notNull().default("ACTIVE"),

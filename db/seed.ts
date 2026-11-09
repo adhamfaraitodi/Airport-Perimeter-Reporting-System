@@ -7,7 +7,8 @@ const DEFAULT_USERS = [
     nip: "1234567",
     name: "Operator Admin",
     role: "OPERATOR" as const,
-    unit: "Aviation Security (AVSEC",
+    position: "Supervisor",
+    unit: "Aviation Security (AVSEC)",
     phone: "081234567800",
     password: "password123",
   },
@@ -15,6 +16,7 @@ const DEFAULT_USERS = [
     nip: "1122334",
     name: "Adham",
     role: "REPORTER" as const,
+    position: "Officer",
     unit: "Aviation Security (AVSEC)",
     phone: "081234567801",
     password: "password123",
@@ -23,6 +25,7 @@ const DEFAULT_USERS = [
     nip: "5566778",
     name: "AF",
     role: "TECHNICIAN" as const,
+    position: "Officer",
     unit: "Facility Operation",
     phone: "081234567802",
     password: "password123",
@@ -159,6 +162,7 @@ async function seed() {
           name: item.name,
           nip: item.nip,
           role: item.role,
+          position: item.position || "Officer",
           unit: item.unit,
           phone: item.phone,
           status: "ACTIVE",
@@ -170,7 +174,7 @@ async function seed() {
           .update(schema.user)
           .set({
             username: item.nip,
-            displayUsername: item.name,
+            position: item.position || "Officer",
           })
           .where(eq(schema.user.id, res.user.id));
 

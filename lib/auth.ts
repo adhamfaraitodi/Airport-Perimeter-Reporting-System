@@ -6,6 +6,7 @@ import { db, schema } from "@/db";
 
 export type UserRole = "REPORTER" | "OPERATOR" | "TECHNICIAN";
 export type AccountStatus = "ACTIVE" | "INACTIVE";
+export type { UserPosition } from "@/db/schema";
 
 if (!process.env.BETTER_AUTH_SECRET) {
   throw new Error(
@@ -66,6 +67,12 @@ export const auth = betterAuth({
         defaultValue: "REPORTER",
         input: true,
       },
+      position: {
+        type: "string",
+        required: false,
+        defaultValue: "Officer",
+        input: true,
+      },
       phone: {
         type: "string",
         required: false,
@@ -95,6 +102,7 @@ export const auth = betterAuth({
       minUsernameLength: 3,
       maxUsernameLength: 30,
       usernameValidator: (val) => /^[0-9]+$/.test(val),
+      displayUsername: false,
     }),
     nextCookies(),
   ],

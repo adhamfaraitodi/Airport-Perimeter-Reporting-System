@@ -30,6 +30,7 @@ import {
   type AccountStatus,
   type ManagedAccount,
 } from "../../../_lib/accounts-store";
+import { USER_POSITIONS } from "@/db/schema";
 import {
   getAccountsAction,
   createAccountAction,
@@ -74,6 +75,7 @@ interface AccountModalState {
   email: string;
   phone: string;
   role: UserRole;
+  position: string;
   unit: string;
   status: AccountStatus;
   password: string;
@@ -187,6 +189,7 @@ export default function ManageAccountsPage() {
       (account.phone || "").toLocaleLowerCase("id").includes(normalizedQuery) ||
       account.email.toLocaleLowerCase("id").includes(normalizedQuery) ||
       account.unit.toLocaleLowerCase("id").includes(normalizedQuery) ||
+      (account.position || "").toLocaleLowerCase("id").includes(normalizedQuery) ||
       roleLabels[account.role].toLocaleLowerCase("id").includes(normalizedQuery)
     );
   });
@@ -200,6 +203,7 @@ export default function ManageAccountsPage() {
       email: "",
       phone: "",
       role: "REPORTER",
+      position: "Officer",
       unit: "Airport Security (AVSEC)",
       status: "ACTIVE",
       password: "",
@@ -216,6 +220,7 @@ export default function ManageAccountsPage() {
       email: account.email,
       phone: account.phone || "",
       role: account.role,
+      position: account.position || "Officer",
       unit: account.unit,
       status: account.status,
       password: "",
@@ -231,6 +236,7 @@ export default function ManageAccountsPage() {
         accountModal.phone.trim() !== "" ||
         accountModal.password.trim() !== "" ||
         accountModal.role !== "REPORTER" ||
+        accountModal.position !== "Officer" ||
         accountModal.status !== "ACTIVE" ||
         accountModal.unit.trim() !== "Airport Security (AVSEC)"
       );
@@ -242,6 +248,7 @@ export default function ManageAccountsPage() {
       accountModal.nip.trim() !== original.nip.trim() ||
       accountModal.phone.trim() !== (original.phone || "").trim() ||
       accountModal.role !== original.role ||
+      accountModal.position !== (original.position || "Officer") ||
       accountModal.unit.trim() !== original.unit.trim() ||
       accountModal.status !== original.status
     );
@@ -300,6 +307,7 @@ export default function ManageAccountsPage() {
           email: accountModal.email,
           phone: accountModal.phone,
           role: accountModal.role,
+          position: accountModal.position,
           unit: accountModal.unit,
           status: accountModal.status,
           password: accountModal.password,
@@ -323,6 +331,7 @@ export default function ManageAccountsPage() {
           email: accountModal.email,
           phone: accountModal.phone,
           role: accountModal.role,
+          position: accountModal.position,
           unit: accountModal.unit,
           status: accountModal.status,
         });
@@ -637,7 +646,7 @@ export default function ManageAccountsPage() {
                 <TableHead>Pengguna</TableHead>
                 <TableHead>NIP & Unit Kerja</TableHead>
                 <TableHead className="w-44">Kontak Person</TableHead>
-                <TableHead className="w-44">Peran Akses</TableHead>
+                <TableHead className="w-48">Peran & Posisi</TableHead>
                 <TableHead className="w-32 text-center">Status</TableHead>
                 <TableHead className="w-44">Terdaftar</TableHead>
                 <TableHead className="w-36 text-right">Aksi</TableHead>
@@ -753,6 +762,9 @@ export default function ManageAccountsPage() {
                             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${roleBadgeClass}`}
                           >
                             {t.header.roles[account.role] || roleLabels[account.role]}
+                          </span>
+                          <span className="mt-0.5 block text-[11px] font-medium text-[var(--rd-muted)]">
+                            {account.position || "Officer"}
                           </span>
                         </TableCell>
                         <TableCell className="text-center">
@@ -936,6 +948,23 @@ export default function ManageAccountsPage() {
                 </label>
 
                 <label className={fieldLabel}>
+                  Unit Kerja / Divisi
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Airport Security (AVSEC)"
+                    value={accountModal.unit}
+                    onChange={(e) => {
+                      setConfirmDiscardAccount(false);
+                      setAccountModal({ ...accountModal, unit: e.target.value });
+                    }}
+                    className={fieldControl}
+                  />
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
+                <label className={fieldLabel}>
                   Peran Akses (Role)
                   <select
                     value={accountModal.role}
@@ -953,24 +982,30 @@ export default function ManageAccountsPage() {
                     <option value="TECHNICIAN">Teknisi</option>
                   </select>
                 </label>
+
+                <label className={fieldLabel}>
+                  Jabatan / Posisi
+                  <select
+                    value={accountModal.position}
+                    onChange={(e) => {
+                      setConfirmDiscardAccount(false);
+                      setAccountModal({
+                        ...accountModal,
+                        position: e.target.value,
+                      });
+                    }}
+                    className={fieldControl}
+                  >
+                    {USER_POSITIONS.map((pos) => (
+                      <option key={pos} value={pos}>
+                        {pos}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
 
               <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
-                <label className={fieldLabel}>
-                  Unit Kerja / Divisi
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: Airport Security (AVSEC)"
-                    value={accountModal.unit}
-                    onChange={(e) => {
-                      setConfirmDiscardAccount(false);
-                      setAccountModal({ ...accountModal, unit: e.target.value });
-                    }}
-                    className={fieldControl}
-                  />
-                </label>
-
                 <label className={fieldLabel}>
                   Status Akun
                   <select
@@ -988,28 +1023,28 @@ export default function ManageAccountsPage() {
                     <option value="INACTIVE">Nonaktif</option>
                   </select>
                 </label>
-              </div>
 
-              {accountModal.mode === "CREATE" && (
-                <label className={fieldLabel}>
-                  Password Awal
-                  <input
-                    type="password"
-                    required
-                    minLength={8}
-                    placeholder="Minimal 8 karakter"
-                    value={accountModal.password}
-                    onChange={(e) => {
-                      setConfirmDiscardAccount(false);
-                      setAccountModal({
-                        ...accountModal,
-                        password: e.target.value,
-                      });
-                    }}
-                    className={fieldControl}
-                  />
-                </label>
-              )}
+                {accountModal.mode === "CREATE" ? (
+                  <label className={fieldLabel}>
+                    Password Awal
+                    <input
+                      type="password"
+                      required
+                      minLength={8}
+                      placeholder="Minimal 8 karakter"
+                      value={accountModal.password}
+                      onChange={(e) => {
+                        setConfirmDiscardAccount(false);
+                        setAccountModal({
+                          ...accountModal,
+                          password: e.target.value,
+                        });
+                      }}
+                      className={fieldControl}
+                    />
+                  </label>
+                ) : null}
+              </div>
 
               {confirmDiscardAccount && (
                 <div

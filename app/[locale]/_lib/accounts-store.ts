@@ -12,6 +12,7 @@ export interface ManagedAccount {
   phone: string;
   avatarUrl?: string | null;
   role: UserRole;
+  position?: string | null;
   unit: string;
   status: AccountStatus;
   createdAt: string;
@@ -34,6 +35,7 @@ export interface AccountInput {
   phone?: string;
   avatarUrl?: string | null;
   role: UserRole;
+  position?: string | null;
   unit: string;
   status: AccountStatus;
 }
@@ -67,6 +69,7 @@ export const useAccountsStore = create<AccountsState>()(
           `${nip.toLowerCase()}@injourneyairports.id`;
         const phone = (input.phone || "").trim() || "-";
         const unit = input.unit.trim() || "Operasional Bandara";
+        const position = input.position?.trim() || "Officer";
 
         if (!nip || !name) {
           throw new Error("NIP dan nama lengkap wajib diisi.");
@@ -85,6 +88,7 @@ export const useAccountsStore = create<AccountsState>()(
           phone,
           avatarUrl: input.avatarUrl ?? null,
           role: input.role,
+          position,
           unit,
           status: input.status,
           createdAt: new Date().toISOString(),
@@ -98,6 +102,7 @@ export const useAccountsStore = create<AccountsState>()(
         const nip = patch.nip.trim();
         const name = patch.name.trim();
         const unit = patch.unit.trim() || "Operasional Bandara";
+        const position = patch.position !== undefined ? patch.position?.trim() || "Officer" : undefined;
         const phone =
           patch.phone !== undefined ? patch.phone.trim() || "-" : undefined;
 
@@ -130,6 +135,7 @@ export const useAccountsStore = create<AccountsState>()(
                       ? patch.avatarUrl
                       : account.avatarUrl,
                   role: patch.role,
+                  position: position !== undefined ? position : account.position,
                   unit,
                   status: patch.status,
                 }
@@ -198,6 +204,7 @@ export const useAccountsStore = create<AccountsState>()(
           ...typed,
           accounts: typed.accounts.map((acc) => ({
             ...acc,
+            position: acc.position || "Officer",
             phone:
               acc.phone?.trim() ||
               defaultPhoneById.get(acc.id) ||

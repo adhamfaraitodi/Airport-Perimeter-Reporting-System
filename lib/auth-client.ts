@@ -8,7 +8,10 @@ import {
 import type { auth } from "./auth";
 
 export const authClient = createAuthClient({
-  plugins: [usernameClient(), inferAdditionalFields<typeof auth>()],
+  plugins: [
+    usernameClient({ displayUsername: false }),
+    inferAdditionalFields<typeof auth>(),
+  ],
 });
 
 export const { signIn, signOut, signUp, useSession } = authClient;
