@@ -377,7 +377,6 @@ export function ReportList({
               className="flex min-w-0 flex-col rounded-2xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] p-3.5 sm:p-6"
             >
               <ReportHistoryPanel
-                title={locale === "en" ? "Reports History" : "Riwayat Laporan"}
                 reports={owned}
                 loading={loading}
                 selectedId={selectedReportId}

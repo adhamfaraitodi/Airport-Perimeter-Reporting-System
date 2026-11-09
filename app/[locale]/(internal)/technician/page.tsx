@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { CheckCircle2, Clock, ClipboardList, Wrench } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,20 +21,15 @@ import { DashboardFooter } from "../operator/_components/dashboard-footer";
 import { ReportHistoryPanel } from "../../_components/report-history-panel";
 import { getTechnicianDashboardDataAction } from "./_lib/technician.actions";
 import type { TechnicianTaskSummary } from "./_lib/technician.schema";
+import { useTranslation } from "@/lib/i18n";
 
 const inlineAlertButton = `ml-2.5 rounded-md bg-[var(--rd-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--rd-coral)] disabled:cursor-not-allowed disabled:opacity-55 ${focusRing}`;
-
-const TECHNICIAN_STATUS_FILTERS = [
-  ["ALL", "Semua"],
-  ["OPEN", "Baru"],
-  ["IN_PROGRESS", "Ditangani"],
-  ["RESOLVED", "Selesai"],
-] as const;
 
 export default function TechnicianDashboardPage() {
   const params = useParams<{ locale?: string }>();
   const locale = params?.locale || "id";
   const { theme, dark, toggleTheme } = useTheme();
+  const { t } = useTranslation();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [reports, setReports] = useState<ReportRecord[]>([]);
   const [summary, setSummary] = useState<TechnicianTaskSummary | null>(null);
@@ -49,6 +44,16 @@ export default function TechnicianDashboardPage() {
   const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [newest, setNewest] = useState(true);
+
+  const technicianFilters = useMemo<readonly (readonly [string, string])[]>(
+    () => [
+      ["ALL", t.historyPanel.filters.ALL],
+      ["OPEN", t.historyPanel.filters.OPEN],
+      ["IN_PROGRESS", t.historyPanel.filters.IN_PROGRESS],
+      ["RESOLVED", t.historyPanel.filters.RESOLVED],
+    ],
+    [t]
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -330,7 +335,6 @@ export default function TechnicianDashboardPage() {
               />
             ) : (
               <ReportHistoryPanel
-                title="Riwayat Laporan"
                 reports={activeReports}
                 loading={loading}
                 selectedId={selectedId}
@@ -341,7 +345,7 @@ export default function TechnicianDashboardPage() {
                 onSearchChange={setSearch}
                 activeFilter={filter}
                 onFilterChange={setFilter}
-                filters={TECHNICIAN_STATUS_FILTERS}
+                filters={technicianFilters}
                 isNewestFirst={newest}
                 onToggleSort={() => setNewest((v) => !v)}
                 pageSize={5}

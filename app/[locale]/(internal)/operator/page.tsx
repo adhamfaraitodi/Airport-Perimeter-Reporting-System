@@ -202,7 +202,6 @@ export default function DashboardPage() {
               />
             ) : (
               <ReportHistoryPanel
-                title="Riwayat Laporan"
                 reports={reports}
                 loading={loading}
                 selectedId={selectedId}

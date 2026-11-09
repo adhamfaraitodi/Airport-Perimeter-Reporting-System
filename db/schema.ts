@@ -68,6 +68,7 @@ export const user = pgTable(
     image: text("image"),
     // Better-Auth username plugin fields (mapped to NIP)
     username: text("username").unique(),
+    displayUsername: text("display_username"),
     // Custom Airport Perimeter fields
     nip: text("nip").notNull().unique(),
     role: userRoleEnum("role").notNull().default("REPORTER"),

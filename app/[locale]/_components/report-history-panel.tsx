@@ -16,6 +16,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "@/lib/i18n";
 import type { ReportRecord } from "../_lib/client-api";
 
 export const DEFAULT_PAGE_SIZE = 5;
@@ -30,46 +31,30 @@ export const REPORT_STATUS_FILTERS = [
 
 export type FilterStatus = (typeof REPORT_STATUS_FILTERS)[number][0];
 
-const statusMeta: Record<
-  string,
-  {
-    label: string;
-    icon: typeof ClipboardClock;
-  }
-> = {
-  OPEN: {
-    label: "Baru",
-    icon: ClipboardClock,
-  },
-  IN_PROGRESS: {
-    label: "Sedang ditangani",
-    icon: ClipboardPen,
-  },
-  RESOLVED: {
-    label: "Selesai",
-    icon: ClipboardCheck,
-  },
-  CLOSED: {
-    label: "Ditutup",
-    icon: ClipboardX,
-  },
+const statusIconMap: Record<string, typeof ClipboardClock> = {
+  OPEN: ClipboardClock,
+  IN_PROGRESS: ClipboardPen,
+  RESOLVED: ClipboardCheck,
+  CLOSED: ClipboardX,
 };
 
-const dateFormat = new Intl.DateTimeFormat("id-ID", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  timeZone: "Asia/Jakarta",
-});
-
-export function formatReportDate(value?: string | null) {
-  if (!value) return "Tanggal tidak tersedia";
+export function formatReportDate(
+  value?: string | null,
+  locale: string = "id",
+  fallbackText: string = "Tanggal tidak tersedia"
+) {
+  if (!value) return fallbackText;
   const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? "Tanggal tidak tersedia"
-    : `${dateFormat.format(date)} WIB`;
+  if (Number.isNaN(date.getTime())) return fallbackText;
+  const df = new Intl.DateTimeFormat(locale === "en" ? "en-US" : "id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Jakarta",
+  });
+  return `${df.format(date)} WIB`;
 }
 
 export interface ReportCardItemProps {
@@ -83,9 +68,18 @@ export function ReportCardItem({
   selected = false,
   onSelect,
 }: ReportCardItemProps) {
+  const { t, locale } = useTranslation();
   const effectiveStatus = report.deletedAt ? "CLOSED" : report.status;
-  const meta = statusMeta[effectiveStatus] || statusMeta.OPEN;
-  const StatusIcon = meta.icon;
+  const StatusIcon = statusIconMap[effectiveStatus] || ClipboardClock;
+
+  const statusLabels: Record<string, string> = {
+    OPEN: t.historyPanel.statusMeta.OPEN,
+    IN_PROGRESS: t.historyPanel.statusMeta.IN_PROGRESS,
+    RESOLVED: t.historyPanel.statusMeta.RESOLVED,
+    CLOSED: t.historyPanel.statusMeta.CLOSED,
+  };
+  const statusLabel =
+    statusLabels[effectiveStatus] || t.historyPanel.statusMeta.OPEN;
 
   const findings = Array.isArray(report.findings) ? report.findings : [];
   const chips = findings
@@ -117,7 +111,7 @@ export function ReportCardItem({
           ? "border-[var(--rd-primary)] bg-[var(--rd-surface)] shadow-xs ring-2 ring-[var(--rd-active)]"
           : "border-[var(--rd-border)] bg-[var(--rd-surface)] hover:bg-[var(--rd-hover)] hover:border-[var(--rd-link)]/40"
       }`}
-      aria-label={`Buka laporan ${displayId}, status ${meta.label}`}
+      aria-label={`${t.historyPanel.openReportAria} ${displayId}, ${t.historyPanel.statusAria} ${statusLabel}`}
     >
       {/* Left Icon Box using rd-status and CSS variables */}
       <div
@@ -143,13 +137,17 @@ export function ReportCardItem({
               className="size-1.5 shrink-0 rounded-full bg-current"
               aria-hidden="true"
             />
-            {meta.label}
+            {statusLabel}
           </span>
           <time
             dateTime={report.createdAt}
             className="text-[11px] text-[var(--rd-muted)] sm:ml-auto"
           >
-            {formatReportDate(report.createdAt)}
+            {formatReportDate(
+              report.createdAt,
+              locale,
+              t.historyPanel.dateUnavailable
+            )}
           </time>
         </div>
 
@@ -168,14 +166,14 @@ export function ReportCardItem({
         ) : (
           <div className="mb-1 text-xs text-[var(--rd-muted)]">
             {report.side
-              ? `Perimeter sisi ${report.side}`
-              : "Laporan temuan perimeter"}
+              ? `${t.historyPanel.perimeterSide} ${report.side}`
+              : t.historyPanel.findingsFallback}
           </div>
         )}
 
         {/* Narrative */}
         <p className="mt-1 line-clamp-1 text-xs leading-relaxed text-[var(--rd-text)] sm:text-sm">
-          {report.narrative || "Tidak ada narasi tambahan"}
+          {report.narrative || t.historyPanel.noNarrative}
         </p>
 
         {/* Meta Info Footer */}
@@ -186,7 +184,7 @@ export function ReportCardItem({
               className="text-[var(--rd-link)]"
               aria-hidden="true"
             />
-            {report.images?.length || 0} Gambar
+            {report.images?.length || 0} {t.historyPanel.imagesCount}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <MapPin
@@ -195,12 +193,12 @@ export function ReportCardItem({
               aria-hidden="true"
             />
             {report.segmentCode && report.side
-              ? `Grid ${report.segmentCode} · Sisi ${report.side}`
+              ? `${t.historyPanel.grid} ${report.segmentCode} · ${t.historyPanel.side} ${report.side}`
               : report.segmentCode
-              ? `Grid ${report.segmentCode}`
+              ? `${t.historyPanel.grid} ${report.segmentCode}`
               : report.side
-                ? `Sisi ${report.side}`
-                : "Segmen belum dipetakan"}
+                ? `${t.historyPanel.side} ${report.side}`
+                : t.historyPanel.unmappedSegment}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <UserRound
@@ -208,7 +206,7 @@ export function ReportCardItem({
               className="text-[var(--rd-link)]"
               aria-hidden="true"
             />
-            {report.reporterName || "Petugas"}
+            {report.reporterName || t.historyPanel.reporterDefault}
           </span>
         </div>
       </div>
@@ -238,7 +236,7 @@ export interface ReportHistoryPanelProps {
 }
 
 export function ReportHistoryPanel({
-  title = "Riwayat Laporan",
+  title,
   reports = [],
   loading = false,
   selectedId = null,
@@ -250,11 +248,28 @@ export function ReportHistoryPanel({
   isNewestFirst: controlledNewest,
   onToggleSort,
   pageSize = DEFAULT_PAGE_SIZE,
-  filters = REPORT_STATUS_FILTERS,
+  filters,
   headerAction,
-  emptyMessage = "Tidak ada laporan yang sesuai dengan pencarian atau filter.",
+  emptyMessage,
   className = "",
 }: ReportHistoryPanelProps) {
+  const { t } = useTranslation();
+
+  const defaultFilters = useMemo<readonly (readonly [string, string])[]>(
+    () => [
+      ["ALL", t.historyPanel.filters.ALL],
+      ["OPEN", t.historyPanel.filters.OPEN],
+      ["IN_PROGRESS", t.historyPanel.filters.IN_PROGRESS],
+      ["RESOLVED", t.historyPanel.filters.RESOLVED],
+      ["CLOSED", t.historyPanel.filters.CLOSED],
+    ],
+    [t]
+  );
+
+  const activeFilters = filters ?? defaultFilters;
+  const panelTitle = title ?? t.historyPanel.title;
+  const panelEmptyMessage = emptyMessage ?? t.historyPanel.empty;
+
   // Internal state if uncontrolled
   const [internalSearch, setInternalSearch] = useState("");
   const [internalFilter, setInternalFilter] = useState("ALL");
@@ -358,7 +373,7 @@ export function ReportHistoryPanel({
       {/* Header title */}
       <div className="flex items-center justify-between pb-3">
         <h2 className="m-0 text-base font-normal text-[var(--rd-text)] sm:text-lg">
-          {title}
+          {panelTitle}
         </h2>
         {headerAction}
       </div>
@@ -374,15 +389,15 @@ export function ReportHistoryPanel({
           type="search"
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
-          placeholder="Cari berdasarkan jenis bagian, kerusakan, dan lokasi"
+          placeholder={t.historyPanel.searchPlaceholder}
           className="w-full rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] py-2.5 pl-10 pr-4 text-xs text-[var(--rd-text)] outline-none transition-colors placeholder:text-[var(--rd-muted)] focus:border-[var(--rd-primary)] focus:ring-2 focus:ring-[var(--rd-active)] sm:text-sm"
-          aria-label="Cari laporan"
+          aria-label={t.historyPanel.searchAriaLabel}
         />
       </div>
 
       {/* Status Filter Tabs */}
       <div className="mb-2 flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
-        {filters.map(([val, label]) => {
+        {activeFilters.map(([val, label]) => {
           const isActive = filter === val;
           return (
             <button
@@ -409,15 +424,17 @@ export function ReportHistoryPanel({
         {loading ? (
           <Skeleton className="h-4 w-32 rounded" />
         ) : (
-          <span>{totalItems} laporan ditemukan</span>
+          <span>
+            {totalItems} {t.historyPanel.foundReports}
+          </span>
         )}
         <button
           type="button"
           onClick={handleToggleSort}
           title={
             newest
-              ? "Urutan terbaru dahulu. Klik untuk terlama"
-              : "Urutan terlama dahulu. Klik untuk terbaru"
+              ? t.historyPanel.sortNewestFirst
+              : t.historyPanel.sortOldestFirst
           }
           className="inline-flex size-8 items-center justify-center rounded-lg text-[var(--rd-link)] transition-colors hover:bg-[var(--rd-active)]"
         >
@@ -466,7 +483,7 @@ export function ReportHistoryPanel({
           ))
         ) : (
           <div className="rounded-2xl border border-dashed border-[var(--rd-border)] p-8 text-center text-xs text-[var(--rd-muted)] sm:text-sm">
-            {emptyMessage}
+            {panelEmptyMessage}
           </div>
         )}
       </div>
@@ -475,7 +492,8 @@ export function ReportHistoryPanel({
       {!loading && totalItems > 0 && (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 pt-2 text-xs text-[var(--rd-muted)] sm:text-sm">
           <span>
-            Menampilkan {startIndex + 1}–{endIndex} dari {totalItems}
+            {t.historyPanel.showingRange} {startIndex + 1}–{endIndex}{" "}
+            {t.historyPanel.of} {totalItems}
           </span>
           <div className="flex items-center gap-1">
             {/* Prev Button */}
@@ -484,7 +502,7 @@ export function ReportHistoryPanel({
               disabled={safePage <= 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               className="inline-flex size-7 items-center justify-center rounded-md text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-hover)] disabled:cursor-not-allowed disabled:opacity-30"
-              aria-label="Halaman sebelumnya"
+              aria-label={t.historyPanel.prevPage}
             >
               <ChevronLeft size={16} />
             </button>
@@ -526,7 +544,7 @@ export function ReportHistoryPanel({
               disabled={safePage >= totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               className="inline-flex size-7 items-center justify-center rounded-md text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-hover)] disabled:cursor-not-allowed disabled:opacity-30"
-              aria-label="Halaman berikutnya"
+              aria-label={t.historyPanel.nextPage}
             >
               <ChevronRight size={16} />
             </button>

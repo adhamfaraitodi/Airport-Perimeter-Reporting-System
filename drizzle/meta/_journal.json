@@ -15,6 +15,13 @@
       "when": 1794017600000,
       "tag": "0001_rename_display_username_to_position",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794017700000,
+      "tag": "0002_add_display_username",
+      "breakpoints": true
     }
   ]
 }

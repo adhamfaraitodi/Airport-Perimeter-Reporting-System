@@ -144,7 +144,7 @@ export async function createAccountAction(
       return { success: false, errorMessage: "Gagal membuat akun melalui Better-Auth." };
     }
 
-    // Explicitly set role, status, position, username in database
+    // Explicitly set role, status, position, username & displayUsername in database
     await db
       .update(schema.user)
       .set({
@@ -152,6 +152,7 @@ export async function createAccountAction(
         status,
         position: resolvedPosition,
         username: nip,
+        displayUsername: name,
       })
       .where(eq(schema.user.id, newUserId));
 
@@ -226,6 +227,7 @@ export async function updateAccountAction(
           unit,
           status,
           username: nip,
+          displayUsername: name,
           updatedAt: new Date(),
         })
         .where(eq(schema.user.id, id));

@@ -174,6 +174,7 @@ async function seed() {
           .update(schema.user)
           .set({
             username: item.nip,
+            displayUsername: item.name,
             position: item.position || "Officer",
           })
           .where(eq(schema.user.id, res.user.id));
