@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import {
-  Calendar,
+  Clipboard,
   CalendarArrowDown,
   CalendarArrowUp,
   ChevronLeft,
@@ -43,56 +43,62 @@ const statusIconMap: Record<string, typeof ClipboardClock> = {
   CLOSED: ClipboardX,
 };
 
-const statusClassMap: Record<string, string> = {
-  OPEN: "border-[var(--rd-danger)]/20 bg-[var(--rd-danger)]/10 text-[var(--rd-danger)]",
-  IN_PROGRESS: "border-[var(--rd-amber)]/20 bg-[var(--rd-amber)]/10 text-[var(--rd-amber)]",
-  RESOLVED: "border-[var(--rd-primary)]/20 bg-[var(--rd-primary)]/10 text-[var(--rd-primary)]",
-  CLOSED: "border-slate-500/20 bg-slate-500/10 text-slate-400",
-};
-
-interface ReportCardProps {
-  report: ReportRecord;
-  isSelected?: boolean;
-  onSelect: (report: ReportRecord) => void;
-  statusLabels: Record<string, string>;
-  formatDate: (dateStr: string) => string;
+export function formatReportDate(
+  value?: string | null,
+  locale: string = "id",
+  fallbackText: string = "Tanggal tidak tersedia"
+) {
+  if (!value) return fallbackText;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return fallbackText;
+  const df = new Intl.DateTimeFormat(locale === "en" ? "en-US" : "id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Jakarta",
+  });
+  return `${df.format(date)} WIB`;
 }
 
-export function ReportHistoryCard({
+export interface ReportCardItemProps {
+  report: ReportRecord;
+  selected?: boolean;
+  onSelect: (report: ReportRecord) => void;
+}
+
+export function ReportCardItem({
   report,
-  isSelected = false,
+  selected = false,
   onSelect,
-  statusLabels,
-  formatDate,
-}: ReportCardProps) {
-  const { t } = useTranslation();
+}: ReportCardItemProps) {
+  const { t, locale } = useTranslation();
   const effectiveStatus = report.deletedAt ? "CLOSED" : report.status;
   const StatusIcon = statusIconMap[effectiveStatus] || ClipboardClock;
-  const statusClass =
-    statusClassMap[effectiveStatus] ||
-    "border-[var(--rd-border)] bg-[var(--rd-bg)] text-[var(--rd-text)]";
 
+  const statusLabels: Record<string, string> = {
+    OPEN: t.historyPanel.statusMeta.OPEN,
+    IN_PROGRESS: t.historyPanel.statusMeta.IN_PROGRESS,
+    RESOLVED: t.historyPanel.statusMeta.RESOLVED,
+    CLOSED: t.historyPanel.statusMeta.CLOSED,
+  };
   const statusLabel =
-    report.deletedAt
-      ? t.historyPanel.statusMeta.CLOSED
-      : statusLabels[effectiveStatus] || t.historyPanel.statusMeta.OPEN;
+    statusLabels[effectiveStatus] || t.historyPanel.statusMeta.OPEN;
 
-  const displayId = String(report.id).replace(/-/g, "").slice(0, 8).toUpperCase();
+  const findings = Array.isArray(report.findings) ? report.findings : [];
+  const chips = findings
+    .flatMap((f) => [
+      f.partName,
+      ...(Array.isArray(f.damages)
+        ? f.damages.map((d) => (typeof d === "string" ? d : d.name))
+        : []),
+    ])
+    .filter(
+      (value): value is string => typeof value === "string" && !!value.trim()
+    );
 
-  const formattedDate = report.createdAt
-    ? formatDate(report.createdAt)
-    : t.historyPanel.dateUnavailable;
-
-  const findingsText = useMemo(() => {
-    if (!report.findings || report.findings.length === 0) return null;
-    const parts = report.findings.map((f) => {
-      const damages = Array.isArray(f.damages)
-        ? f.damages.map((d) => (typeof d === "string" ? d : d.name)).join(", ")
-        : "";
-      return damages ? `${f.partName} (${damages})` : f.partName;
-    });
-    return parts.join("; ");
-  }, [report.findings]);
+  const displayId = `#${String(report.id).slice(-6).toUpperCase()}`;
 
   return (
     <div
@@ -105,67 +111,92 @@ export function ReportHistoryCard({
           onSelect(report);
         }
       }}
-      aria-label={`${t.historyPanel.openReportAria} ${displayId}, ${t.historyPanel.statusAria} ${statusLabel}`}
-      className={`group relative flex cursor-pointer flex-col rounded-xl border border-solid p-3.5 transition-all outline-none focus-visible:ring-2 focus-visible:ring-[var(--rd-primary)] sm:p-4 ${
-        isSelected
-          ? "border-[var(--rd-primary)] bg-[var(--rd-active)] shadow-sm"
-          : "border-[var(--rd-border)] bg-[var(--rd-surface)] hover:border-[var(--rd-primary)]/40 hover:bg-[var(--rd-hover)] hover:shadow-xs"
+      className={`group flex w-full cursor-pointer items-start gap-3 rounded-2xl border border-solid p-3.5 text-left transition-colors sm:p-4 ${
+        selected
+          ? "border-[var(--rd-primary)] bg-[var(--rd-surface)] shadow-xs ring-2 ring-[var(--rd-active)]"
+          : "border-[var(--rd-border)] bg-[var(--rd-surface)] hover:bg-[var(--rd-hover)] hover:border-[var(--rd-link)]/40"
       }`}
+      aria-label={`${t.historyPanel.openReportAria} ${displayId}, ${t.historyPanel.statusAria} ${statusLabel}`}
     >
-      {/* Header: Status Pill & Time/ID */}
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <span
-          className={`inline-flex items-center gap-1.5 rounded-full border border-solid px-2.5 py-0.5 text-xs font-medium ${statusClass}`}
-        >
-          <StatusIcon size={13} aria-hidden="true" />
-          <span>{statusLabel}</span>
-        </span>
+      {/* Left Icon Box using rd-status and CSS variables */}
+      <div
+        data-status={effectiveStatus}
+        className="rd-status flex size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--rd-tint)] text-[var(--rd-status)] sm:size-12"
+        aria-hidden="true"
+      >
+        <StatusIcon size={22} strokeWidth={1.9} />
+      </div>
 
-        <div className="flex items-center gap-1.5 text-xs text-[var(--rd-muted)]">
-          <time dateTime={report.createdAt} className="hidden sm:inline">
-            {formattedDate}
-          </time>
-          <span className="hidden sm:inline">·</span>
-          <span className="font-mono text-[11px] text-[var(--rd-link)]">
-            #{displayId}
+      {/* Main Body */}
+      <div className="min-w-0 flex-1">
+        {/* Top Header Row */}
+        <div className="mb-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs">
+          <span className="text-[var(--rd-muted)]">
+            {displayId}
           </span>
+          <span
+            data-status={effectiveStatus}
+            className="rd-status inline-flex items-center gap-1.5 rounded-full bg-[var(--rd-tint)] px-2.5 py-0.5 text-xs text-[var(--rd-status)]"
+          >
+            <span
+              className="size-1.5 shrink-0 rounded-full bg-current"
+              aria-hidden="true"
+            />
+            {statusLabel}
+          </span>
+          <time
+            dateTime={report.createdAt}
+            className="text-[11px] text-[var(--rd-muted)] sm:ml-auto"
+          >
+            {formatReportDate(
+              report.createdAt,
+              locale,
+              t.historyPanel.dateUnavailable
+            )}
+          </time>
         </div>
-      </div>
 
-      {/* Date on mobile */}
-      <div className="mb-1.5 text-[11px] text-[var(--rd-muted)] sm:hidden">
-        {formattedDate}
-      </div>
-
-      {/* Findings title or perimeter side summary */}
-      <h3 className="mb-1 text-sm font-semibold text-[var(--rd-text)] group-hover:text-[var(--rd-primary)]">
-        {findingsText ||
-          (report.side
-            ? `${t.historyPanel.perimeterSide} ${report.side}`
-            : t.historyPanel.findingsFallback)}
-      </h3>
-
-      {/* Narrative snippet */}
-      <p className="line-clamp-2 text-xs leading-relaxed text-[var(--rd-muted)]">
-        {report.narrative || t.historyPanel.noNarrative}
-      </p>
-
-      {/* Footer Info: Images count, Location Grid/Side, Reporter */}
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-solid border-[var(--rd-border)]/60 pt-2.5 text-[11px] text-[var(--rd-muted)]">
-        {/* Images indicator */}
-        {(report.images?.length || 0) > 0 && (
-          <div className="flex items-center gap-1 text-[var(--rd-link)]">
-            <Images size={13} aria-hidden="true" />
-            <span>
-              {report.images?.length || 0} {t.historyPanel.imagesCount}
-            </span>
+        {/* Chips / Findings Badges */}
+        {chips.length > 0 ? (
+          <div className="mb-1.5 flex flex-wrap gap-1.5">
+            {chips.map((chip, idx) => (
+              <span
+                key={`${chip}-${idx}`}
+                className="rounded-full bg-[var(--rd-active)] px-2.5 py-0.5 text-xs text-[var(--rd-link)]"
+              >
+                {chip}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <div className="mb-1 text-xs text-[var(--rd-muted)]">
+            {report.side
+              ? `${t.historyPanel.perimeterSide} ${report.side}`
+              : t.historyPanel.findingsFallback}
           </div>
         )}
 
-        {/* Location Grid & Side */}
-        <div className="flex items-center gap-1">
-          <MapPin size={13} className="text-[var(--rd-link)]" aria-hidden="true" />
-          <span>
+        {/* Narrative */}
+        <p className="mt-1 line-clamp-1 text-xs leading-relaxed text-[var(--rd-text)] sm:text-sm">
+          {report.narrative || t.historyPanel.noNarrative}
+        </p>
+
+        {/* Meta Info Footer */}
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-[var(--rd-muted)]">
+          <span className="inline-flex items-center gap-1.5">
+            <Images
+              size={15}
+              className="text-[var(--rd-link)]"
+              aria-hidden="true"
+            />
+            {report.images?.length || 0} {t.historyPanel.imagesCount}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <MapPin
+              size={15}
+              className="text-[var(--rd-link)]"
+              aria-hidden="true"
+            />
             {report.segmentCode && report.side
               ? `${t.historyPanel.grid} ${report.segmentCode} · ${t.historyPanel.side} ${report.side}`
               : report.segmentCode
@@ -174,12 +205,12 @@ export function ReportHistoryCard({
                 ? `${t.historyPanel.side} ${report.side}`
                 : t.historyPanel.unmappedSegment}
           </span>
-        </div>
-
-        {/* Reporter */}
-        <div className="ml-auto flex items-center gap-1 text-[var(--rd-muted)]">
-          <UserRound size={12} aria-hidden="true" />
-          <span className="max-w-[120px] truncate sm:max-w-[180px]">
+          <span className="inline-flex items-center gap-1.5">
+            <UserRound
+              size={15}
+              className="text-[var(--rd-link)]"
+              aria-hidden="true"
+            />
             {report.reporterName || t.historyPanel.reporterDefault}
           </span>
         </div>
@@ -188,11 +219,14 @@ export function ReportHistoryCard({
   );
 }
 
+// Backward-compatible alias
+export const ReportHistoryCard = ReportCardItem;
+
 export interface ReportHistoryPanelProps {
   title?: string;
-  reports: ReportRecord[];
+  reports?: ReportRecord[];
   loading?: boolean;
-  selectedId?: string | null;
+  selectedId?: string | number | null;
   onSelect: (report: ReportRecord) => void;
   // External or default state handlers
   searchQuery?: string;
@@ -399,10 +433,14 @@ export function ReportHistoryPanel({
             type="button"
             disabled={reports.length === 0}
             onClick={() => setShowDateModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--rd-primary)] px-3.5 py-2 text-xs font-medium text-white shadow-xs transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-            title={reports.length === 0 ? "Tidak ada laporan untuk diunduh" : "Unduh laporan (PDF Landscape)"}
+            className="inline-flex items-center gap-2 rounded-[10px] bg-[var(--rd-primary)] px-4 py-2 text-xs font-semibold text-white shadow-xs transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
+            title={
+              reports.length === 0
+                ? "Tidak ada laporan untuk diunduh"
+                : "Unduh laporan (PDF Landscape)"
+            }
           >
-            <Download size={14} aria-hidden="true" />
+            <Download size={15} aria-hidden="true" />
             <span>{t.reports?.downloadPdf ?? "Unduh Laporan"}</span>
           </button>
         ) : null}
@@ -499,28 +537,11 @@ export function ReportHistoryPanel({
           </div>
         ) : (
           currentReports.map((report) => (
-            <ReportHistoryCard
+            <ReportCardItem
               key={report.id}
               report={report}
-              isSelected={report.id === selectedId}
+              selected={selectedId != null && String(report.id) === String(selectedId)}
               onSelect={onSelect}
-              statusLabels={{
-                OPEN: t.historyPanel.statusMeta.OPEN,
-                IN_PROGRESS: t.historyPanel.statusMeta.IN_PROGRESS,
-                RESOLVED: t.historyPanel.statusMeta.RESOLVED,
-                CLOSED: t.historyPanel.statusMeta.CLOSED,
-              }}
-              formatDate={(iso) => {
-                try {
-                  return new Date(iso).toLocaleDateString("id-ID", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  });
-                } catch {
-                  return iso;
-                }
-              }}
             />
           ))
         )}
@@ -572,7 +593,6 @@ export function ReportHistoryPanel({
                       ? "bg-[var(--rd-active)] text-[var(--rd-link)] font-medium"
                       : "text-[var(--rd-muted)] hover:bg-[var(--rd-hover)] hover:text-[var(--rd-text)]"
                   }`}
-                  aria-current={isCurrent ? "page" : undefined}
                 >
                   {pageNum}
                 </button>
@@ -612,7 +632,7 @@ export function ReportHistoryPanel({
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="flex size-9 items-center justify-center rounded-xl bg-[var(--rd-primary)]/10 text-[var(--rd-primary)]">
-                  <Calendar size={18} aria-hidden="true" />
+                  <Clipboard size={18} aria-hidden="true" />
                 </div>
                 <div>
                   <h3 id="download-dialog-title" className="text-sm font-semibold text-[var(--rd-text)] sm:text-base">

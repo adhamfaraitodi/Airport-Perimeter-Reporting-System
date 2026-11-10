@@ -51,7 +51,7 @@ export const id = {
     viewAllTechnicianTasks: "Lihat Daftar Tugas Perbaikan",
     viewAllMyReports: "Buka Daftar Laporan Saya",
     profile: "Profil Pengguna",
-    profileDesc: "Kelola data diri & tanda tangan",
+    profileDesc: "Kelola data diri & foto profil",
     logout: "Keluar",
     logoutDesc: "Selesai sesi aplikasi",
     dataMaster: "Data Master",

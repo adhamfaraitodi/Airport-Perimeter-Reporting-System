@@ -13,12 +13,10 @@ import {
   Building2,
   Calendar,
   CheckCircle2,
-  Check,
   ClipboardCheck,
   ClipboardClock,
   ClipboardPen,
   ClipboardX,
-  FileSignature,
   IdCard,
   Loader2,
   Lock,
@@ -53,10 +51,7 @@ import {
   updateProfileAction,
   type ProfileData,
 } from "./_lib/profile.actions";
-import {
-  compressAvatarPhoto,
-  processSignaturePhoto,
-} from "../../_lib/signature-processor";
+import { compressAvatarPhoto } from "../../_lib/signature-processor";
 
 const readOnlyInput =
   "m-0 block w-full cursor-not-allowed rounded-[10px] border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)]/80 px-3.5 py-2.5 text-sm text-[var(--rd-muted)] opacity-85 select-all";
@@ -70,7 +65,6 @@ interface ProfileCache {
   name: string;
   phone: string;
   avatarUrl: string | null;
-  signatureUrl: string | null;
   updatedAt?: number;
 }
 
@@ -114,14 +108,7 @@ export default function ProfilePage() {
     undefined
   );
 
-  const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
-  const [signaturePayload, setSignaturePayload] = useState<
-    string | null | undefined
-  >(undefined);
-  const [processingSignature, setProcessingSignature] = useState(false);
-
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
-  const signatureInputRef = useRef<HTMLInputElement | null>(null);
   const isFormTouched = useRef(false);
 
   // Sync with local accounts store if available
@@ -140,7 +127,6 @@ export default function ProfilePage() {
       if (cached.name) setName(cached.name);
       if (cached.phone) setPhone(cached.phone);
       if (cached.avatarUrl) setAvatarUrl(cached.avatarUrl);
-      if (cached.signatureUrl) setSignatureUrl(cached.signatureUrl);
       setLoading(false);
     }
 
@@ -169,8 +155,6 @@ export default function ProfilePage() {
         let finalName = cached?.name || session.name || "";
         let finalPhone = cached?.phone || session.phone || "";
         let finalAvatarUrl = cached?.avatarUrl ?? session.image ?? null;
-        let finalSignatureUrl =
-          cached?.signatureUrl ?? session.signatureUrl ?? null;
         let nextUser: SessionUser = session;
         let nextDbProfile: ProfileData | null = null;
 
@@ -182,7 +166,6 @@ export default function ProfilePage() {
             phone: p.phone || undefined,
             unit: p.unit || undefined,
             image: p.image || undefined,
-            signatureUrl: p.signatureUrl || undefined,
           };
           nextDbProfile = p;
           setUser(nextUser);
@@ -192,11 +175,9 @@ export default function ProfilePage() {
             setName(p.name);
             setPhone(p.phone || "");
             setAvatarUrl(p.image || null);
-            setSignatureUrl(p.signatureUrl || null);
             finalName = p.name;
             finalPhone = p.phone || "";
             finalAvatarUrl = p.image || null;
-            finalSignatureUrl = p.signatureUrl || null;
           }
         } else {
           // Fallback to session
@@ -204,11 +185,9 @@ export default function ProfilePage() {
             setName(session.name);
             setPhone(session.phone || "");
             setAvatarUrl(session.image || null);
-            setSignatureUrl(session.signatureUrl || null);
             finalName = session.name;
             finalPhone = session.phone || "";
             finalAvatarUrl = session.image || null;
-            finalSignatureUrl = session.signatureUrl || null;
           }
         }
 
@@ -219,7 +198,6 @@ export default function ProfilePage() {
             name: finalName,
             phone: finalPhone,
             avatarUrl: finalAvatarUrl,
-            signatureUrl: finalSignatureUrl,
             reports: reportItems,
           });
         }
@@ -266,43 +244,6 @@ export default function ProfilePage() {
     setAvatarPayload(null);
   }
 
-  // Autonomous Wet Signature handler (Zero-config, transparent + auto-trim)
-  async function handleSelectSignature(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      toast.error("Format foto tidak didukung. Gunakan JPG atau PNG.");
-      return;
-    }
-
-    setProcessingSignature(true);
-    try {
-      toast.info("Memproses tanda tangan...");
-      const { dataUrl } = await processSignaturePhoto(file);
-      isFormTouched.current = true;
-      setSignatureUrl(dataUrl);
-      setSignaturePayload(dataUrl);
-      toast.success("Tanda tangan berhasil diproses", {
-        description: `Gambar berhasil diproses, pastikan hasil sudah sesuai.`,
-      });
-    } catch (err) {
-      toast.error(
-        message(err) ||
-          "Gagal mengekstrak tanda tangan. Pastikan foto tanda tangan di atas kertas putih dan pencahayaan jelas."
-      );
-    } finally {
-      setProcessingSignature(false);
-    }
-  }
-
-  function handleRemoveSignature() {
-    isFormTouched.current = true;
-    setSignatureUrl(null);
-    setSignaturePayload(null);
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!user) return;
@@ -325,7 +266,6 @@ export default function ProfilePage() {
         name: cleanedName,
         phone: cleanedPhone,
         avatarDataUrl: avatarPayload,
-        signatureDataUrl: signaturePayload,
       });
 
       if (!res.success || !res.user) {
@@ -336,9 +276,7 @@ export default function ProfilePage() {
       setName(res.user.name);
       setPhone(res.user.phone || "");
       setAvatarUrl(res.user.image || null);
-      setSignatureUrl(res.user.signatureUrl || null);
       setAvatarPayload(undefined);
-      setSignaturePayload(undefined);
       isFormTouched.current = false;
 
       const nextUser: SessionUser = user
@@ -348,7 +286,6 @@ export default function ProfilePage() {
             phone: res.user.phone || undefined,
             unit: res.user.unit || undefined,
             image: res.user.image || undefined,
-            signatureUrl: res.user.signatureUrl || undefined,
           }
         : {
             id: res.user.id,
@@ -358,7 +295,6 @@ export default function ProfilePage() {
             phone: res.user.phone || undefined,
             unit: res.user.unit,
             image: res.user.image || undefined,
-            signatureUrl: res.user.signatureUrl || undefined,
           };
 
       setUser(nextUser);
@@ -369,7 +305,6 @@ export default function ProfilePage() {
         name: res.user.name,
         phone: res.user.phone || "",
         avatarUrl: res.user.image || null,
-        signatureUrl: res.user.signatureUrl || null,
         reports,
       });
 
@@ -466,8 +401,7 @@ export default function ProfilePage() {
             Profil Saya,
           </h1>
           <p className="m-0 text-xs text-[var(--rd-muted)] sm:text-sm">
-            Perbarui foto profil, tanda tangan digital, nama tampilan, dan nomor
-            kontak Anda.
+            Perbarui foto profil, nama tampilan, dan nomor kontak Anda.
           </p>
         </div>
 
@@ -629,7 +563,7 @@ export default function ProfilePage() {
             </ul>
           </aside>
 
-          {/* RIGHT COLUMN: Edit Profile Card + Signature Section */}
+          {/* RIGHT COLUMN: Edit Profile Card */}
           <div className="min-w-0 space-y-5 xl:space-y-6">
             {/* Profile Form Card */}
             <section
@@ -709,118 +643,6 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 </div>
-
-                {/* SIGNATURE SECTION: ONLY FOR REPORTER AND TECHNICIAN (HIDDEN FOR OPERATOR) */}
-                {!isOperator && (
-                  <div className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)]/50 p-4 sm:p-5">
-                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <FileSignature
-                          size={18}
-                          className="text-[var(--rd-link)]"
-                          aria-hidden="true"
-                        />
-                        <span className="text-xs font-semibold text-[var(--rd-text)] sm:text-sm">
-                          Tanda Tangan Basah Digital
-                        </span>
-                      </div>
-                    </div>
-
-                    <p className="m-0 mb-3 text-xs leading-relaxed text-[var(--rd-muted)]">
-                      Cukup kirimkan foto tanda tangan Anda berlatar kertas putih dan pencahayaan yang cukup.
-                      Sistem akan otomatis melakukan proses penyesuaian gambar.
-                    </p>
-
-                    <input
-                      ref={signatureInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      onChange={handleSelectSignature}
-                      className="hidden"
-                    />
-
-                    {loading ? (
-                      <div className="flex min-h-36 w-full items-center justify-center rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4">
-                        <Skeleton className="h-28 w-full rounded-md" />
-                      </div>
-                    ) : processingSignature ? (
-                      <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--rd-link)] bg-[var(--rd-surface)] py-8 text-center">
-                        <Loader2
-                          size={24}
-                          className="animate-spin text-[var(--rd-link)]"
-                        />
-                        <span className="text-xs font-medium text-[var(--rd-text)]">
-                          Sedang mengekstrak tanda tangan & membuang latar belakang...
-                        </span>
-                      </div>
-                    ) : signatureUrl ? (
-                      <div className="space-y-3">
-                        {/* Signature Preview Canvas Box with subtle checkerboard pattern */}
-                        <div
-                          className="flex min-h-36 w-full items-center justify-center rounded-lg border border-solid border-[var(--rd-border)] p-4 shadow-inner"
-                          style={{
-                            backgroundColor: "#f8fafc",
-                            backgroundImage:
-                              "radial-gradient(#cbd5e1 0.75px, transparent 0.75px)",
-                            backgroundSize: "8px 8px",
-                          }}
-                        >
-                          <img
-                            src={signatureUrl}
-                            alt="Tanda Tangan Digital"
-                            className="max-h-32 sm:max-h-36 max-w-full object-contain filter drop-shadow-sm"
-                          />
-                        </div>
-
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex items-center gap-0.5">
-                            <Check className="text-[var(--rd-lime)]" size={14} aria-hidden="true"/>
-                            <span className="text-[11px] font-medium text-[var(--rd-lime)]">
-                              Tanda tangan sudah berhasil diproses, Simpan untuk menerapkan.
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              disabled={loading || saving}
-                              onClick={() => signatureInputRef.current?.click()}
-                              className={`${btnSecondary} !min-h-8 !px-3 !py-1 !text-xs`}
-                            >
-                              <Upload size={13} aria-hidden="true" />
-                              <span>Ganti Foto</span>
-                            </button>
-                            <button
-                              type="button"
-                              disabled={loading || saving}
-                              onClick={handleRemoveSignature}
-                              className={`${btnSecondary} !min-h-8 !px-3 !py-1 !text-xs text-[var(--rd-coral)]`}
-                            >
-                              <Trash2 size={13} aria-hidden="true" />
-                              <span>Hapus</span>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div
-                        onClick={() => signatureInputRef.current?.click()}
-                        className="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--rd-border)] bg-[var(--rd-surface)] px-4 py-6 text-center transition-colors hover:border-[var(--rd-link)] hover:bg-[var(--rd-link)]/5"
-                      >
-                        <div className="grid size-10 place-items-center rounded-full bg-[var(--rd-bg)] text-[var(--rd-link)] shadow-xs transition-transform group-hover:scale-105">
-                          <Upload size={18} aria-hidden="true" />
-                        </div>
-                        <div>
-                          <p className="m-0 text-xs font-semibold text-[var(--rd-text)]">
-                            Unggah Foto Tanda Tangan
-                          </p>
-                          <p className="m-0 mt-0.5 text-[11px] text-[var(--rd-muted)]">
-                            Ambil foto tanda tangan di kertas putih dengan pencahayaan yang baik.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
 
                 {/* Editable Fields in 2-Column Grid on Desktop */}
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">

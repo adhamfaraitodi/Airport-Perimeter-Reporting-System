@@ -53,7 +53,7 @@ export const en: typeof id = {
     viewAllTechnicianTasks: "View Maintenance Task Queue",
     viewAllMyReports: "Open My Reports List",
     profile: "User Profile",
-    profileDesc: "Manage personal data & signature",
+    profileDesc: "Manage personal data & avatar",
     logout: "Log Out",
     logoutDesc: "End application session",
     dataMaster: "Master Data",

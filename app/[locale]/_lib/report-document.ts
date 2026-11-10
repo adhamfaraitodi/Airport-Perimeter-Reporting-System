@@ -495,29 +495,6 @@ export async function downloadAllReportsPdf(
       doc.addImage(logoDataUrl, "PNG", margin, currentY - 2, 36, 11);
     }
 
-    // Right Header Text
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9.5);
-    doc.setTextColor(15, 23, 42); // #0f172a
-    doc.text("PT ANGKASA PURA INDONESIA", pageWidth - margin, currentY + 1, {
-      align: "right",
-    });
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(71, 85, 105); // #475569
-    doc.text(
-      "Bandar Udara Internasional Yogyakarta (YIA)",
-      pageWidth - margin,
-      currentY + 5.5,
-      { align: "right" }
-    );
-    doc.text(
-      "Airport Perimeter Reporting System (APRS)",
-      pageWidth - margin,
-      currentY + 9.5,
-      { align: "right" }
-    );
 
     // Separator line
     currentY += 14;
@@ -668,7 +645,7 @@ export async function downloadAllReportsPdf(
 
       const footerY = pageHeight - 7;
       doc.text(
-        "Dokumen rekapitulasi resmi diterbitkan otomatis oleh Airport Perimeter Reporting System (APRS) YIA.",
+        "Dokumen rekapitulasi resmi diterbitkan otomatis oleh Airport Perimeter Reporting System (APRS).",
         margin,
         footerY
       );
