@@ -190,7 +190,7 @@ export async function updateAccountAction(
   errorMessage?: string;
 }> {
   try {
-    await verifyOperatorSession();
+    const currentUser = await verifyOperatorSession();
 
     const parsed = updateAccountSchema.safeParse({ id, ...input });
     if (!parsed.success) {
@@ -199,6 +199,13 @@ export async function updateAccountAction(
     }
 
     const { nip, name, phone, unit, role, position, status } = parsed.data;
+
+    if (currentUser.id === id && (role !== "OPERATOR" || status === "INACTIVE")) {
+      return {
+        success: false,
+        errorMessage: "Anda tidak dapat menurunkan peran atau menonaktifkan akun Anda sendiri.",
+      };
+    }
 
     // Check duplicate NIP if changed
     const existingNip = await db

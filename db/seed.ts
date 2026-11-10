@@ -143,9 +143,6 @@ async function seed() {
   }
 
   // 2. Seed Default Users using Better-Auth signUpEmail
-  let reporterUserId: string | null = null;
-  let operatorUserId: string | null = null;
-
   for (const item of DEFAULT_USERS) {
     const existing = await db
       .select({ id: schema.user.id })
@@ -161,11 +158,9 @@ async function seed() {
           password: item.password,
           name: item.name,
           nip: item.nip,
-          role: item.role,
           position: item.position || "Officer",
           unit: item.unit,
           phone: item.phone,
-          status: "ACTIVE",
         },
       });
 
@@ -173,6 +168,8 @@ async function seed() {
         await db
           .update(schema.user)
           .set({
+            role: item.role,
+            status: "ACTIVE",
             username: item.nip,
             displayUsername: item.name,
             position: item.position || "Officer",
@@ -182,13 +179,9 @@ async function seed() {
         console.log(
           `  + User: ${item.name} [${item.role}] (NIP: ${item.nip}, UUID: ${res.user.id})`
         );
-        if (item.role === "REPORTER") reporterUserId = res.user.id;
-        if (item.role === "OPERATOR") operatorUserId = res.user.id;
       }
     } else {
       console.log(`  = User NIP ${item.nip} sudah ada (lewati).`);
-      if (item.role === "REPORTER") reporterUserId = existing[0].id;
-      if (item.role === "OPERATOR") operatorUserId = existing[0].id;
     }
   }
 

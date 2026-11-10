@@ -65,7 +65,7 @@ export const auth = betterAuth({
         type: "string",
         required: true,
         defaultValue: "REPORTER",
-        input: true,
+        input: false,
       },
       position: {
         type: "string",
@@ -88,7 +88,7 @@ export const auth = betterAuth({
         type: "string",
         required: false,
         defaultValue: "ACTIVE",
-        input: true,
+        input: false,
       },
       signatureUrl: {
         type: "string",
