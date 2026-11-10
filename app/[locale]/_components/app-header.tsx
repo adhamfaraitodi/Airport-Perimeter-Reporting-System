@@ -13,6 +13,7 @@ import {
   ClipboardCheck,
   ClipboardClock,
   ClipboardPen,
+  ClipboardX,
   Database,
   Fence,
   Languages,
@@ -42,7 +43,7 @@ export interface NotificationItem {
   title: string;
   description: string;
   time: string;
-  status: "OPEN" | "IN_PROGRESS" | "RESOLVED";
+  status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
   read: boolean;
 }
 
@@ -534,14 +535,9 @@ export function AppHeader({
                       ? ClipboardCheck
                       : item.status === "IN_PROGRESS"
                         ? ClipboardPen
-                        : ClipboardClock;
-
-                  const iconBadgeClass =
-                    item.status === "RESOLVED"
-                      ? "bg-[var(--rd-lime)]/15 text-[var(--rd-lime)]"
-                      : item.status === "IN_PROGRESS"
-                        ? "bg-[var(--rd-brown)]/15 text-[var(--rd-brown)]"
-                        : "bg-[var(--rd-coral)]/15 text-[var(--rd-coral)]";
+                        : item.status === "CLOSED"
+                          ? ClipboardX
+                          : ClipboardClock;
 
                   return (
                     <button
@@ -553,7 +549,8 @@ export function AppHeader({
                       }`}
                     >
                       <span
-                        className={`mt-0.5 grid size-8 shrink-0 place-items-center rounded-xl ${iconBadgeClass}`}
+                        data-status={item.status}
+                        className="rd-status mt-0.5 grid size-8 shrink-0 place-items-center rounded-xl bg-[var(--rd-tint)] text-[var(--rd-status)]"
                         aria-hidden="true"
                       >
                         <StatusIcon size={16} strokeWidth={2} />

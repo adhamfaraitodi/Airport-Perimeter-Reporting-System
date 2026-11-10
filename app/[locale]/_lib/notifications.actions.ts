@@ -16,7 +16,7 @@ export interface NotificationDto {
   title: string;
   description: string;
   time: string;
-  status: "OPEN" | "IN_PROGRESS" | "RESOLVED";
+  status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
   read: boolean;
   createdAt: string;
 }
@@ -89,10 +89,12 @@ async function resolveCurrentActor(): Promise<{
 
 /**
  * Fetch notifications targeted to the current user with full i18n support:
- * - Broadcasts to user's role (e.g. OPERATOR or TECHNICIAN)
- * - Broadcasts to ALL
+ * - Broadcasts for user's role (e.g. OPERATOR or TECHNICIAN)
+ * - Broadcasts to "ALL"
  * - Specific personal notifications sent to user's ID (e.g. REPORTER of their own report)
- * - Automatically renders localized title & description based on active [locale]
+ *
+ * Joins against `notification_read` table per-user so multi-user accounts
+ * maintain independent unread status flags cleanly.
  */
 export async function getNotificationsAction(
   locale: string = "id"
@@ -100,7 +102,12 @@ export async function getNotificationsAction(
   try {
     const actor = await resolveCurrentActor();
     if (!actor) {
-      return { success: false, items: [], unreadCount: 0, errorMessage: "Unauthorized" };
+      return {
+        success: false,
+        items: [],
+        unreadCount: 0,
+        errorMessage: "Sesi tidak valid.",
+      };
     }
 
     const rows = await db
@@ -138,12 +145,18 @@ export async function getNotificationsAction(
 
     const items: NotificationDto[] = rows.map((r) => {
       const rawStatus = (r.status as string) || "OPEN";
-      const validStatus: "OPEN" | "IN_PROGRESS" | "RESOLVED" =
-        rawStatus === "RESOLVED"
-          ? "RESOLVED"
-          : rawStatus === "IN_PROGRESS"
-            ? "IN_PROGRESS"
-            : "OPEN";
+      const isClosed =
+        rawStatus === "CLOSED" ||
+        r.category === "REPORT_CLOSED" ||
+        r.templateKey?.startsWith("REPORT_CLOSED");
+      const validStatus: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" =
+        isClosed
+          ? "CLOSED"
+          : rawStatus === "RESOLVED"
+            ? "RESOLVED"
+            : rawStatus === "IN_PROGRESS"
+              ? "IN_PROGRESS"
+              : "OPEN";
 
       // Render i18n title & description from structured template key + params
       const rendered = renderNotificationText(
