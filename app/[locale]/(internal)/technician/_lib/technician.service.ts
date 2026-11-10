@@ -1,8 +1,7 @@
 import crypto from "crypto";
-import fs from "fs";
-import path from "path";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
+import { processAndSaveEvidencePhoto } from "@/lib/evidence-image";
 import type { FindingItem, LifecycleStatus, ReportRecord } from "../../../_lib/client-api";
 import { dispatchReportNotificationAction } from "../../../_lib/notifications.actions";
 import {
@@ -38,36 +37,18 @@ export function canTechnicianTransitionStatus(
 
 /**
  * Helper to write uploaded base64 photos to the server filesystem under /public/uploads/reports/
- * Always generates a server-controlled UUID filename to prevent path traversal.
+ * Converts image to optimized WebP format with auto-orientation and UUID filename.
  */
-export function saveTechnicianPhotoFile(
-  mimeType: string,
+export async function saveTechnicianPhotoFile(
+  _mimeType: string,
   base64Data: string
-): { photoId: string; filePath: string; sizeBytes: number } {
-  const photoId = crypto.randomUUID();
-  const cleaned = base64Data.replace(/^data:image\/\w+;base64,/, "");
-  const buffer = Buffer.from(cleaned, "base64");
-  const ext =
-    mimeType === "image/png"
-      ? "png"
-      : mimeType === "image/webp"
-        ? "webp"
-        : "jpg";
-
-  const fileName = `${photoId}.${ext}`;
-  const dir = path.join(process.cwd(), "public", "uploads", "reports");
-
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-
-  const fullPath = path.join(dir, fileName);
-  fs.writeFileSync(fullPath, buffer);
-
+): Promise<{ photoId: string; filePath: string; mimeType: string; sizeBytes: number }> {
+  const result = await processAndSaveEvidencePhoto(base64Data);
   return {
-    photoId,
-    filePath: `/uploads/reports/${fileName}`,
-    sizeBytes: buffer.length,
+    photoId: result.photoId,
+    filePath: result.filePath,
+    mimeType: result.mimeType,
+    sizeBytes: result.sizeBytes,
   };
 }
 
@@ -109,16 +90,18 @@ export async function executeTechnicianStatusUpdate(
     );
   }
 
-  // Save all uploaded photos to server disk using server-generated UUIDs
-  const savedPhotos = input.photos.map((photo) => {
-    const saved = saveTechnicianPhotoFile(photo.mimeType, photo.base64);
-    return {
-      id: saved.photoId,
-      filePath: saved.filePath,
-      mimeType: photo.mimeType,
-      sizeBytes: saved.sizeBytes,
-    };
-  });
+  // Save all uploaded photos to server disk as optimized WebP using server-generated UUIDs
+  const savedPhotos = await Promise.all(
+    input.photos.map(async (photo) => {
+      const saved = await processAndSaveEvidencePhoto(photo.base64);
+      return {
+        id: saved.photoId,
+        filePath: saved.filePath,
+        mimeType: saved.mimeType,
+        sizeBytes: saved.sizeBytes,
+      };
+    })
+  );
 
   const historyId = crypto.randomUUID();
   const now = new Date();

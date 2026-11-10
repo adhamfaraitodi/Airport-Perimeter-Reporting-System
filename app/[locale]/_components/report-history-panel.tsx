@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import {
+  Calendar,
   CalendarArrowDown,
   CalendarArrowUp,
   ChevronLeft,
@@ -10,14 +11,18 @@ import {
   ClipboardClock,
   ClipboardPen,
   ClipboardX,
+  Download,
   Images,
+  Loader2,
   MapPin,
   Search,
   UserRound,
+  X,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/lib/i18n";
 import type { ReportRecord } from "../_lib/client-api";
+import { downloadAllReportsPdf } from "../_lib/report-document";
 
 export const DEFAULT_PAGE_SIZE = 5;
 
@@ -38,62 +43,56 @@ const statusIconMap: Record<string, typeof ClipboardClock> = {
   CLOSED: ClipboardX,
 };
 
-export function formatReportDate(
-  value?: string | null,
-  locale: string = "id",
-  fallbackText: string = "Tanggal tidak tersedia"
-) {
-  if (!value) return fallbackText;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return fallbackText;
-  const df = new Intl.DateTimeFormat(locale === "en" ? "en-US" : "id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Asia/Jakarta",
-  });
-  return `${df.format(date)} WIB`;
-}
+const statusClassMap: Record<string, string> = {
+  OPEN: "border-[var(--rd-danger)]/20 bg-[var(--rd-danger)]/10 text-[var(--rd-danger)]",
+  IN_PROGRESS: "border-[var(--rd-amber)]/20 bg-[var(--rd-amber)]/10 text-[var(--rd-amber)]",
+  RESOLVED: "border-[var(--rd-primary)]/20 bg-[var(--rd-primary)]/10 text-[var(--rd-primary)]",
+  CLOSED: "border-slate-500/20 bg-slate-500/10 text-slate-400",
+};
 
-export interface ReportCardItemProps {
+interface ReportCardProps {
   report: ReportRecord;
-  selected?: boolean;
+  isSelected?: boolean;
   onSelect: (report: ReportRecord) => void;
+  statusLabels: Record<string, string>;
+  formatDate: (dateStr: string) => string;
 }
 
-export function ReportCardItem({
+export function ReportHistoryCard({
   report,
-  selected = false,
+  isSelected = false,
   onSelect,
-}: ReportCardItemProps) {
-  const { t, locale } = useTranslation();
+  statusLabels,
+  formatDate,
+}: ReportCardProps) {
+  const { t } = useTranslation();
   const effectiveStatus = report.deletedAt ? "CLOSED" : report.status;
   const StatusIcon = statusIconMap[effectiveStatus] || ClipboardClock;
+  const statusClass =
+    statusClassMap[effectiveStatus] ||
+    "border-[var(--rd-border)] bg-[var(--rd-bg)] text-[var(--rd-text)]";
 
-  const statusLabels: Record<string, string> = {
-    OPEN: t.historyPanel.statusMeta.OPEN,
-    IN_PROGRESS: t.historyPanel.statusMeta.IN_PROGRESS,
-    RESOLVED: t.historyPanel.statusMeta.RESOLVED,
-    CLOSED: t.historyPanel.statusMeta.CLOSED,
-  };
   const statusLabel =
-    statusLabels[effectiveStatus] || t.historyPanel.statusMeta.OPEN;
+    report.deletedAt
+      ? t.historyPanel.statusMeta.CLOSED
+      : statusLabels[effectiveStatus] || t.historyPanel.statusMeta.OPEN;
 
-  const findings = Array.isArray(report.findings) ? report.findings : [];
-  const chips = findings
-    .flatMap((f) => [
-      f.partName,
-      ...(Array.isArray(f.damages)
-        ? f.damages.map((d) => (typeof d === "string" ? d : d.name))
-        : []),
-    ])
-    .filter(
-      (value): value is string => typeof value === "string" && !!value.trim()
-    );
+  const displayId = String(report.id).replace(/-/g, "").slice(0, 8).toUpperCase();
 
-  const displayId = `#${String(report.id).slice(-6).toUpperCase()}`;
+  const formattedDate = report.createdAt
+    ? formatDate(report.createdAt)
+    : t.historyPanel.dateUnavailable;
+
+  const findingsText = useMemo(() => {
+    if (!report.findings || report.findings.length === 0) return null;
+    const parts = report.findings.map((f) => {
+      const damages = Array.isArray(f.damages)
+        ? f.damages.map((d) => (typeof d === "string" ? d : d.name)).join(", ")
+        : "";
+      return damages ? `${f.partName} (${damages})` : f.partName;
+    });
+    return parts.join("; ");
+  }, [report.findings]);
 
   return (
     <div
@@ -106,92 +105,67 @@ export function ReportCardItem({
           onSelect(report);
         }
       }}
-      className={`group flex w-full cursor-pointer items-start gap-3 rounded-2xl border border-solid p-3.5 text-left transition-colors sm:p-4 ${
-        selected
-          ? "border-[var(--rd-primary)] bg-[var(--rd-surface)] shadow-xs ring-2 ring-[var(--rd-active)]"
-          : "border-[var(--rd-border)] bg-[var(--rd-surface)] hover:bg-[var(--rd-hover)] hover:border-[var(--rd-link)]/40"
-      }`}
       aria-label={`${t.historyPanel.openReportAria} ${displayId}, ${t.historyPanel.statusAria} ${statusLabel}`}
+      className={`group relative flex cursor-pointer flex-col rounded-xl border border-solid p-3.5 transition-all outline-none focus-visible:ring-2 focus-visible:ring-[var(--rd-primary)] sm:p-4 ${
+        isSelected
+          ? "border-[var(--rd-primary)] bg-[var(--rd-active)] shadow-sm"
+          : "border-[var(--rd-border)] bg-[var(--rd-surface)] hover:border-[var(--rd-primary)]/40 hover:bg-[var(--rd-hover)] hover:shadow-xs"
+      }`}
     >
-      {/* Left Icon Box using rd-status and CSS variables */}
-      <div
-        data-status={effectiveStatus}
-        className="rd-status flex size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--rd-tint)] text-[var(--rd-status)] sm:size-12"
-        aria-hidden="true"
-      >
-        <StatusIcon size={22} strokeWidth={1.9} />
+      {/* Header: Status Pill & Time/ID */}
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full border border-solid px-2.5 py-0.5 text-xs font-medium ${statusClass}`}
+        >
+          <StatusIcon size={13} aria-hidden="true" />
+          <span>{statusLabel}</span>
+        </span>
+
+        <div className="flex items-center gap-1.5 text-xs text-[var(--rd-muted)]">
+          <time dateTime={report.createdAt} className="hidden sm:inline">
+            {formattedDate}
+          </time>
+          <span className="hidden sm:inline">·</span>
+          <span className="font-mono text-[11px] text-[var(--rd-link)]">
+            #{displayId}
+          </span>
+        </div>
       </div>
 
-      {/* Main Body */}
-      <div className="min-w-0 flex-1">
-        {/* Top Header Row */}
-        <div className="mb-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs">
-          <span className="text-[var(--rd-muted)]">
-            {displayId}
-          </span>
-          <span
-            data-status={effectiveStatus}
-            className="rd-status inline-flex items-center gap-1.5 rounded-full bg-[var(--rd-tint)] px-2.5 py-0.5 text-xs text-[var(--rd-status)]"
-          >
-            <span
-              className="size-1.5 shrink-0 rounded-full bg-current"
-              aria-hidden="true"
-            />
-            {statusLabel}
-          </span>
-          <time
-            dateTime={report.createdAt}
-            className="text-[11px] text-[var(--rd-muted)] sm:ml-auto"
-          >
-            {formatReportDate(
-              report.createdAt,
-              locale,
-              t.historyPanel.dateUnavailable
-            )}
-          </time>
-        </div>
+      {/* Date on mobile */}
+      <div className="mb-1.5 text-[11px] text-[var(--rd-muted)] sm:hidden">
+        {formattedDate}
+      </div>
 
-        {/* Chips / Findings Badges */}
-        {chips.length > 0 ? (
-          <div className="mb-1.5 flex flex-wrap gap-1.5">
-            {chips.map((chip, idx) => (
-              <span
-                key={`${chip}-${idx}`}
-                className="rounded-full bg-[var(--rd-active)] px-2.5 py-0.5 text-xs text-[var(--rd-link)]"
-              >
-                {chip}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <div className="mb-1 text-xs text-[var(--rd-muted)]">
-            {report.side
-              ? `${t.historyPanel.perimeterSide} ${report.side}`
-              : t.historyPanel.findingsFallback}
+      {/* Findings title or perimeter side summary */}
+      <h3 className="mb-1 text-sm font-semibold text-[var(--rd-text)] group-hover:text-[var(--rd-primary)]">
+        {findingsText ||
+          (report.side
+            ? `${t.historyPanel.perimeterSide} ${report.side}`
+            : t.historyPanel.findingsFallback)}
+      </h3>
+
+      {/* Narrative snippet */}
+      <p className="line-clamp-2 text-xs leading-relaxed text-[var(--rd-muted)]">
+        {report.narrative || t.historyPanel.noNarrative}
+      </p>
+
+      {/* Footer Info: Images count, Location Grid/Side, Reporter */}
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-solid border-[var(--rd-border)]/60 pt-2.5 text-[11px] text-[var(--rd-muted)]">
+        {/* Images indicator */}
+        {(report.images?.length || 0) > 0 && (
+          <div className="flex items-center gap-1 text-[var(--rd-link)]">
+            <Images size={13} aria-hidden="true" />
+            <span>
+              {report.images?.length || 0} {t.historyPanel.imagesCount}
+            </span>
           </div>
         )}
 
-        {/* Narrative */}
-        <p className="mt-1 line-clamp-1 text-xs leading-relaxed text-[var(--rd-text)] sm:text-sm">
-          {report.narrative || t.historyPanel.noNarrative}
-        </p>
-
-        {/* Meta Info Footer */}
-        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-[var(--rd-muted)]">
-          <span className="inline-flex items-center gap-1.5">
-            <Images
-              size={15}
-              className="text-[var(--rd-link)]"
-              aria-hidden="true"
-            />
-            {report.images?.length || 0} {t.historyPanel.imagesCount}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <MapPin
-              size={15}
-              className="text-[var(--rd-link)]"
-              aria-hidden="true"
-            />
+        {/* Location Grid & Side */}
+        <div className="flex items-center gap-1">
+          <MapPin size={13} className="text-[var(--rd-link)]" aria-hidden="true" />
+          <span>
             {report.segmentCode && report.side
               ? `${t.historyPanel.grid} ${report.segmentCode} · ${t.historyPanel.side} ${report.side}`
               : report.segmentCode
@@ -200,12 +174,12 @@ export function ReportCardItem({
                 ? `${t.historyPanel.side} ${report.side}`
                 : t.historyPanel.unmappedSegment}
           </span>
-          <span className="inline-flex items-center gap-1.5">
-            <UserRound
-              size={15}
-              className="text-[var(--rd-link)]"
-              aria-hidden="true"
-            />
+        </div>
+
+        {/* Reporter */}
+        <div className="ml-auto flex items-center gap-1 text-[var(--rd-muted)]">
+          <UserRound size={12} aria-hidden="true" />
+          <span className="max-w-[120px] truncate sm:max-w-[180px]">
             {report.reporterName || t.historyPanel.reporterDefault}
           </span>
         </div>
@@ -231,6 +205,8 @@ export interface ReportHistoryPanelProps {
   pageSize?: number;
   filters?: readonly (readonly [string, string])[];
   headerAction?: ReactNode;
+  showDownloadAll?: boolean;
+  onDownloadAll?: (reports: ReportRecord[]) => void | Promise<void>;
   emptyMessage?: string;
   className?: string;
 }
@@ -250,10 +226,24 @@ export function ReportHistoryPanel({
   pageSize = DEFAULT_PAGE_SIZE,
   filters,
   headerAction,
+  showDownloadAll = true,
+  onDownloadAll,
   emptyMessage,
   className = "",
 }: ReportHistoryPanelProps) {
   const { t } = useTranslation();
+  const [showDateModal, setShowDateModal] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  // Default dates: 3 months ago to today
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 3);
+    return d.toISOString().slice(0, 10);
+  });
+  const [endDate, setEndDate] = useState(() => {
+    return new Date().toISOString().slice(0, 10);
+  });
 
   const defaultFilters = useMemo<readonly (readonly [string, string])[]>(
     () => [
@@ -297,7 +287,34 @@ export function ReportHistoryPanel({
     else setInternalNewest((prev) => !prev);
   };
 
-  // Filter & Search Logic
+  // Filter reports matching the date range (ALL statuses included)
+  const matchingReports = useMemo(() => {
+    const start = startDate ? new Date(`${startDate}T00:00:00`) : null;
+    const end = endDate ? new Date(`${endDate}T23:59:59.999`) : null;
+    return reports.filter((r) => {
+      const d = new Date(r.createdAt);
+      if (start && d < start) return false;
+      if (end && d > end) return false;
+      return true;
+    });
+  }, [reports, startDate, endDate]);
+
+  const handleConfirmDownload = async () => {
+    if (downloadingPdf || matchingReports.length === 0) return;
+    setDownloadingPdf(true);
+    try {
+      if (onDownloadAll) {
+        await onDownloadAll(matchingReports);
+      } else {
+        await downloadAllReportsPdf(matchingReports, { startDate, endDate });
+      }
+      setShowDateModal(false);
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
+  // Filter & Search Logic for in-panel list
   const filteredReports = useMemo(() => {
     const q = search.trim().toLowerCase();
 
@@ -370,12 +387,25 @@ export function ReportHistoryPanel({
 
   return (
     <div className={`flex flex-col ${className}`}>
-      {/* Header title */}
-      <div className="flex items-center justify-between pb-3">
+      {/* Header title & Download Button */}
+      <div className="flex items-center justify-between gap-3 pb-3">
         <h2 className="m-0 text-base font-normal text-[var(--rd-text)] sm:text-lg">
           {panelTitle}
         </h2>
-        {headerAction}
+        {headerAction ? (
+          headerAction
+        ) : showDownloadAll ? (
+          <button
+            type="button"
+            disabled={reports.length === 0}
+            onClick={() => setShowDateModal(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--rd-primary)] px-3.5 py-2 text-xs font-medium text-white shadow-xs transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            title={reports.length === 0 ? "Tidak ada laporan untuk diunduh" : "Unduh laporan (PDF Landscape)"}
+          >
+            <Download size={14} aria-hidden="true" />
+            <span>{t.reports?.downloadPdf ?? "Unduh Laporan"}</span>
+          </button>
+        ) : null}
       </div>
 
       {/* Search Input */}
@@ -448,53 +478,64 @@ export function ReportHistoryPanel({
           Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="flex w-full items-start gap-3 rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4"
+              className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-4 shadow-xs"
             >
-              <Skeleton className="size-11 rounded-xl sm:size-12" />
-              <div className="min-w-0 flex-1 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-4 w-16 rounded" />
-                    <Skeleton className="h-5 w-24 rounded-full" />
-                  </div>
-                  <Skeleton className="h-3 w-24 rounded" />
-                </div>
-                <div className="flex gap-1.5">
-                  <Skeleton className="h-5 w-16 rounded-full" />
-                  <Skeleton className="h-5 w-20 rounded-full" />
-                </div>
-                <Skeleton className="h-4 w-3/4 rounded" />
-                <div className="flex gap-4 pt-1">
-                  <Skeleton className="h-3 w-16 rounded" />
-                  <Skeleton className="h-3 w-20 rounded" />
-                  <Skeleton className="h-3 w-20 rounded" />
-                </div>
+              <div className="mb-3 flex items-center justify-between">
+                <Skeleton className="h-5 w-20 rounded-full" />
+                <Skeleton className="h-4 w-28 rounded" />
+              </div>
+              <Skeleton className="mb-2 h-4 w-3/4 rounded" />
+              <Skeleton className="mb-3 h-3 w-full rounded" />
+              <div className="flex items-center gap-4 pt-2">
+                <Skeleton className="h-3 w-16 rounded" />
+                <Skeleton className="h-3 w-24 rounded" />
+                <Skeleton className="ml-auto h-3 w-20 rounded" />
               </div>
             </div>
           ))
-        ) : currentReports.length > 0 ? (
-          currentReports.map((report) => (
-            <ReportCardItem
-              key={report.id}
-              report={report}
-              selected={report.id === selectedId}
-              onSelect={onSelect}
-            />
-          ))
-        ) : (
-          <div className="rounded-2xl border border-dashed border-[var(--rd-border)] p-8 text-center text-xs text-[var(--rd-muted)] sm:text-sm">
+        ) : currentReports.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-[var(--rd-border)] bg-[var(--rd-surface)]/50 p-8 text-center text-xs text-[var(--rd-muted)] sm:text-sm">
             {panelEmptyMessage}
           </div>
+        ) : (
+          currentReports.map((report) => (
+            <ReportHistoryCard
+              key={report.id}
+              report={report}
+              isSelected={report.id === selectedId}
+              onSelect={onSelect}
+              statusLabels={{
+                OPEN: t.historyPanel.statusMeta.OPEN,
+                IN_PROGRESS: t.historyPanel.statusMeta.IN_PROGRESS,
+                RESOLVED: t.historyPanel.statusMeta.RESOLVED,
+                CLOSED: t.historyPanel.statusMeta.CLOSED,
+              }}
+              formatDate={(iso) => {
+                try {
+                  return new Date(iso).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  });
+                } catch {
+                  return iso;
+                }
+              }}
+            />
+          ))
         )}
       </div>
 
-      {/* Bottom Pagination */}
-      {!loading && totalItems > 0 && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 pt-2 text-xs text-[var(--rd-muted)] sm:text-sm">
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-solid border-[var(--rd-border)] pt-3 text-xs text-[var(--rd-muted)]">
+          {/* Range Info */}
           <span>
             {t.historyPanel.showingRange} {startIndex + 1}–{endIndex}{" "}
             {t.historyPanel.of} {totalItems}
           </span>
+
+          {/* Numeric Page Buttons */}
           <div className="flex items-center gap-1">
             {/* Prev Button */}
             <button
@@ -507,26 +548,26 @@ export function ReportHistoryPanel({
               <ChevronLeft size={16} />
             </button>
 
-            {/* Page items */}
-            {paginationRange.map((item, idx) => {
-              if (item === "...") {
+            {/* Page numbers */}
+            {paginationRange.map((pageNum, idx) => {
+              if (pageNum === "...") {
                 return (
                   <span
                     key={`ellipsis-${idx}`}
-                    className="flex size-7 items-center justify-center text-xs text-[var(--rd-muted)] select-none"
+                    className="inline-flex size-7 items-center justify-center text-[var(--rd-muted)]"
                   >
-                    . .
+                    …
                   </span>
                 );
               }
-              const pageNum = Number(item);
+
               const isCurrent = pageNum === safePage;
               return (
                 <button
                   key={pageNum}
                   type="button"
-                  onClick={() => setCurrentPage(pageNum)}
-                  className={`flex size-7 items-center justify-center rounded-full text-xs transition-colors ${
+                  onClick={() => setCurrentPage(Number(pageNum))}
+                  className={`inline-flex size-7 items-center justify-center rounded-md text-xs transition-colors ${
                     isCurrent
                       ? "bg-[var(--rd-active)] text-[var(--rd-link)] font-medium"
                       : "text-[var(--rd-muted)] hover:bg-[var(--rd-hover)] hover:text-[var(--rd-text)]"
@@ -548,6 +589,126 @@ export function ReportHistoryPanel({
             >
               <ChevronRight size={16} />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Date Range Selection Popup Modal */}
+      {showDateModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="download-dialog-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => {
+            if (!downloadingPdf) setShowDateModal(false);
+          }}
+        >
+          <div
+            className="relative w-full max-w-md rounded-2xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] p-5 shadow-xl sm:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-9 items-center justify-center rounded-xl bg-[var(--rd-primary)]/10 text-[var(--rd-primary)]">
+                  <Calendar size={18} aria-hidden="true" />
+                </div>
+                <div>
+                  <h3 id="download-dialog-title" className="text-sm font-semibold text-[var(--rd-text)] sm:text-base">
+                    Unduh Rekap Laporan
+                  </h3>
+                  <span className="text-[11px] text-[var(--rd-muted)]">
+                    Format Dokumen Landscape (PDF A4)
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={downloadingPdf}
+                onClick={() => setShowDateModal(false)}
+                className="inline-flex size-7 items-center justify-center rounded-lg text-[var(--rd-muted)] transition-colors hover:bg-[var(--rd-hover)] hover:text-[var(--rd-text)]"
+                aria-label="Tutup"
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
+            </div>
+
+            <p className="mb-4 text-xs leading-relaxed text-[var(--rd-muted)]">
+              Pilih rentang tanggal laporan yang akan disertakan. Seluruh laporan dengan berbagai status (Baru, Ditangani, Selesai, Ditutup) dalam rentang ini akan diekspor.
+            </p>
+
+            {/* Date inputs */}
+            <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--rd-text)]">
+                  Tanggal Mulai
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  disabled={downloadingPdf}
+                  className="w-full rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-3 py-2 text-xs text-[var(--rd-text)] outline-none transition-colors focus:border-[var(--rd-primary)] focus:ring-1 focus:ring-[var(--rd-primary)]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--rd-text)]">
+                  Tanggal Selesai
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  disabled={downloadingPdf}
+                  className="w-full rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-3 py-2 text-xs text-[var(--rd-text)] outline-none transition-colors focus:border-[var(--rd-primary)] focus:ring-1 focus:ring-[var(--rd-primary)]"
+                />
+              </div>
+            </div>
+
+            {/* Summary info box */}
+            <div className="mb-5 rounded-xl border border-solid border-[var(--rd-border)]/70 bg-[var(--rd-bg)]/60 p-3 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--rd-muted)]">Data siap diunduh:</span>
+                <strong className={matchingReports.length > 0 ? "text-[var(--rd-primary)]" : "text-[var(--rd-coral)]"}>
+                  {matchingReports.length} laporan
+                </strong>
+              </div>
+              <span className="mt-1 block text-[11px] text-[var(--rd-muted)]">
+                {matchingReports.length === 0
+                  ? "Tidak ada laporan pada rentang tanggal ini."
+                  : "Mencakup semua status: Baru, Ditangani, Selesai, dan Ditutup."}
+              </span>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                disabled={downloadingPdf}
+                onClick={() => setShowDateModal(false)}
+                className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-4 py-2 text-xs font-medium text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-hover)] disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={
+                  downloadingPdf ||
+                  matchingReports.length === 0 ||
+                  (!!startDate && !!endDate && startDate > endDate)
+                }
+                onClick={handleConfirmDownload}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--rd-primary)] px-4 py-2 text-xs font-semibold text-white shadow-xs transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {downloadingPdf ? (
+                  <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <Download size={14} aria-hidden="true" />
+                )}
+                <span>{downloadingPdf ? "Menyiapkan PDF…" : "Unduh PDF Landscape"}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

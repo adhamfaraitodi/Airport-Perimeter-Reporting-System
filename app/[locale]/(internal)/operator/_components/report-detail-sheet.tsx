@@ -1,17 +1,15 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { ArrowLeft, Check, Download, Loader2, MapPin } from "lucide-react";
+import type { ReactNode } from "react";
+import { ArrowLeft, Check, MapPin } from "lucide-react";
 import Gallery from "../../../_components/photo-gallery";
 import MapView from "../../../_components/perimeter-map-view";
 import type { ReportRecord } from "../../../_lib/client-api";
 import { dateText, labels } from "../../../_lib/draft-store";
-import { downloadReportDocument } from "../../../_lib/report-document";
 import {
   btnBase,
   btnDangerGhost,
   btnPrimary,
-  btnSecondary,
   btnText,
   mutedText,
   statusPill,
@@ -52,18 +50,6 @@ export function ReportDetailSheet({
   onAction,
   onBack,
 }: ReportDetailSheetProps) {
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
-
-  async function handleDownloadPdf() {
-    if (downloadingPdf) return;
-    setDownloadingPdf(true);
-    try {
-      await downloadReportDocument(report);
-    } finally {
-      setDownloadingPdf(false);
-    }
-  }
-
   const findingLabel = report.findings?.length
     ? report.findings.map((f) => f.partName).join(", ")
     : `Perimeter sisi ${report.side || "belum ditentukan"}`;
@@ -146,9 +132,9 @@ export function ReportDetailSheet({
           </p>
         </>
       )}
-      {operator && !report.deletedAt && (
+      {operator && !report.deletedAt && (canUpdateStatus || canDelete) && onAction && (
         <div className="my-5 flex flex-wrap gap-2">
-          {canUpdateStatus && onAction && (
+          {canUpdateStatus && (
             <button
               type="button"
               disabled={statusActionDisabled}
@@ -166,20 +152,7 @@ export function ReportDetailSheet({
               {statusActionLabel}
             </button>
           )}
-          <button
-            type="button"
-            disabled={downloadingPdf}
-            className={`${canUpdateStatus && !statusActionDisabled ? btnSecondary : btnPrimary} flex-1 text-xs disabled:cursor-not-allowed disabled:opacity-60`}
-            onClick={handleDownloadPdf}
-          >
-            {downloadingPdf ? (
-              <Loader2 size={14} className="mr-1.5 animate-spin" aria-hidden="true" />
-            ) : (
-              <Download size={14} className="mr-1.5" aria-hidden="true" />
-            )}
-            {downloadingPdf ? "Menyiapkan PDF…" : "Unduh Laporan"}
-          </button>
-          {canDelete && onAction && (
+          {canDelete && (
             <button
               type="button"
               className={`${btnDangerGhost} flex-1 text-xs`}
@@ -188,23 +161,6 @@ export function ReportDetailSheet({
               Tutup laporan
             </button>
           )}
-        </div>
-      )}
-      {operator && report.deletedAt && (
-        <div className="my-5 flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={downloadingPdf}
-            className={`${btnPrimary} flex-1 text-xs disabled:cursor-not-allowed disabled:opacity-60`}
-            onClick={handleDownloadPdf}
-          >
-            {downloadingPdf ? (
-              <Loader2 size={14} className="mr-1.5 animate-spin" aria-hidden="true" />
-            ) : (
-              <Download size={14} className="mr-1.5" aria-hidden="true" />
-            )}
-            {downloadingPdf ? "Menyiapkan PDF…" : "Unduh Arsip Laporan"}
-          </button>
         </div>
       )}
       <section className="mt-7 border-t border-solid border-[var(--rd-border)] pt-[22px]">

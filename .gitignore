@@ -42,3 +42,10 @@ next-env.d.ts
 
 #skill agents
 .agents*
+
+# User uploaded files
+/storage/signatures/*
+/public/uploads/*
+!/public/uploads/.gitkeep
+!/public/uploads/avatars/.gitkeep
+!/public/uploads/reports/.gitkeep

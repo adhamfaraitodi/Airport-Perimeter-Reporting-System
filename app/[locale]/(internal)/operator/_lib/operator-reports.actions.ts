@@ -1,12 +1,11 @@
 "use server";
 
 import crypto from "crypto";
-import fs from "fs";
-import path from "path";
 import { headers } from "next/headers";
-import { eq, desc, sql } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { auth, type UserRole } from "@/lib/auth";
+import { processAndSaveEvidencePhoto } from "@/lib/evidence-image";
 import type {
   ReportRecord,
   FindingItem,
@@ -44,37 +43,8 @@ async function verifySession() {
 }
 
 /**
- * Helper to save base64 image to public/uploads/reports/ using a server-generated UUID.
- * Prevents path traversal / arbitrary file overwrite attacks.
- */
-function saveReportPhotoFile(
-  mimeType: string,
-  base64Data: string
-): { photoId: string; filePath: string; sizeBytes: number } {
-  const photoId = crypto.randomUUID();
-  const cleaned = base64Data.replace(/^data:image\/\w+;base64,/, "");
-  const buffer = Buffer.from(cleaned, "base64");
-  const ext = mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : "jpg";
-  const fileName = `${photoId}.${ext}`;
-  const dir = path.join(process.cwd(), "public", "uploads", "reports");
-
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-
-  const fullPath = path.join(dir, fileName);
-  fs.writeFileSync(fullPath, buffer);
-
-  return {
-    photoId,
-    filePath: `/uploads/reports/${fileName}`,
-    sizeBytes: buffer.length,
-  };
-}
-
-/**
  * Fetch all reports with reporter, photos, and status history from PostgreSQL.
- * Filters directly at the SQL layer when caller is a REPORTER to leverage reports_reporter_id_idx.
+ * Filters to the last 3 months and filters directly at the SQL layer when caller is a REPORTER.
  */
 export async function getReportsAction(): Promise<{
   success: boolean;
@@ -85,7 +55,16 @@ export async function getReportsAction(): Promise<{
     const user = await verifySession();
     const userRole = (user as Record<string, unknown>).role as UserRole | undefined;
 
-    // Fetch reports with SQL-level role filtering
+    // Filter reports from the last 3 months
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+    const conditions = [gte(schema.reports.createdAt, threeMonthsAgo)];
+    if (userRole === "REPORTER") {
+      conditions.push(eq(schema.reports.reporterId, user.id));
+    }
+
+    // Fetch reports with SQL-level role and 3-month filtering
     const baseQuery = db
       .select({
         id: schema.reports.id,
@@ -108,10 +87,9 @@ export async function getReportsAction(): Promise<{
       .from(schema.reports)
       .leftJoin(schema.user, eq(schema.reports.reporterId, schema.user.id));
 
-    const filteredRows = await (userRole === "REPORTER"
-      ? baseQuery.where(eq(schema.reports.reporterId, user.id))
-      : baseQuery
-    ).orderBy(desc(schema.reports.createdAt));
+    const filteredRows = await baseQuery
+      .where(and(...conditions))
+      .orderBy(desc(schema.reports.createdAt));
 
     if (filteredRows.length === 0) {
       return { success: true, reports: [] };
@@ -206,16 +184,18 @@ export async function getReportsAction(): Promise<{
   }
 }
 
-function saveBatchPhotos(files: UploadedFilePayload[]) {
-  return files.map((f) => {
-    const saved = saveReportPhotoFile(f.mimeType, f.base64);
-    return {
-      id: saved.photoId,
-      filePath: saved.filePath,
-      mimeType: f.mimeType,
-      sizeBytes: saved.sizeBytes,
-    };
-  });
+async function saveBatchPhotos(files: UploadedFilePayload[]) {
+  return Promise.all(
+    files.map(async (f) => {
+      const saved = await processAndSaveEvidencePhoto(f.base64);
+      return {
+        id: saved.photoId,
+        filePath: saved.filePath,
+        mimeType: saved.mimeType,
+        sizeBytes: saved.sizeBytes,
+      };
+    })
+  );
 }
 
 /**
@@ -246,7 +226,7 @@ export async function commitReportSubmissionAction(input: CommitReportSubmission
         throw new Error("Hanya Pelapor (Reporter) atau Operator yang dapat membuat laporan baru.");
       }
 
-      const savedPhotos = saveBatchPhotos(files);
+      const savedPhotos = await saveBatchPhotos(files);
       const reportId = UUID_REGEX.test(payload.id) ? payload.id : crypto.randomUUID();
       const findingsJson = payload.findings || [];
 
@@ -331,7 +311,7 @@ export async function commitReportSubmissionAction(input: CommitReportSubmission
         throw new Error("Hanya Operator yang dapat menutup / menghapus laporan.");
       }
 
-      const savedPhotos = saveBatchPhotos(files);
+      const savedPhotos = await saveBatchPhotos(files);
       const historyId = crypto.randomUUID();
       const now = new Date();
 
@@ -400,7 +380,7 @@ export async function commitReportSubmissionAction(input: CommitReportSubmission
         );
       }
 
-      const savedPhotos = saveBatchPhotos(files);
+      const savedPhotos = await saveBatchPhotos(files);
       const historyId = crypto.randomUUID();
       const now = new Date();
 

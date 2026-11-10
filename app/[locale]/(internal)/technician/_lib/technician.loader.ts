@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, ne, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import type {
   FindingItem,
@@ -10,22 +10,26 @@ import type { TechnicianTaskSummary } from "./technician.schema";
 /**
  * High-performance database loader for the Technician dashboard.
  * Queries aggregated counter badges and active reports list leveraging PostgreSQL indexes.
+ * Restricted to the last 3 months.
  */
 export async function getTechnicianReports(): Promise<{
   summary: TechnicianTaskSummary;
   reports: ReportRecord[];
 }> {
-  // 1. Single round-trip aggregation for badge counters using SQL FILTER
+  const threeMonthsAgo = new Date();
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+  // 1. Single round-trip aggregation for badge counters using SQL FILTER (last 3 months)
   const [summaryRow] = await db
     .select({
-      totalActive: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NULL AND ${schema.reports.status} != 'CLOSED')::int`,
-      open: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NULL AND ${schema.reports.status} = 'OPEN')::int`,
-      inProgress: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NULL AND ${schema.reports.status} = 'IN_PROGRESS')::int`,
-      resolved: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NULL AND ${schema.reports.status} = 'RESOLVED')::int`,
+      totalActive: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NULL AND ${schema.reports.status} != 'CLOSED' AND ${schema.reports.createdAt} >= ${threeMonthsAgo})::int`,
+      open: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NULL AND ${schema.reports.status} = 'OPEN' AND ${schema.reports.createdAt} >= ${threeMonthsAgo})::int`,
+      inProgress: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NULL AND ${schema.reports.status} = 'IN_PROGRESS' AND ${schema.reports.createdAt} >= ${threeMonthsAgo})::int`,
+      resolved: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NULL AND ${schema.reports.status} = 'RESOLVED' AND ${schema.reports.createdAt} >= ${threeMonthsAgo})::int`,
     })
     .from(schema.reports);
 
-  // 2. Query active reports (leverages partial index: reports_active_idx)
+  // 2. Query active reports from last 3 months
   const reportRows = await db
     .select({
       id: schema.reports.id,
@@ -50,7 +54,8 @@ export async function getTechnicianReports(): Promise<{
     .where(
       and(
         isNull(schema.reports.deletedAt),
-        ne(schema.reports.status, "CLOSED")
+        ne(schema.reports.status, "CLOSED"),
+        gte(schema.reports.createdAt, threeMonthsAgo)
       )
     )
     .orderBy(desc(schema.reports.createdAt));

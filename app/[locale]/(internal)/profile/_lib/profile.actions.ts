@@ -2,6 +2,7 @@
 
 import fs from "fs";
 import path from "path";
+import sharp from "sharp";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
@@ -140,7 +141,7 @@ export async function updateProfileAction(
           fs.unlinkSync(oldFile);
         }
       } else if (parsed.data.avatarDataUrl.startsWith("data:image/")) {
-        // Save avatar file
+        // Save avatar file converted to genuine WebP (512x512 cover, quality 85)
         const base64Data = parsed.data.avatarDataUrl.replace(/^data:image\/\w+;base64,/, "");
         const buffer = Buffer.from(base64Data, "base64");
         const dir = path.join(process.cwd(), "public", "uploads", "avatars");
@@ -148,7 +149,12 @@ export async function updateProfileAction(
           fs.mkdirSync(dir, { recursive: true });
         }
         const filePath = path.join(dir, `${targetUserId}.webp`);
-        fs.writeFileSync(filePath, buffer);
+        const webpBuffer = await sharp(buffer)
+          .rotate()
+          .resize(512, 512, { fit: "cover" })
+          .webp({ quality: 85, effort: 4 })
+          .toBuffer();
+        fs.writeFileSync(filePath, webpBuffer);
         finalImageUrl = `/uploads/avatars/${targetUserId}.webp?t=${Date.now()}`;
       }
     }

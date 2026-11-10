@@ -103,30 +103,6 @@ export async function downloadReportPdf(report: ReportRecord): Promise<void> {
       doc.addImage(logoDataUrl, "PNG", margin, currentY - 2, 38, 12);
     }
 
-    // Right Header Text
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9.5);
-    doc.setTextColor(15, 23, 42); // #0f172a
-    doc.text("PT ANGKASA PURA INDONESIA", pageWidth - margin, currentY + 1, {
-      align: "right",
-    });
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(71, 85, 105); // #475569
-    doc.text(
-      "Bandar Udara Internasional Yogyakarta (YIA)",
-      pageWidth - margin,
-      currentY + 5.5,
-      { align: "right" }
-    );
-    doc.text(
-      "Airport Perimeter Reporting System (APRS)",
-      pageWidth - margin,
-      currentY + 9.5,
-      { align: "right" }
-    );
-
     currentY += 14;
 
     // Divider line
@@ -223,7 +199,7 @@ export async function downloadReportPdf(report: ReportRecord): Promise<void> {
       String(idx + 1),
       f.partName,
       (f.damages || [])
-        .map((d) => (typeof d === "string" ? d : d.name))
+        .map((d) => (typeof d === "string" ? d : (d as any).name))
         .join(", ") || "-",
     ]);
 
@@ -420,7 +396,7 @@ export async function downloadReportPdf(report: ReportRecord): Promise<void> {
 
       const footerY = doc.internal.pageSize.getHeight() - 7;
       doc.text(
-        "Dokumen resmi diterbitkan otomatis oleh Airport Perimeter Reporting System (APRS) YIA.",
+        "Dokumen resmi diterbitkan otomatis oleh Airport Perimeter Reporting System (APRS).",
         margin,
         footerY
       );
@@ -450,3 +426,269 @@ export async function downloadReportPdf(report: ReportRecord): Promise<void> {
  * Backwards-compatible alias for ReportDetailSheet
  */
 export const downloadReportDocument = downloadReportPdf;
+
+export interface DownloadAllReportsOptions {
+  startDate?: string;
+  endDate?: string;
+}
+
+/**
+ * Generates and downloads an official landscape PDF recap of all perimeter reports.
+ * Includes all reports with all statuses for the selected date range.
+ * Columns:
+ * 1. No
+ * 2. ID Laporan
+ * 3. Lokasi / Grid (Kode grid, sisi, koordinat GPS)
+ * 4. Bagian & Jenis Kerusakan
+ * 5. Nama Pelapor
+ * 6. Status
+ * 7. Keterangan (Seluruh catatan: temuan awal, sedang diperbaiki, telah ditangani, ditutup)
+ */
+export async function downloadAllReportsPdf(
+  reports: ReportRecord[],
+  options?: DownloadAllReportsOptions
+): Promise<void> {
+  let targetReports = reports;
+
+  if (options?.startDate || options?.endDate) {
+    const start = options.startDate ? new Date(`${options.startDate}T00:00:00`) : null;
+    const end = options.endDate ? new Date(`${options.endDate}T23:59:59.999`) : null;
+    targetReports = reports.filter((r) => {
+      const d = new Date(r.createdAt);
+      if (start && d < start) return false;
+      if (end && d > end) return false;
+      return true;
+    });
+  }
+
+  if (!targetReports || targetReports.length === 0) {
+    toast.error("Tidak ada laporan", {
+      description: "Tidak ada data laporan pada rentang tanggal yang dipilih.",
+    });
+    return;
+  }
+
+  const dateStamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const filename = `Rekapitulasi_Laporan_Perimeter_YIA_${dateStamp}.pdf`;
+
+  try {
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth(); // 297mm
+    const pageHeight = doc.internal.pageSize.getHeight(); // 210mm
+    const margin = 14;
+    let currentY = margin;
+
+    // 1. Header with InJourney Logo
+    const logoUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/injourney-logo.webp`
+        : "/injourney-logo.webp";
+
+    const logoDataUrl = await loadImageDataUrl(logoUrl);
+
+    if (logoDataUrl) {
+      doc.addImage(logoDataUrl, "PNG", margin, currentY - 2, 36, 11);
+    }
+
+    // Right Header Text
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(15, 23, 42); // #0f172a
+    doc.text("PT ANGKASA PURA INDONESIA", pageWidth - margin, currentY + 1, {
+      align: "right",
+    });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(71, 85, 105); // #475569
+    doc.text(
+      "Bandar Udara Internasional Yogyakarta (YIA)",
+      pageWidth - margin,
+      currentY + 5.5,
+      { align: "right" }
+    );
+    doc.text(
+      "Airport Perimeter Reporting System (APRS)",
+      pageWidth - margin,
+      currentY + 9.5,
+      { align: "right" }
+    );
+
+    // Separator line
+    currentY += 14;
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.35);
+    doc.line(margin, currentY, pageWidth - margin, currentY);
+
+    // Document Title
+    currentY += 7;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(15, 23, 42);
+    doc.text("REKAPITULASI LAPORAN PERIMETER", margin, currentY);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139);
+    const printedAt = new Date().toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    let subtitle = `Dicetak: ${printedAt} WIB  |  Total: ${targetReports.length} Laporan`;
+    if (options?.startDate || options?.endDate) {
+      const startLabel = options.startDate || "Awal";
+      const endLabel = options.endDate || "Kini";
+      subtitle = `Periode: ${startLabel} s/d ${endLabel}  |  ${subtitle}`;
+    }
+    doc.text(subtitle, margin, currentY + 5);
+
+    currentY += 9;
+
+    // Table rows with requested 7 columns
+    const tableBody = targetReports.map((r, index) => {
+      const shortId = String(r.id).replace(/-/g, "").slice(0, 8).toUpperCase();
+
+      // Kolom: Lokasi / Grid (Kode grid, sisi, koordinat GPS)
+      const gridText = r.segmentCode ? `Grid ${r.segmentCode}` : "Grid -";
+      const sideText = r.side ? `Sisi ${r.side}` : "Sisi -";
+      const gpsText =
+        r.latitude != null && r.longitude != null
+          ? `GPS: ${Number(r.latitude).toFixed(5)}, ${Number(r.longitude).toFixed(5)}`
+          : "GPS: -";
+      const lokasiGrid = `${gridText}\n${sideText}\n${gpsText}`;
+
+      // Kolom: Bagian & Jenis Kerusakan
+      const findingsList = (r.findings || []).map((f, i) => {
+        const dmgList = (f.damages || []).map((d) =>
+          typeof d === "string" ? d : (d as any).name
+        );
+        const dmg = dmgList.join(", ");
+        const prefix = (r.findings || []).length > 1 ? `${i + 1}. ` : "";
+        return dmg ? `${prefix}${f.partName} (${dmg})` : `${prefix}${f.partName}`;
+      });
+      const bagianKerusakan = findingsList.length > 0 ? findingsList.join("\n") : "-";
+
+      // Kolom: Status
+      const statusStr = r.deletedAt
+        ? "Ditutup"
+        : labels[r.status] || r.status;
+
+      // Kolom: Keterangan (seluruh catatan dari temuan, sedang diperbaiki, telah ditangani)
+      const noteLines: string[] = [];
+      if (r.narrative && r.narrative.trim()) {
+        noteLines.push(`• Temuan: ${r.narrative.trim()}`);
+      }
+      if (r.history && r.history.length > 0) {
+        for (const h of r.history) {
+          if (h.narrative && h.narrative.trim()) {
+            const st = labels[h.status] || (h.status === "CLOSED" ? "Ditutup" : h.status);
+            const actor = h.actorName ? ` (${h.actorName})` : "";
+            noteLines.push(`• ${st}${actor}: ${h.narrative.trim()}`);
+          }
+        }
+      }
+      if (r.deletionReason && r.deletionReason.trim()) {
+        const alreadyIncluded = noteLines.some((line) => line.includes(r.deletionReason!.trim()));
+        if (!alreadyIncluded) {
+          noteLines.push(`• Ditutup: ${r.deletionReason.trim()}`);
+        }
+      }
+      const keterangan = noteLines.length > 0 ? noteLines.join("\n") : "-";
+
+      return [
+        String(index + 1),
+        shortId,
+        lokasiGrid,
+        bagianKerusakan,
+        r.reporterName || "Petugas Lapangan",
+        statusStr,
+        keterangan,
+      ];
+    });
+
+    autoTable(doc, {
+      startY: currentY,
+      margin: { left: margin, right: margin, bottom: 15 },
+      head: [
+        [
+          "No",
+          "ID Laporan",
+          "Lokasi / Grid",
+          "Bagian & Jenis Kerusakan",
+          "Nama Pelapor",
+          "Status",
+          "Keterangan",
+        ],
+      ],
+      body: tableBody,
+      theme: "grid",
+      headStyles: {
+        fillColor: [10, 112, 119], // #0a7077
+        textColor: [255, 255, 255],
+        fontSize: 8,
+        fontStyle: "bold",
+        halign: "center",
+      },
+      styles: {
+        fontSize: 7.5,
+        cellPadding: 2.2,
+        textColor: [30, 41, 59],
+        lineColor: [226, 232, 240],
+        lineWidth: 0.2,
+        overflow: "linebreak",
+        valign: "top",
+      },
+      columnStyles: {
+        0: { cellWidth: 10, halign: "center" },
+        1: { cellWidth: 22, fontStyle: "bold", halign: "center" },
+        2: { cellWidth: 42 },
+        3: { cellWidth: 54 },
+        4: { cellWidth: 30 },
+        5: { cellWidth: 25, halign: "center" },
+        6: { cellWidth: "auto" },
+      },
+    });
+
+    // Page numbers in footer
+    const pageCount = (doc.internal as any).getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(148, 163, 184);
+
+      const footerY = pageHeight - 7;
+      doc.text(
+        "Dokumen rekapitulasi resmi diterbitkan otomatis oleh Airport Perimeter Reporting System (APRS) YIA.",
+        margin,
+        footerY
+      );
+      doc.text(
+        `Halaman ${i} dari ${pageCount}`,
+        pageWidth - margin,
+        footerY,
+        { align: "right" }
+      );
+    }
+
+    doc.save(filename);
+
+    toast.success("Dokumen PDF berhasil diunduh", {
+      description: `File ${filename} telah disimpan ke perangkat Anda.`,
+    });
+  } catch (err) {
+    console.error("Gagal mengunduh dokumen PDF rekapitulasi:", err);
+    toast.error("Gagal mengunduh PDF", {
+      description: "Terjadi kesalahan saat membuat dokumen PDF.",
+    });
+  }
+}
