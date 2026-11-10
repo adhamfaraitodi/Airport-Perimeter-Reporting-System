@@ -1,4 +1,3 @@
-import { dispatchReportNotificationAction } from "./notifications.actions";
 import { getProfileAction } from "../(internal)/profile/_lib/profile.actions";
 import {
   getReportsAction,

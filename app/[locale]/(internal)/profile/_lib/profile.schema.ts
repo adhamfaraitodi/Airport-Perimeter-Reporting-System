@@ -22,11 +22,6 @@ export const updateProfileSchema = z.object({
     .max(MAX_BASE64_IMAGE_LENGTH, "Ukuran foto profil maksimal 3.5MB.")
     .nullable()
     .optional(),
-  signatureDataUrl: z
-    .string()
-    .max(MAX_BASE64_IMAGE_LENGTH, "Ukuran tanda tangan maksimal 3.5MB.")
-    .nullable()
-    .optional(),
 });
 
 export type UpdateProfileSchemaInput = z.infer<typeof updateProfileSchema>;

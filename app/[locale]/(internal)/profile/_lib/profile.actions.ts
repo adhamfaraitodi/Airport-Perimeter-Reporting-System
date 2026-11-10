@@ -27,7 +27,6 @@ export interface UpdateProfileInput {
   name: string;
   phone?: string | null;
   avatarDataUrl?: string | null; // Base64 dataUrl or null to remove
-  signatureDataUrl?: string | null; // Base64 dataUrl or null to remove
 }
 
 export interface UpdateProfileResult {
@@ -91,7 +90,6 @@ export async function getProfileAction(): Promise<{
  * Autonomous Update Profile:
  * - Updates name, phone
  * - Saves compressed WebP avatar to public/uploads/avatars/
- * - Saves processed wet signature to private storage/signatures/
  * - Persists updates to PostgreSQL `user` table
  * - Validates input via Zod updateProfileSchema
  */
@@ -123,7 +121,6 @@ export async function updateProfileAction(
     }
 
     let finalImageUrl = existing.image;
-    let finalSignatureUrl = existing.signatureUrl;
 
     // 1. Process Avatar
     if (parsed.data.avatarDataUrl !== undefined) {
@@ -159,42 +156,13 @@ export async function updateProfileAction(
       }
     }
 
-    // 2. Process Private Signature
-    if (parsed.data.signatureDataUrl !== undefined) {
-      if (parsed.data.signatureDataUrl === null) {
-        // Remove existing signature file
-        finalSignatureUrl = null;
-        const oldSign = path.join(
-          process.cwd(),
-          "storage",
-          "signatures",
-          `${targetUserId}.png`
-        );
-        if (fs.existsSync(oldSign)) {
-          fs.unlinkSync(oldSign);
-        }
-      } else if (parsed.data.signatureDataUrl.startsWith("data:image/")) {
-        // Save signature file in private storage
-        const base64Data = parsed.data.signatureDataUrl.replace(/^data:image\/\w+;base64,/, "");
-        const buffer = Buffer.from(base64Data, "base64");
-        const dir = path.join(process.cwd(), "storage", "signatures");
-        if (!fs.existsSync(dir)) {
-          fs.mkdirSync(dir, { recursive: true });
-        }
-        const filePath = path.join(dir, `${targetUserId}.png`);
-        fs.writeFileSync(filePath, buffer);
-        finalSignatureUrl = `/api/profile/signature/${targetUserId}?t=${Date.now()}`;
-      }
-    }
-
-    // 3. Update PostgreSQL
+    // 2. Update PostgreSQL
     const [updated] = await db
       .update(schema.user)
       .set({
         name: parsed.data.name.trim(),
         phone: parsed.data.phone ? parsed.data.phone.trim() : null,
         image: finalImageUrl,
-        signatureUrl: finalSignatureUrl,
         updatedAt: new Date(),
       })
       .where(eq(schema.user.id, targetUserId))
@@ -222,51 +190,5 @@ export async function updateProfileAction(
       success: false,
       errorMessage: "Gagal menyimpan perubahan profil ke database.",
     };
-  }
-}
-
-/**
- * Retrieve user's signature as Base64 Data URL for embedding into generated PDF reports.
- * Enforces ownership, Operator, or Technician privilege.
- */
-export async function getUserSignatureDataUrl(
-  userId: string
-): Promise<string | null> {
-  try {
-    const reqHeaders = await headers();
-    const session = await auth.api.getSession({ headers: reqHeaders }).catch(() => null);
-
-    if (!session?.user?.id) {
-      return null;
-    }
-
-    const userRecord = session.user as Record<string, unknown>;
-    if (userRecord.status === "INACTIVE") {
-      return null;
-    }
-
-    const callerRole = userRecord.role as string | undefined;
-    if (
-      session.user.id !== userId &&
-      callerRole !== "OPERATOR" &&
-      callerRole !== "TECHNICIAN"
-    ) {
-      return null;
-    }
-
-    const safeUserId = userId.replace(/[^a-zA-Z0-9_-]/g, "");
-    const signPath = path.join(
-      process.cwd(),
-      "storage",
-      "signatures",
-      `${safeUserId}.png`
-    );
-    if (!fs.existsSync(signPath)) {
-      return null;
-    }
-    const buf = fs.readFileSync(signPath);
-    return `data:image/png;base64,${buf.toString("base64")}`;
-  } catch {
-    return null;
   }
 }

@@ -323,14 +323,7 @@ export function ReportHistoryPanel({
 
   // Filter reports matching the date range (ALL statuses included)
   const matchingReports = useMemo(() => {
-    const start = startDate ? new Date(`${startDate}T00:00:00`) : null;
-    const end = endDate ? new Date(`${endDate}T23:59:59.999`) : null;
-    return reports.filter((r) => {
-      const d = new Date(r.createdAt);
-      if (start && d < start) return false;
-      if (end && d > end) return false;
-      return true;
-    });
+    return filterReportsByDateRange(reports, startDate, endDate);
   }, [reports, startDate, endDate]);
 
   const handleConfirmDownload = async () => {

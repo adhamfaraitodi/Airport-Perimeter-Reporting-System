@@ -24,8 +24,6 @@ export const roleLabels: Record<UserRole, string> = {
   TECHNICIAN: "Teknisi Pemeliharaan",
 };
 
-const defaultAccounts: ManagedAccount[] = [];
-
 const defaultPhoneById = new Map<string, string>();
 
 export interface AccountInput {
