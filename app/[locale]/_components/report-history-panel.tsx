@@ -726,7 +726,7 @@ export function ReportHistoryPanel({
                 ) : (
                   <Download size={14} aria-hidden="true" />
                 )}
-                <span>{downloadingPdf ? "Menyiapkan PDF…" : "Unduh PDF Landscape"}</span>
+                <span>{downloadingPdf ? "Menyiapkan PDF…" : "Unduh PDF"}</span>
               </button>
             </div>
           </div>
