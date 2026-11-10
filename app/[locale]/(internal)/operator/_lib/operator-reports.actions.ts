@@ -57,7 +57,7 @@ export async function getReportsAction(): Promise<{
 
     // Filter reports from the last 3 months
     const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    threeMonthsAgo.setDate(threeMonthsAgo.getDate() - 90);
 
     const conditions = [gte(schema.reports.createdAt, threeMonthsAgo)];
     if (userRole === "REPORTER") {
@@ -157,6 +157,7 @@ export async function getReportsAction(): Promise<{
         id: r.id,
         reporterId: r.reporterId,
         reporterName: r.reporterName || r.reporterEmail || "Petugas Lapangan",
+        reporterEmail: r.reporterEmail || undefined,
         createdAt: r.createdAt.toISOString(),
         side: r.side || "",
         segmentCode: r.segmentCode || undefined,

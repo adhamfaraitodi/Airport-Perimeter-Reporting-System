@@ -22,7 +22,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/lib/i18n";
 import type { ReportRecord } from "../_lib/client-api";
-import { downloadAllReportsPdf } from "../_lib/report-document";
+import { downloadAllReportsPdf, filterReportsByDateRange } from "../_lib/report-document";
 
 export const DEFAULT_PAGE_SIZE = 5;
 
@@ -716,7 +716,7 @@ export function ReportHistoryPanel({
                 disabled={
                   downloadingPdf ||
                   matchingReports.length === 0 ||
-                  (!!startDate && !!endDate && startDate > endDate)
+                  (Boolean(startDate && endDate && new Date(startDate) > new Date(endDate)))
                 }
                 onClick={handleConfirmDownload}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--rd-primary)] px-4 py-2 text-xs font-semibold text-white shadow-xs transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"

@@ -17,7 +17,7 @@ export async function getTechnicianReports(): Promise<{
   reports: ReportRecord[];
 }> {
   const threeMonthsAgo = new Date();
-  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+  threeMonthsAgo.setDate(threeMonthsAgo.getDate() - 90);
 
   // 1. Single round-trip aggregation for badge counters using SQL FILTER (last 3 months)
   const [summaryRow] = await db
@@ -122,6 +122,7 @@ export async function getTechnicianReports(): Promise<{
       id: r.id,
       reporterId: r.reporterId,
       reporterName: r.reporterName || r.reporterEmail || "Petugas Lapangan",
+      reporterEmail: r.reporterEmail || undefined,
       createdAt: r.createdAt.toISOString(),
       side: r.side || "",
       segmentCode: r.segmentCode || undefined,

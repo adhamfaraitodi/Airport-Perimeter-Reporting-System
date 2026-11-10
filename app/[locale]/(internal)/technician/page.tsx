@@ -134,7 +134,9 @@ export default function TechnicianDashboardPage() {
   const countResolved = summary
     ? summary.resolved
     : activeReports.filter((r) => r.status === "RESOLVED").length;
-  const countTotal = summary ? summary.totalActive : activeReports.length;
+  const countTotal = summary
+    ? summary.totalActive
+    : activeReports.length;
 
   const visible = reports.filter((report) => {
     const isClosed = Boolean(report.deletedAt);

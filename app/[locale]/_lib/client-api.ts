@@ -62,6 +62,7 @@ export interface ReportRecord {
   id: string;
   reporterId: string;
   reporterName: string;
+  reporterEmail?: string;
   createdAt: string;
   side: string;
   segmentCode?: string;
