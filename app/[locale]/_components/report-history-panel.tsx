@@ -260,7 +260,7 @@ export function ReportHistoryPanel({
   pageSize = DEFAULT_PAGE_SIZE,
   filters,
   headerAction,
-  showDownloadAll = true,
+  showDownloadAll = false,
   onDownloadAll,
   emptyMessage,
   className = "",

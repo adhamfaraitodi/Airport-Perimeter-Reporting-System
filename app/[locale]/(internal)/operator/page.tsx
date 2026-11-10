@@ -216,6 +216,7 @@ export default function DashboardPage() {
                 onToggleSort={() => setNewest((v) => !v)}
                 pageSize={5}
                 className="p-4 sm:p-5"
+                showDownloadAll={true}
               />
             )}
           </section>

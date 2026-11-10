@@ -51,6 +51,7 @@ export default function TechnicianDashboardPage() {
       ["OPEN", t.historyPanel.filters.OPEN],
       ["IN_PROGRESS", t.historyPanel.filters.IN_PROGRESS],
       ["RESOLVED", t.historyPanel.filters.RESOLVED],
+      ["CLOSED", t.historyPanel.filters.CLOSED],
     ],
     [t]
   );
@@ -135,13 +136,17 @@ export default function TechnicianDashboardPage() {
     : activeReports.filter((r) => r.status === "RESOLVED").length;
   const countTotal = summary ? summary.totalActive : activeReports.length;
 
-  const visible = activeReports.filter((report) => {
+  const visible = reports.filter((report) => {
+    const isClosed = Boolean(report.deletedAt);
     const matchesStatus =
       filter === "ALL"
         ? true
-        : filter === "ACTIVE"
-          ? report.status === "OPEN" || report.status === "IN_PROGRESS"
-          : report.status === filter;
+        : filter === "CLOSED"
+          ? isClosed
+          : filter === "ACTIVE"
+            ? !isClosed &&
+              (report.status === "OPEN" || report.status === "IN_PROGRESS")
+            : !isClosed && report.status === filter;
 
     if (!matchesStatus) return false;
 
@@ -158,7 +163,7 @@ export default function TechnicianDashboardPage() {
   });
 
   const selected =
-    activeReports.find((report) => report.id === selectedId) || null;
+    reports.find((report) => report.id === selectedId) || null;
 
   return (
     <div
@@ -335,7 +340,7 @@ export default function TechnicianDashboardPage() {
               />
             ) : (
               <ReportHistoryPanel
-                reports={activeReports}
+                reports={reports}
                 loading={loading}
                 selectedId={selectedId}
                 onSelect={(r) => {
@@ -350,6 +355,7 @@ export default function TechnicianDashboardPage() {
                 onToggleSort={() => setNewest((v) => !v)}
                 pageSize={5}
                 className="p-4 sm:p-5"
+                showDownloadAll={true}
               />
             )}
           </section>

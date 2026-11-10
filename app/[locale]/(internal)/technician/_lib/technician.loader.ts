@@ -29,7 +29,7 @@ export async function getTechnicianReports(): Promise<{
     })
     .from(schema.reports);
 
-  // 2. Query active reports from last 3 months
+  // 2. Query reports from last 3 months (including closed for complete history)
   const reportRows = await db
     .select({
       id: schema.reports.id,
@@ -51,13 +51,7 @@ export async function getTechnicianReports(): Promise<{
     })
     .from(schema.reports)
     .leftJoin(schema.user, eq(schema.reports.reporterId, schema.user.id))
-    .where(
-      and(
-        isNull(schema.reports.deletedAt),
-        ne(schema.reports.status, "CLOSED"),
-        gte(schema.reports.createdAt, threeMonthsAgo)
-      )
-    )
+    .where(gte(schema.reports.createdAt, threeMonthsAgo))
     .orderBy(desc(schema.reports.createdAt));
 
   const summary: TechnicianTaskSummary = {
