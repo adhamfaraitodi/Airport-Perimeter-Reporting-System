@@ -108,46 +108,6 @@ async function loadImageDataUrl(
   });
 }
 
-interface SignatureAsset {
-  dataUrl: string;
-  width: number;
-  height: number;
-}
-
-/**
- * Fetches user's private wet signature from internal API if available,
- * capturing natural dimensions so aspect ratio is preserved in PDF.
- */
-async function tryFetchSignature(userId?: string): Promise<SignatureAsset | null> {
-  if (!userId || typeof window === "undefined") return null;
-  try {
-    const res = await fetch(`/api/profile/signature/${userId}`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    const dataUrl = await new Promise<string | null>((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
-    if (!dataUrl) return null;
-    return await new Promise<SignatureAsset | null>((resolve) => {
-      const img = new Image();
-      img.onload = () =>
-        resolve({
-          dataUrl,
-          width: img.naturalWidth || img.width || 320,
-          height: img.naturalHeight || img.height || 150,
-        });
-      img.onerror = () => resolve({ dataUrl, width: 320, height: 150 });
-      img.src = dataUrl;
-    });
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Generates and downloads a clean, official InJourney Airports PDF report.
@@ -408,12 +368,6 @@ export async function downloadReportPdf(report: ReportRecord): Promise<void> {
       .reverse()
       .find((h) => h.status === "RESOLVED" || h.status === "IN_PROGRESS");
     const technicianName = technicianEntry?.actorName;
-    const technicianId = technicianEntry?.actorId;
-
-    const [reporterSign, technicianSign] = await Promise.all([
-      tryFetchSignature(report.reporterId),
-      tryFetchSignature(technicianId),
-    ]);
 
     const signNames = [
       report.reporterName || "Petugas Lapangan",
@@ -425,7 +379,6 @@ export async function downloadReportPdf(report: ReportRecord): Promise<void> {
       "Unit Pemeliharaan Fasilitas",
       "Airport Operation Center",
     ];
-    const signImages = [reporterSign, technicianSign, null];
 
     for (let i = 0; i < 3; i++) {
       const boxX = margin + i * boxWidth;
@@ -435,23 +388,6 @@ export async function downloadReportPdf(report: ReportRecord): Promise<void> {
       doc.setFontSize(8);
       doc.setTextColor(71, 85, 105);
       doc.text(signTitles[i], centerX, currentY + 3, { align: "center" });
-
-      // Embed signature preserving natural aspect ratio within max 34mm x 15mm box
-      const signImg = signImages[i];
-      if (signImg) {
-        try {
-          const maxW = 34;
-          const maxH = 15;
-          const ratio = Math.min(maxW / signImg.width, maxH / signImg.height);
-          const drawW = signImg.width * ratio;
-          const drawH = signImg.height * ratio;
-          const drawX = centerX - drawW / 2;
-          const drawY = currentY + 5.5 + (maxH - drawH) / 2;
-          doc.addImage(signImg.dataUrl, "PNG", drawX, drawY, drawW, drawH);
-        } catch {
-          // ignore
-        }
-      }
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8);
