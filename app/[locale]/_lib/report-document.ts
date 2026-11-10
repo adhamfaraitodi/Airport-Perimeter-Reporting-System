@@ -29,22 +29,76 @@ export function filterReportsByDateRange(
 
 
 /**
- * Loads an image from URL and converts it to a PNG Data URL via HTML5 canvas.
+ * Formats ISO date string into "Hari, DD Mon YYYY / HH:mm WIB"
  */
-async function loadImageDataUrl(url: string): Promise<string | null> {
+function formatHariTanggal(isoString?: string | null): string {
+  if (!isoString) return "-";
+  try {
+    const d = new Date(isoString);
+    if (Number.isNaN(d.getTime())) return "-";
+    const dayName = new Intl.DateTimeFormat("id-ID", {
+      weekday: "long",
+      timeZone: "Asia/Jakarta",
+    }).format(d);
+    const dateStr = new Intl.DateTimeFormat("id-ID", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "Asia/Jakarta",
+    }).format(d);
+    const timeStr = new Intl.DateTimeFormat("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Jakarta",
+    }).format(d);
+    return `${dayName}, ${dateStr}\n${timeStr} WIB`;
+  } catch {
+    return "-";
+  }
+}
+
+interface ImageAsset {
+  dataUrl: string;
+  format: "JPEG" | "PNG";
+}
+
+/**
+ * Loads an image from URL, scales to optimal print width (360px), and renders as JPEG
+ * on a white background. This avoids jsPDF decompressing raw alpha RGBA bitmaps into the PDF,
+ * which caused the file size to inflate to 6.3MB instead of ~20KB.
+ */
+async function loadImageDataUrl(
+  url: string,
+  maxWidth = 360
+): Promise<ImageAsset | null> {
   if (typeof window === "undefined") return null;
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = "Anonymous";
     img.onload = () => {
       try {
+        const naturalW = img.naturalWidth || img.width;
+        const naturalH = img.naturalHeight || img.height;
+        const scale = Math.min(1, maxWidth / naturalW);
+        const targetW = Math.round(naturalW * scale);
+        const targetH = Math.round(naturalH * scale);
+
         const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth || img.width;
-        canvas.height = img.naturalHeight || img.height;
+        canvas.width = targetW;
+        canvas.height = targetH;
         const ctx = canvas.getContext("2d");
         if (!ctx) return resolve(null);
-        ctx.drawImage(img, 0, 0);
-        resolve(canvas.toDataURL("image/png"));
+
+        // Fill solid white background so logo glyphs render cleanly
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, targetW, targetH);
+        ctx.drawImage(img, 0, 0, targetW, targetH);
+
+        // Native DCT-encoded JPEG stream keeps total PDF size ~20KB
+        resolve({
+          dataUrl: canvas.toDataURL("image/jpeg", 0.92),
+          format: "JPEG",
+        });
       } catch {
         resolve(null);
       }
@@ -120,11 +174,11 @@ export async function downloadReportPdf(report: ReportRecord): Promise<void> {
         ? `${window.location.origin}/injourney-logo.webp`
         : "/injourney-logo.webp";
 
-    const logoDataUrl = await loadImageDataUrl(logoUrl);
+    const logoAsset = await loadImageDataUrl(logoUrl, 360);
 
-    if (logoDataUrl) {
+    if (logoAsset) {
       // Draw Logo on left
-      doc.addImage(logoDataUrl, "PNG", margin, currentY - 2, 38, 12);
+      doc.addImage(logoAsset.dataUrl, logoAsset.format, margin, currentY - 2, 38, 12, undefined, "FAST");
     }
 
     currentY += 14;
@@ -502,10 +556,10 @@ export async function downloadAllReportsPdf(
         ? `${window.location.origin}/injourney-logo.webp`
         : "/injourney-logo.webp";
 
-    const logoDataUrl = await loadImageDataUrl(logoUrl);
+    const logoAsset = await loadImageDataUrl(logoUrl, 360);
 
-    if (logoDataUrl) {
-      doc.addImage(logoDataUrl, "PNG", margin, currentY - 2, 36, 11);
+    if (logoAsset) {
+      doc.addImage(logoAsset.dataUrl, logoAsset.format, margin, currentY - 2, 36, 11, undefined, "FAST");
     }
 
 
@@ -594,9 +648,13 @@ export async function downloadAllReportsPdf(
       }
       const keterangan = noteLines.length > 0 ? noteLines.join("\n") : "-";
 
+      // Kolom: Hari & Tanggal
+      const hariTanggal = formatHariTanggal(r.createdAt);
+
       return [
         String(index + 1),
         shortId,
+        hariTanggal,
         lokasiGrid,
         bagianKerusakan,
         r.reporterName || "Petugas Lapangan",
@@ -612,6 +670,7 @@ export async function downloadAllReportsPdf(
         [
           "No",
           "ID Laporan",
+          "Hari & Tanggal",
           "Lokasi / Grid",
           "Bagian & Jenis Kerusakan",
           "Nama Pelapor",
@@ -640,11 +699,12 @@ export async function downloadAllReportsPdf(
       columnStyles: {
         0: { cellWidth: 10, halign: "center" },
         1: { cellWidth: 22, fontStyle: "bold", halign: "center" },
-        2: { cellWidth: 42 },
-        3: { cellWidth: 54 },
-        4: { cellWidth: 30 },
-        5: { cellWidth: 25, halign: "center" },
-        6: { cellWidth: "auto" },
+        2: { cellWidth: 32 },
+        3: { cellWidth: 38 },
+        4: { cellWidth: 46 },
+        5: { cellWidth: 28 },
+        6: { cellWidth: 24, halign: "center" },
+        7: { cellWidth: "auto" },
       },
     });
 
