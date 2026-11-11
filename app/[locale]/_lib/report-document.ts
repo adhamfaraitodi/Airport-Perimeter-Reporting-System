@@ -3,30 +3,9 @@ import autoTable from "jspdf-autotable";
 import { toast } from "@/components/ui/sonner";
 import type { ReportRecord } from "./client-api";
 import { dateText, labels } from "./draft-store";
+import { filterReportsByDateRange } from "@/lib/date-filter";
 
-/**
- * Filter reports strictly within [startDate, endDate] inclusive (YYYY-MM-DD format).
- * Normalized to UTC boundary comparison to avoid timezone day shifts.
- */
-export function filterReportsByDateRange(
-  reports: readonly ReportRecord[],
-  startDate?: string,
-  endDate?: string
-): ReportRecord[] {
-  if (!startDate && !endDate) return [...reports];
-
-  const startMs = startDate ? new Date(`${startDate}T00:00:00.000Z`).getTime() : null;
-  const endMs = endDate ? new Date(`${endDate}T23:59:59.999Z`).getTime() : null;
-
-  return reports.filter((r) => {
-    const dMs = new Date(r.createdAt).getTime();
-    if (Number.isNaN(dMs)) return false;
-    if (startMs !== null && dMs < startMs) return false;
-    if (endMs !== null && dMs > endMs) return false;
-    return true;
-  });
-}
-
+export { filterReportsByDateRange };
 
 /**
  * Formats ISO date string into "Hari, DD Mon YYYY / HH:mm WIB"

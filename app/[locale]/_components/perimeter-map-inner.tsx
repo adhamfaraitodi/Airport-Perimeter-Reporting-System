@@ -109,7 +109,10 @@ export default function PerimeterMapInner({
   const [tileError, setTileError] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
   const pointOutsideBounds = point && !isPointInNavigationBounds(point);
-  callbacks.current = { onPoint, onSelect };
+
+  useEffect(() => {
+    callbacks.current = { onPoint, onSelect };
+  });
 
   useEffect(() => {
     if (!host.current) return;
