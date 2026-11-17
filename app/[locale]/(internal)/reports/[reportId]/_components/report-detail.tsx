@@ -27,7 +27,7 @@ const states: Record<string, { label: string; icon: typeof ClipboardClock }> = {
 const button =
   "border-0 shadow-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--rd-link)]";
 const heading = "m-0 mb-3 text-base leading-normal font-normal tracking-normal";
-const small = "text-xs leading-relaxed text-[var(--rd-muted)]";
+const small = "text-sm leading-relaxed text-[var(--rd-muted)]";
 
 function timestamp(value?: string | null) {
   return value && !Number.isNaN(new Date(value).getTime())
@@ -40,7 +40,7 @@ function Status({ status }: { status: string }) {
   return (
     <span
       data-status={states[status] ? status : "OPEN"}
-      className="rd-status inline-flex items-center gap-1 rounded-full bg-[var(--rd-tint)] px-2 py-0.5 text-xs text-[var(--rd-status)]"
+      className="rd-status inline-flex items-center gap-1 rounded-full bg-[var(--rd-tint)] px-2 py-0.5 text-sm text-[var(--rd-status)]"
     >
       <span className="size-1.5 rounded-full bg-current" />
       {item.label}
@@ -105,7 +105,7 @@ function PhotoItem({ image, label, onOpen }: PhotoItemProps) {
       {url ? (
         <>
           <img src={url} alt={label} className="h-full w-full object-cover" />
-          <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-black/60 p-1.5 text-xs text-white">
+          <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-black/60 p-1.5 text-sm text-white">
             <span className="truncate">{label}</span>
             <button
               type="button"
@@ -119,7 +119,7 @@ function PhotoItem({ image, label, onOpen }: PhotoItemProps) {
           </div>
         </>
       ) : error ? (
-        <div className="flex h-full flex-col items-center justify-center p-2 text-center text-xs">
+        <div className="flex h-full flex-col items-center justify-center p-2 text-center text-sm">
           <p className="m-0 mb-1 text-[var(--rd-coral)]">{error}</p>
           <button
             type="button"
@@ -250,7 +250,7 @@ export function ReportDetail({ report, onBack }: ReportDetailProps) {
                 Penutupan menyembunyikan laporan dari tampilan aktif tanpa
                 menghapus riwayat dan bukti.
               </p>
-              <p className="m-0 text-sm whitespace-pre-wrap [overflow-wrap:anywhere]">
+              <p className="m-0 text-base whitespace-pre-wrap [overflow-wrap:anywhere]">
                 {(report as any).deleteReason || report.deletionReason || "Alasan penutupan tidak tercatat."}
               </p>
             </section>
@@ -267,7 +267,7 @@ export function ReportDetail({ report, onBack }: ReportDetailProps) {
                     key={finding.partId || finding.partName}
                     className="rounded-lg border border-[var(--rd-border)] p-3"
                   >
-                    <p className="m-0 mb-2 text-xs text-[var(--rd-muted)]">
+                    <p className="m-0 mb-2 text-sm text-[var(--rd-muted)]">
                       {finding.partName}
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -279,7 +279,7 @@ export function ReportDetail({ report, onBack }: ReportDetailProps) {
                         return (
                           <span
                             key={key}
-                            className="inline-flex min-h-7 items-center gap-1 rounded-lg bg-[var(--rd-active)] px-2 py-1 text-xs text-[var(--rd-link)]"
+                            className="inline-flex min-h-7 items-center gap-1 rounded-lg bg-[var(--rd-active)] px-2 py-1 text-sm text-[var(--rd-link)]"
                           >
                             <Check size={14} aria-hidden="true" />
                             {name}
@@ -299,7 +299,7 @@ export function ReportDetail({ report, onBack }: ReportDetailProps) {
             <h3 id="narrative-heading" className={heading}>
               Narasi Laporan Temuan
             </h3>
-            <p className="m-0 rounded-lg border border-[var(--rd-border)] bg-[var(--rd-bg)]/50 p-3.5 text-sm leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">
+            <p className="m-0 rounded-lg border border-[var(--rd-border)] bg-[var(--rd-bg)]/50 p-3.5 text-base leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">
               {report.narrative || "Tidak ada narasi."}
             </p>
           </section>
@@ -373,14 +373,14 @@ export function ReportDetail({ report, onBack }: ReportDetailProps) {
                         item.previousStatus}
                     </p>
                   )}
-                  <p className="mt-0 mb-3 text-sm leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">
+                  <p className="mt-0 mb-3 text-base leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">
                     {item.narrative}
                   </p>
                   <Photos images={item.images} onOpen={setPhoto} />
                 </li>
               ))}
               <li className="border-l-2 border-[var(--rd-link)] pl-3">
-                <p className="m-0 text-sm">Laporan dibuat</p>
+                <p className="m-0 text-base">Laporan dibuat</p>
                 <p className={`${small} mt-1 mb-0`}>
                   {report.reporterName || "Pelapor"} ·{" "}
                   {timestamp(report.createdAt)}
@@ -402,7 +402,7 @@ export function ReportDetail({ report, onBack }: ReportDetailProps) {
         className="fixed inset-0 m-auto max-h-[90dvh] w-[calc(100%_-_32px)] max-w-4xl overflow-auto rounded-xl border border-[var(--rd-border)] bg-[var(--rd-surface)] p-4 text-[var(--rd-text)] shadow-xl backdrop:bg-black/70"
       >
         <div className="mb-3 flex items-center justify-between gap-4">
-          <span className="text-sm">{photo?.label}</span>
+          <span className="text-base">{photo?.label}</span>
           <button
             autoFocus
             type="button"

@@ -147,7 +147,7 @@ export function ReportList({
         {/* Breadcrumb Navigation */}
         <nav
           aria-label="Breadcrumb"
-          className="mb-3 flex flex-wrap items-center gap-2 text-xs md:text-[13px]"
+          className="mb-3 flex flex-wrap items-center gap-2 text-sm md:text-[13px]"
         >
           <span className="text-[var(--rd-muted)]">Dashboard</span>
           <span className="text-[var(--rd-muted)]/50 select-none">/</span>
@@ -178,7 +178,7 @@ export function ReportList({
             <h1 className="m-0 text-xl font-normal tracking-tight sm:text-2xl">
               {t.reports.title}
             </h1>
-            <p className="m-0 mt-1 text-xs text-[var(--rd-muted)] sm:text-sm">
+            <p className="m-0 mt-1 text-sm text-[var(--rd-muted)] sm:text-base">
               {locale === "en"
                 ? "Report perimeter fence damage or airport boundary security incidents."
                 : "Mulai laporkan kerusakan atau kejadian pelanggaran pembatas perimeter bandara."}
@@ -189,7 +189,7 @@ export function ReportList({
               type="button"
               disabled={loading || !!error || formOpen || !user}
               onClick={onCreate}
-              className={`${button} flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-[var(--rd-primary)] px-4 py-2 text-xs font-semibold text-white hover:bg-[var(--rd-primary-hover)] sm:flex-none sm:text-sm`}
+              className={`${button} flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-[var(--rd-primary)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--rd-primary-hover)] sm:flex-none sm:text-base`}
             >
               <Plus size={16} strokeWidth={2.4} aria-hidden="true" />
               {t.reports.createReport}
@@ -215,7 +215,7 @@ export function ReportList({
         {notice && (
           <p
             role="status"
-            className="mb-5 rounded-lg bg-[var(--rd-active)] p-3 text-sm text-[var(--rd-link)]"
+            className="mb-5 rounded-lg bg-[var(--rd-active)] p-3 text-base text-[var(--rd-link)]"
           >
             {notice}
           </p>
@@ -223,10 +223,10 @@ export function ReportList({
         {error && (
           <div
             role="alert"
-            className="mb-5 rounded-lg border border-[var(--rd-border)] bg-[var(--rd-surface)] p-4 text-sm text-[var(--rd-coral)]"
+            className="mb-5 rounded-lg border border-[var(--rd-border)] bg-[var(--rd-surface)] p-4 text-base text-[var(--rd-coral)]"
           >
             {error}
-            <p className="m-0 mt-1 text-xs">
+            <p className="m-0 mt-1 text-sm">
               {locale === "en" ? "Use the refresh button to try again." : "Gunakan tombol segarkan untuk mencoba kembali."}
             </p>
           </div>
@@ -234,7 +234,7 @@ export function ReportList({
         {abandonedSubmissionId && (
           <div
             role="status"
-            className="mb-5 rounded-lg border border-[var(--rd-border)] p-3 text-xs leading-relaxed"
+            className="mb-5 rounded-lg border border-[var(--rd-border)] p-3 text-sm leading-relaxed"
           >
             <strong>{locale === "en" ? "Previous submission pending confirmation." : "Pengiriman sebelumnya belum pasti."}</strong>
             <p className="my-2 break-all">
@@ -266,7 +266,7 @@ export function ReportList({
                   <h2 className="m-0 text-base font-normal text-[var(--rd-text)]">
                     {t.operator.summaryTitle}
                   </h2>
-                  <p className="m-0 mt-0.5 text-xs text-[var(--rd-muted)]">
+                  <p className="m-0 mt-0.5 text-sm text-[var(--rd-muted)]">
                     {locale === "en" ? "Summary of your current reports status" : "Rekapitulasi status laporan Anda saat ini"}
                   </p>
                 </div>
@@ -282,7 +282,7 @@ export function ReportList({
                   >
                     <StateIcon status={status} />
                     <div className="min-w-0 flex-1">
-                      <span className="mt-2 block text-[10px] min-[390px]:text-[11px] sm:mt-0 sm:text-xs lg:font-semibold">
+                      <span className="mt-2 block text-[10px] min-[390px]:text-[11px] sm:mt-0 sm:text-sm lg:font-semibold">
                         {label}
                       </span>
                       <span className="hidden text-[11px] text-[var(--rd-muted)] lg:block">
@@ -310,26 +310,26 @@ export function ReportList({
                     <UserRound size={20} strokeWidth={1.8} aria-hidden="true" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="m-0 truncate text-sm font-bold text-[var(--rd-text)]">
+                    <p className="m-0 truncate text-base font-bold text-[var(--rd-text)]">
                       {user?.name || (locale === "en" ? "Field Reporter" : "Petugas Pelapor")}
                     </p>
-                    <p className="m-0 text-xs text-[var(--rd-muted)]">
+                    <p className="m-0 text-sm text-[var(--rd-muted)]">
                       {t.common.airportName}
                     </p>
                   </div>
                   <Link
                     href={`/${locale}/profile`}
-                    className="rounded-lg border border-[var(--rd-border)] bg-[var(--rd-bg)] px-2.5 py-1 text-xs font-semibold text-[var(--rd-link)] transition-colors hover:bg-[var(--rd-active)]"
+                    className="rounded-lg border border-[var(--rd-border)] bg-[var(--rd-bg)] px-2.5 py-1 text-sm font-semibold text-[var(--rd-link)] transition-colors hover:bg-[var(--rd-active)]"
                   >
                     {t.profile.title}
                   </Link>
                 </div>
 
-                <h3 className="m-0 mb-3 flex items-center gap-1.5 text-xs font-bold tracking-wide text-[var(--rd-muted)] uppercase">
+                <h3 className="m-0 mb-3 flex items-center gap-1.5 text-sm font-bold tracking-wide text-[var(--rd-muted)] uppercase">
                   <ShieldAlert size={14} className="text-[var(--rd-link)]" aria-hidden="true" />
                   <span>{locale === "en" ? "Reporting Guidelines" : "Panduan Pelaporan"}</span>
                 </h3>
-                <ul className="m-0 list-none space-y-2.5 p-0 text-xs leading-relaxed text-[var(--rd-muted)]">
+                <ul className="m-0 list-none space-y-2.5 p-0 text-sm leading-relaxed text-[var(--rd-muted)]">
                   <li className="flex items-start gap-2">
                     <CheckCircle2
                       size={14}

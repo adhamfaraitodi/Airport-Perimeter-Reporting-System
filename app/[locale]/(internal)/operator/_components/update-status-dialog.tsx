@@ -389,7 +389,7 @@ export function UpdateStatusDialog({
           </button>
         )}
       </div>
-      <p className="mb-5 text-sm leading-relaxed text-[var(--rd-muted)]">
+      <p className="mb-5 text-base leading-relaxed text-[var(--rd-muted)]">
         {customSubtitle ||
           (action === "DELETE"
             ? "Penutupan menyembunyikan titik dari peta, bukan menghapus bukti atau menyatakan masalah selesai."
@@ -473,7 +473,7 @@ export function UpdateStatusDialog({
         >
           {countText(narrative).toLocaleString("id-ID")} / 2.000 karakter
         </div>
-        <label className="relative mb-[18px] flex min-h-[145px] cursor-pointer flex-col items-center justify-center gap-[7px] overflow-hidden rounded-[10px] border border-dashed border-[var(--rd-link)]/50 bg-[var(--rd-bg)] p-5 text-center text-xs font-semibold focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--rd-link)]">
+        <label className="relative mb-[18px] flex min-h-[145px] cursor-pointer flex-col items-center justify-center gap-[7px] overflow-hidden rounded-[10px] border border-dashed border-[var(--rd-link)]/50 bg-[var(--rd-bg)] p-5 text-center text-sm font-semibold focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--rd-link)]">
           <Plus
             size={28}
             className="text-[var(--rd-link)]"
@@ -639,7 +639,7 @@ export function UpdateStatusDialog({
         </section>
       )}
       {attempt && (
-        <p role="status" className="mb-3 text-xs">
+        <p role="status" className="mb-3 text-sm">
           {
             Object.values(progress).filter((value) => value === "Berhasil")
               .length

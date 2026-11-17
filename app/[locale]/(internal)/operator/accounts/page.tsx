@@ -453,7 +453,7 @@ export default function ManageAccountsPage() {
         {/* Breadcrumb */}
         <nav
           aria-label="Breadcrumb"
-          className="mb-3 flex items-center gap-2 text-xs md:text-[13px]"
+          className="mb-3 flex items-center gap-2 text-sm md:text-[13px]"
         >
           <Link
             href={`/${locale}/operator`}
@@ -473,7 +473,7 @@ export default function ManageAccountsPage() {
             <h1 className="m-0 text-xl font-semibold sm:text-2xl">
               Manajemen Akun Personel
             </h1>
-            <p className="m-0 mt-1 text-xs text-[var(--rd-muted)] sm:text-sm">
+            <p className="m-0 mt-1 text-sm text-[var(--rd-muted)] sm:text-base">
               Kelola kredensial, peran akses, dan status operasional akun
               petugas perimeter.
             </p>
@@ -498,14 +498,14 @@ export default function ManageAccountsPage() {
               <Users size={22} strokeWidth={1.8} aria-hidden="true" />
             </span>
             <div>
-              <span className="block text-xs text-[var(--rd-muted)]">
+              <span className="block text-sm text-[var(--rd-muted)]">
                 Total Akun Terdaftar
               </span>
               {loading ? (
                 <Skeleton className="mt-1 h-6 w-20 rounded-md" />
               ) : (
                 <strong className="text-xl font-semibold text-[var(--rd-text)]">
-                  {totalAccounts} <span className="text-xs font-normal text-[var(--rd-muted)]">pengguna</span>
+                  {totalAccounts} <span className="text-sm font-normal text-[var(--rd-muted)]">pengguna</span>
                 </strong>
               )}
             </div>
@@ -516,14 +516,14 @@ export default function ManageAccountsPage() {
               <ShieldCheck size={22} strokeWidth={1.8} aria-hidden="true" />
             </span>
             <div>
-              <span className="block text-xs text-[var(--rd-muted)]">
+              <span className="block text-sm text-[var(--rd-muted)]">
                 Operator Perimeter
               </span>
               {loading ? (
                 <Skeleton className="mt-1 h-6 w-20 rounded-md" />
               ) : (
                 <strong className="text-xl font-semibold text-[var(--rd-text)]">
-                  {totalOperators} <span className="text-xs font-normal text-[var(--rd-muted)]">operator</span>
+                  {totalOperators} <span className="text-sm font-normal text-[var(--rd-muted)]">operator</span>
                 </strong>
               )}
             </div>
@@ -534,14 +534,14 @@ export default function ManageAccountsPage() {
               <Wrench size={21} strokeWidth={1.8} aria-hidden="true" />
             </span>
             <div>
-              <span className="block text-xs text-[var(--rd-muted)]">
+              <span className="block text-sm text-[var(--rd-muted)]">
                 Pelapor & Teknisi
               </span>
               {loading ? (
                 <Skeleton className="mt-1 h-6 w-24 rounded-md" />
               ) : (
                 <strong className="text-xl font-semibold text-[var(--rd-text)]">
-                  {totalFieldStaff} <span className="text-xs font-normal text-[var(--rd-muted)]">personel lapangan</span>
+                  {totalFieldStaff} <span className="text-sm font-normal text-[var(--rd-muted)]">personel lapangan</span>
                 </strong>
               )}
             </div>
@@ -552,14 +552,14 @@ export default function ManageAccountsPage() {
               <UserCheck size={22} strokeWidth={1.8} aria-hidden="true" />
             </span>
             <div>
-              <span className="block text-xs text-[var(--rd-muted)]">
+              <span className="block text-sm text-[var(--rd-muted)]">
                 Status Akun Aktif
               </span>
               {loading ? (
                 <Skeleton className="mt-1 h-6 w-24 rounded-md" />
               ) : (
                 <strong className="text-xl font-semibold text-[var(--rd-text)]">
-                  {totalActive} <span className="text-xs font-normal text-[var(--rd-muted)]">dari {totalAccounts} akun</span>
+                  {totalActive} <span className="text-sm font-normal text-[var(--rd-muted)]">dari {totalAccounts} akun</span>
                 </strong>
               )}
             </div>
@@ -578,7 +578,7 @@ export default function ManageAccountsPage() {
               <div
                 role="tablist"
                 aria-label="Filter peran akses"
-                className="flex max-w-full overflow-x-auto rounded-xl bg-[var(--rd-bg)] p-1 text-xs scrollbar-none"
+                className="flex max-w-full overflow-x-auto rounded-xl bg-[var(--rd-bg)] p-1 text-sm scrollbar-none"
               >
                 {(
                   [
@@ -594,7 +594,7 @@ export default function ManageAccountsPage() {
                     role="tab"
                     aria-selected={roleFilter === value}
                     onClick={() => setRoleFilter(value)}
-                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${focusRing} ${
+                    className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${focusRing} ${
                       roleFilter === value
                         ? "bg-[var(--rd-surface)] text-[var(--rd-link)] shadow-xs"
                         : "text-[var(--rd-muted)] hover:text-[var(--rd-text)]"
@@ -612,7 +612,7 @@ export default function ManageAccountsPage() {
                 onChange={(e) =>
                   setStatusFilter(e.target.value as StatusFilter)
                 }
-                className={`min-h-9 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-3 py-1.5 text-xs font-medium text-[var(--rd-text)] ${focusRing}`}
+                className={`min-h-9 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-3 py-1.5 text-sm font-medium text-[var(--rd-text)] ${focusRing}`}
               >
                 <option value="ALL">Semua Status</option>
                 <option value="ACTIVE">Aktif</option>
@@ -633,7 +633,7 @@ export default function ManageAccountsPage() {
                 placeholder="Cari nama, NIP, kontak, atau unit…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="min-w-0 flex-1 border-0 bg-transparent py-2 text-xs text-[var(--rd-text)] outline-none placeholder:text-[var(--rd-muted)] sm:text-sm"
+                className="min-w-0 flex-1 border-0 bg-transparent py-2 text-sm text-[var(--rd-text)] outline-none placeholder:text-[var(--rd-muted)] sm:text-base"
               />
             </label>
           </div>
@@ -708,7 +708,7 @@ export default function ManageAccountsPage() {
 
                     return (
                       <TableRow key={account.id}>
-                        <TableCell className="text-center font-mono text-xs text-[var(--rd-muted)]">
+                        <TableCell className="text-center font-mono text-sm text-[var(--rd-muted)]">
                           {index + 1}
                         </TableCell>
                         <TableCell>
@@ -720,12 +720,12 @@ export default function ManageAccountsPage() {
                                 className="size-9 shrink-0 rounded-xl object-cover"
                               />
                             ) : (
-                              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-border)] text-xs font-bold text-[var(--rd-text)]">
+                              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-border)] text-sm font-bold text-[var(--rd-text)]">
                                 {initials}
                               </span>
                             )}
                             <div className="min-w-0">
-                              <span className="block truncate text-sm font-semibold">
+                              <span className="block truncate text-base font-semibold">
                                 {account.name}
                                 {isSelf && (
                                   <span className="ml-1.5 rounded-sm bg-[var(--rd-active)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--rd-link)]">
@@ -733,22 +733,22 @@ export default function ManageAccountsPage() {
                                   </span>
                                 )}
                               </span>
-                              <span className="block truncate text-xs text-[var(--rd-muted)]">
+                              <span className="block truncate text-sm text-[var(--rd-muted)]">
                                 {account.email}
                               </span>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="block font-mono text-xs font-semibold">
+                          <span className="block font-mono text-sm font-semibold">
                             {account.nip}
                           </span>
-                          <span className="block truncate text-xs text-[var(--rd-muted)]">
+                          <span className="block truncate text-sm text-[var(--rd-muted)]">
                             {account.unit}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className="flex items-center gap-1.5 text-xs text-[var(--rd-text)]">
+                          <span className="flex items-center gap-1.5 text-sm text-[var(--rd-text)]">
                             <Phone
                               size={13}
                               className="shrink-0 text-[var(--rd-muted)]"
@@ -759,7 +759,7 @@ export default function ManageAccountsPage() {
                         </TableCell>
                         <TableCell>
                           <span
-                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${roleBadgeClass}`}
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-sm font-semibold ${roleBadgeClass}`}
                           >
                             {t.header.roles[account.role] || roleLabels[account.role]}
                           </span>
@@ -777,7 +777,7 @@ export default function ManageAccountsPage() {
                                 ? "Anda tidak dapat menonaktifkan akun sendiri"
                                 : "Klik untuk ubah status aktif/nonaktif"
                             }
-                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50 ${focusRing} ${
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-sm font-semibold transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50 ${focusRing} ${
                               account.status === "ACTIVE"
                                 ? "bg-[var(--rd-lime)]/15 text-[var(--rd-lime)]"
                                 : "bg-[var(--rd-border)] text-[var(--rd-muted)]"
@@ -789,7 +789,7 @@ export default function ManageAccountsPage() {
                             </span>
                           </button>
                         </TableCell>
-                        <TableCell className="text-xs text-[var(--rd-muted)]">
+                        <TableCell className="text-sm text-[var(--rd-muted)]">
                           {dateText(account.createdAt)}
                         </TableCell>
                         <TableCell className="text-right">
@@ -1049,7 +1049,7 @@ export default function ManageAccountsPage() {
               {confirmDiscardAccount && (
                 <div
                   role="alert"
-                  className="mb-4 rounded-xl border border-solid border-[var(--rd-coral)]/40 bg-[var(--rd-coral)]/10 p-3 text-xs leading-relaxed text-[var(--rd-text)]"
+                  className="mb-4 rounded-xl border border-solid border-[var(--rd-coral)]/40 bg-[var(--rd-coral)]/10 p-3 text-sm leading-relaxed text-[var(--rd-text)]"
                 >
                   <strong className="block font-semibold text-[var(--rd-coral)]">
                     Batalkan pengisian data akun?
@@ -1062,7 +1062,7 @@ export default function ManageAccountsPage() {
                     <button
                       type="button"
                       onClick={() => setConfirmDiscardAccount(false)}
-                      className={`${btnBase} min-h-8 rounded-lg border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-1 text-xs text-[var(--rd-text)] hover:bg-[var(--rd-hover)]`}
+                      className={`${btnBase} min-h-8 rounded-lg border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-1 text-sm text-[var(--rd-text)] hover:bg-[var(--rd-hover)]`}
                     >
                       Lanjut Mengisi
                     </button>
@@ -1072,7 +1072,7 @@ export default function ManageAccountsPage() {
                         setConfirmDiscardAccount(false);
                         setAccountModal(null);
                       }}
-                      className={`${btnBase} min-h-8 rounded-lg bg-[var(--rd-coral)] px-3 py-1 text-xs text-white hover:brightness-95`}
+                      className={`${btnBase} min-h-8 rounded-lg bg-[var(--rd-coral)] px-3 py-1 text-sm text-white hover:brightness-95`}
                     >
                       Ya, Batalkan
                     </button>
@@ -1135,7 +1135,7 @@ export default function ManageAccountsPage() {
               </button>
             </div>
 
-            <p className="m-0 mb-4 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] p-3 text-xs text-[var(--rd-muted)]">
+            <p className="m-0 mb-4 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] p-3 text-sm text-[var(--rd-muted)]">
               Atur ulang password untuk{" "}
               <strong className="text-[var(--rd-text)]">
                 {passwordModal.account.name}
@@ -1185,7 +1185,7 @@ export default function ManageAccountsPage() {
               {confirmDiscardPassword && (
                 <div
                   role="alert"
-                  className="mb-4 rounded-xl border border-solid border-[var(--rd-coral)]/40 bg-[var(--rd-coral)]/10 p-3 text-xs leading-relaxed text-[var(--rd-text)]"
+                  className="mb-4 rounded-xl border border-solid border-[var(--rd-coral)]/40 bg-[var(--rd-coral)]/10 p-3 text-sm leading-relaxed text-[var(--rd-text)]"
                 >
                   <strong className="block font-semibold text-[var(--rd-coral)]">
                     Batalkan reset password?
@@ -1198,7 +1198,7 @@ export default function ManageAccountsPage() {
                     <button
                       type="button"
                       onClick={() => setConfirmDiscardPassword(false)}
-                      className={`${btnBase} min-h-8 rounded-lg border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-1 text-xs text-[var(--rd-text)] hover:bg-[var(--rd-hover)]`}
+                      className={`${btnBase} min-h-8 rounded-lg border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-1 text-sm text-[var(--rd-text)] hover:bg-[var(--rd-hover)]`}
                     >
                       Lanjut Mengisi
                     </button>
@@ -1208,7 +1208,7 @@ export default function ManageAccountsPage() {
                         setConfirmDiscardPassword(false);
                         setPasswordModal(null);
                       }}
-                      className={`${btnBase} min-h-8 rounded-lg bg-[var(--rd-coral)] px-3 py-1 text-xs text-white hover:brightness-95`}
+                      className={`${btnBase} min-h-8 rounded-lg bg-[var(--rd-coral)] px-3 py-1 text-sm text-white hover:brightness-95`}
                     >
                       Ya, Batalkan
                     </button>
@@ -1271,7 +1271,7 @@ export default function ManageAccountsPage() {
                 <X size={18} aria-hidden="true" />
               </button>
             </div>
-            <p className="m-0 mb-5 text-xs leading-relaxed text-[var(--rd-muted)] sm:text-sm">
+            <p className="m-0 mb-5 text-sm leading-relaxed text-[var(--rd-muted)] sm:text-base">
               Akun{" "}
               <strong className="text-[var(--rd-text)]">
                 {deleteTarget.name}
@@ -1328,7 +1328,7 @@ export default function ManageAccountsPage() {
                 <X size={18} aria-hidden="true" />
               </button>
             </div>
-            <p className="m-0 mb-5 text-xs leading-relaxed text-[var(--rd-muted)] sm:text-sm">
+            <p className="m-0 mb-5 text-sm leading-relaxed text-[var(--rd-muted)] sm:text-base">
               Muat ulang seluruh data akun personel langsung dari database.
             </p>
             <div className="flex justify-end gap-2.5">

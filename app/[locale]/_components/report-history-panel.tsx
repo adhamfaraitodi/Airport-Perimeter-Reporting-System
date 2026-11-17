@@ -130,13 +130,13 @@ export function ReportCardItem({
       {/* Main Body */}
       <div className="min-w-0 flex-1">
         {/* Top Header Row */}
-        <div className="mb-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs">
+        <div className="mb-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm">
           <span className="text-[var(--rd-muted)]">
             {displayId}
           </span>
           <span
             data-status={effectiveStatus}
-            className="rd-status inline-flex items-center gap-1.5 rounded-full bg-[var(--rd-tint)] px-2.5 py-0.5 text-xs text-[var(--rd-status)]"
+            className="rd-status inline-flex items-center gap-1.5 rounded-full bg-[var(--rd-tint)] px-2.5 py-0.5 text-sm text-[var(--rd-status)]"
           >
             <span
               className="size-1.5 shrink-0 rounded-full bg-current"
@@ -162,14 +162,14 @@ export function ReportCardItem({
             {chips.map((chip, idx) => (
               <span
                 key={`${chip}-${idx}`}
-                className="rounded-full bg-[var(--rd-active)] px-2.5 py-0.5 text-xs text-[var(--rd-link)]"
+                className="rounded-full bg-[var(--rd-active)] px-2.5 py-0.5 text-sm text-[var(--rd-link)]"
               >
                 {chip}
               </span>
             ))}
           </div>
         ) : (
-          <div className="mb-1 text-xs text-[var(--rd-muted)]">
+          <div className="mb-1 text-sm text-[var(--rd-muted)]">
             {report.side
               ? `${t.historyPanel.perimeterSide} ${report.side}`
               : t.historyPanel.findingsFallback}
@@ -177,12 +177,12 @@ export function ReportCardItem({
         )}
 
         {/* Narrative */}
-        <p className="mt-1 line-clamp-1 text-xs leading-relaxed text-[var(--rd-text)] sm:text-sm">
+        <p className="mt-1 line-clamp-1 text-sm leading-relaxed text-[var(--rd-text)] sm:text-base">
           {report.narrative || t.historyPanel.noNarrative}
         </p>
 
         {/* Meta Info Footer */}
-        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-[var(--rd-muted)]">
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-[var(--rd-muted)]">
           <span className="inline-flex items-center gap-1.5">
             <Images
               size={15}
@@ -426,7 +426,7 @@ export function ReportHistoryPanel({
             type="button"
             disabled={reports.length === 0}
             onClick={() => setShowDateModal(true)}
-            className="inline-flex items-center gap-2 rounded-[10px] bg-[var(--rd-primary)] px-4 py-2 text-xs font-semibold text-white shadow-xs transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
+            className="inline-flex items-center gap-2 rounded-[10px] bg-[var(--rd-primary)] px-4 py-2 text-sm font-semibold text-white shadow-xs transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:text-base"
             title={
               reports.length === 0
                 ? "Tidak ada laporan untuk diunduh"
@@ -451,7 +451,7 @@ export function ReportHistoryPanel({
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder={t.historyPanel.searchPlaceholder}
-          className="w-full rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] py-2.5 pl-10 pr-4 text-xs text-[var(--rd-text)] outline-none transition-colors placeholder:text-[var(--rd-muted)] focus:border-[var(--rd-primary)] focus:ring-2 focus:ring-[var(--rd-active)] sm:text-sm"
+          className="w-full rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] py-2.5 pl-10 pr-4 text-sm text-[var(--rd-text)] outline-none transition-colors placeholder:text-[var(--rd-muted)] focus:border-[var(--rd-primary)] focus:ring-2 focus:ring-[var(--rd-active)] sm:text-base"
           aria-label={t.historyPanel.searchAriaLabel}
         />
       </div>
@@ -465,7 +465,7 @@ export function ReportHistoryPanel({
               key={val}
               type="button"
               onClick={() => handleFilterChange(val)}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs transition-colors ${
+              className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm transition-colors ${
                 isActive
                   ? "bg-[var(--rd-active)] text-[var(--rd-link)] font-medium"
                   : "bg-transparent text-[var(--rd-muted)] hover:bg-[var(--rd-hover)] hover:text-[var(--rd-text)]"
@@ -481,7 +481,7 @@ export function ReportHistoryPanel({
       <div className="mb-3 border-b border-solid border-[var(--rd-border)]" />
 
       {/* Count & Sort Controls */}
-      <div className="mb-3 flex items-center justify-between text-xs text-[var(--rd-muted)]">
+      <div className="mb-3 flex items-center justify-between text-sm text-[var(--rd-muted)]">
         {loading ? (
           <Skeleton className="h-4 w-32 rounded" />
         ) : (
@@ -525,7 +525,7 @@ export function ReportHistoryPanel({
             </div>
           ))
         ) : currentReports.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-[var(--rd-border)] bg-[var(--rd-surface)]/50 p-8 text-center text-xs text-[var(--rd-muted)] sm:text-sm">
+          <div className="rounded-xl border border-dashed border-[var(--rd-border)] bg-[var(--rd-surface)]/50 p-8 text-center text-sm text-[var(--rd-muted)] sm:text-base">
             {panelEmptyMessage}
           </div>
         ) : (
@@ -542,7 +542,7 @@ export function ReportHistoryPanel({
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-solid border-[var(--rd-border)] pt-3 text-xs text-[var(--rd-muted)]">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-solid border-[var(--rd-border)] pt-3 text-sm text-[var(--rd-muted)]">
           {/* Range Info */}
           <span>
             {t.historyPanel.showingRange} {startIndex + 1}–{endIndex}{" "}
@@ -581,7 +581,7 @@ export function ReportHistoryPanel({
                   key={pageNum}
                   type="button"
                   onClick={() => setCurrentPage(Number(pageNum))}
-                  className={`inline-flex size-7 items-center justify-center rounded-md text-xs transition-colors ${
+                  className={`inline-flex size-7 items-center justify-center rounded-md text-sm transition-colors ${
                     isCurrent
                       ? "bg-[var(--rd-active)] text-[var(--rd-link)] font-medium"
                       : "text-[var(--rd-muted)] hover:bg-[var(--rd-hover)] hover:text-[var(--rd-text)]"
@@ -628,7 +628,7 @@ export function ReportHistoryPanel({
                   <Clipboard size={18} aria-hidden="true" />
                 </div>
                 <div>
-                  <h3 id="download-dialog-title" className="text-sm font-semibold text-[var(--rd-text)] sm:text-base">
+                  <h3 id="download-dialog-title" className="text-base font-semibold text-[var(--rd-text)] sm:text-base">
                     Unduh Rekap Laporan
                   </h3>
                   <span className="text-[11px] text-[var(--rd-muted)]">
@@ -647,14 +647,14 @@ export function ReportHistoryPanel({
               </button>
             </div>
 
-            <p className="mb-4 text-xs leading-relaxed text-[var(--rd-muted)]">
+            <p className="mb-4 text-sm leading-relaxed text-[var(--rd-muted)]">
               Pilih rentang tanggal laporan yang akan disertakan. Seluruh laporan dengan berbagai status (Baru, Ditangani, Selesai, Ditutup) dalam rentang ini akan diekspor.
             </p>
 
             {/* Date inputs */}
             <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--rd-text)]">
+                <label className="mb-1 block text-sm font-medium text-[var(--rd-text)]">
                   Tanggal Mulai
                 </label>
                 <input
@@ -662,11 +662,11 @@ export function ReportHistoryPanel({
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   disabled={downloadingPdf}
-                  className="w-full rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-3 py-2 text-xs text-[var(--rd-text)] outline-none transition-colors focus:border-[var(--rd-primary)] focus:ring-1 focus:ring-[var(--rd-primary)]"
+                  className="w-full rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-3 py-2 text-sm text-[var(--rd-text)] outline-none transition-colors focus:border-[var(--rd-primary)] focus:ring-1 focus:ring-[var(--rd-primary)]"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--rd-text)]">
+                <label className="mb-1 block text-sm font-medium text-[var(--rd-text)]">
                   Tanggal Selesai
                 </label>
                 <input
@@ -674,13 +674,13 @@ export function ReportHistoryPanel({
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   disabled={downloadingPdf}
-                  className="w-full rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-3 py-2 text-xs text-[var(--rd-text)] outline-none transition-colors focus:border-[var(--rd-primary)] focus:ring-1 focus:ring-[var(--rd-primary)]"
+                  className="w-full rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-3 py-2 text-sm text-[var(--rd-text)] outline-none transition-colors focus:border-[var(--rd-primary)] focus:ring-1 focus:ring-[var(--rd-primary)]"
                 />
               </div>
             </div>
 
             {/* Summary info box */}
-            <div className="mb-5 rounded-xl border border-solid border-[var(--rd-border)]/70 bg-[var(--rd-bg)]/60 p-3 text-xs">
+            <div className="mb-5 rounded-xl border border-solid border-[var(--rd-border)]/70 bg-[var(--rd-bg)]/60 p-3 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-[var(--rd-muted)]">Data siap diunduh:</span>
                 <strong className={matchingReports.length > 0 ? "text-[var(--rd-primary)]" : "text-[var(--rd-coral)]"}>
@@ -700,7 +700,7 @@ export function ReportHistoryPanel({
                 type="button"
                 disabled={downloadingPdf}
                 onClick={() => setShowDateModal(false)}
-                className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-4 py-2 text-xs font-medium text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-hover)] disabled:opacity-50"
+                className="rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-4 py-2 text-sm font-medium text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-hover)] disabled:opacity-50"
               >
                 Batal
               </button>
@@ -712,7 +712,7 @@ export function ReportHistoryPanel({
                   (Boolean(startDate && endDate && new Date(startDate) > new Date(endDate)))
                 }
                 onClick={handleConfirmDownload}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--rd-primary)] px-4 py-2 text-xs font-semibold text-white shadow-xs transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--rd-primary)] px-4 py-2 text-sm font-semibold text-white shadow-xs transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {downloadingPdf ? (
                   <Loader2 size={14} className="animate-spin" aria-hidden="true" />

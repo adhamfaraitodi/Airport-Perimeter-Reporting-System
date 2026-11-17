@@ -18,7 +18,7 @@ import { UpdateStatusDialog } from "./_components/update-status-dialog";
 import { DashboardFooter } from "./_components/dashboard-footer";
 import { ReportHistoryPanel } from "../../_components/report-history-panel";
 
-const inlineAlertButton = `ml-2.5 rounded-md bg-[var(--rd-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--rd-coral)] disabled:cursor-not-allowed disabled:opacity-55 ${focusRing}`;
+const inlineAlertButton = `ml-2.5 rounded-md bg-[var(--rd-surface)] px-2.5 py-1 text-sm font-semibold text-[var(--rd-coral)] disabled:cursor-not-allowed disabled:opacity-55 ${focusRing}`;
 
 export default function DashboardPage() {
   const params = useParams<{ locale?: string }>();
@@ -133,7 +133,7 @@ export default function DashboardPage() {
       <main className="mx-auto flex w-full max-w-[1700px] flex-1 flex-col px-3 pt-4 md:px-[3%] md:pt-6 min-[1100px]:px-[5%]">
         <nav
           aria-label="Breadcrumb"
-          className="mb-3 flex items-center gap-2 text-xs md:text-[13px]"
+          className="mb-3 flex items-center gap-2 text-sm md:text-[13px]"
         >
           <span className="text-[var(--rd-muted)]">Dashboard</span>
           <span className="text-[var(--rd-muted)]/50 select-none">/</span>

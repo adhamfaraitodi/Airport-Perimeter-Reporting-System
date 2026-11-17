@@ -57,7 +57,7 @@ export default function ReportDetailPage() {
       <main className="mx-auto flex w-full max-w-[1700px] flex-1 flex-col px-3 pt-4 md:px-[3%] md:pt-6 min-[1100px]:px-[5%]">
         <nav
           aria-label="Breadcrumb"
-          className="mb-3 flex flex-wrap items-center gap-2 text-xs md:text-[13px]"
+          className="mb-3 flex flex-wrap items-center gap-2 text-sm md:text-[13px]"
         >
           <span className="text-[var(--rd-muted)]">Dashboard</span>
           <span className="text-[var(--rd-muted)]/50 select-none">/</span>
@@ -78,7 +78,7 @@ export default function ReportDetailPage() {
             <button
               type="button"
               onClick={() => router.push(`/${locale}/reports`)}
-              className="mb-5 inline-flex min-h-9 items-center gap-1.5 rounded-lg border-0 bg-transparent px-0 py-1 text-xs text-[var(--rd-muted)] hover:text-[var(--rd-link)]"
+              className="mb-5 inline-flex min-h-9 items-center gap-1.5 rounded-lg border-0 bg-transparent px-0 py-1 text-sm text-[var(--rd-muted)] hover:text-[var(--rd-link)]"
             >
               <ArrowLeft
                 size={18}
@@ -148,13 +148,13 @@ export default function ReportDetailPage() {
             <h2 className="m-0 text-base font-semibold sm:text-lg">
               Laporan Tidak Ditemukan
             </h2>
-            <p className="m-0 mt-1.5 max-w-md text-xs leading-relaxed text-[var(--rd-muted)] sm:text-sm">
+            <p className="m-0 mt-1.5 max-w-md text-sm leading-relaxed text-[var(--rd-muted)] sm:text-base">
               Data laporan yang Anda cari tidak tersedia atau Anda tidak memiliki akses ke laporan tersebut.
             </p>
             <button
               type="button"
               onClick={() => router.push(`/${locale}/reports`)}
-              className="mt-5 inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[var(--rd-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--rd-primary-hover)]"
+              className="mt-5 inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[var(--rd-primary)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--rd-primary-hover)]"
             >
               <ArrowLeft size={16} aria-hidden="true" />
               Kembali ke Daftar Laporan

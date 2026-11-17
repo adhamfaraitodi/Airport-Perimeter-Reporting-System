@@ -170,7 +170,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
           {/* Language Switcher */}
           <button
             type="button"
-            className={`${buttonClasses} inline-flex h-[44px] items-center gap-1.5 rounded-full border-0 bg-transparent px-2.5 text-xs font-semibold text-[var(--login-panel-text)] hover:bg-[var(--login-theme-hover)] sm:px-3`}
+            className={`${buttonClasses} inline-flex h-[44px] items-center gap-1.5 rounded-full border-0 bg-transparent px-2.5 text-sm font-semibold text-[var(--login-panel-text)] hover:bg-[var(--login-theme-hover)] sm:px-3`}
             onClick={handleToggleLanguage}
             aria-label={
               locale === "id"

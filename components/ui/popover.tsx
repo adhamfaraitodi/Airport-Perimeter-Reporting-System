@@ -183,7 +183,7 @@ function PopoverHeader({
   return (
     <div
       data-slot="popover-header"
-      className={`flex flex-col gap-1 text-sm ${className}`}
+      className={`flex flex-col gap-1 text-base ${className}`}
       {...props}
     />
   );
@@ -209,7 +209,7 @@ function PopoverDescription({
   return (
     <p
       data-slot="popover-description"
-      className={`m-0 text-xs text-[var(--rd-muted)] ${className}`}
+      className={`m-0 text-base text-[var(--rd-muted)] ${className}`}
       {...props}
     />
   );

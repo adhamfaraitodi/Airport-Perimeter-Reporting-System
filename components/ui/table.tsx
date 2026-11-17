@@ -8,7 +8,7 @@ function Table({ className = "", ...props }: React.ComponentProps<"table">) {
     >
       <table
         data-slot="table"
-        className={`w-full caption-bottom border-collapse text-sm ${className}`}
+        className={`w-full caption-bottom border-collapse text-base ${className}`}
         {...props}
       />
     </div>
@@ -68,7 +68,7 @@ function TableHead({ className = "", ...props }: React.ComponentProps<"th">) {
   return (
     <th
       data-slot="table-head"
-      className={`h-11 px-4 text-left align-middle text-xs font-semibold tracking-wide text-[var(--rd-muted)] whitespace-nowrap [&:has([role=checkbox])]:pr-0 ${className}`}
+      className={`h-11 px-4 text-left align-middle text-base font-semibold tracking-wide text-[var(--rd-muted)] whitespace-nowrap [&:has([role=checkbox])]:pr-0 ${className}`}
       {...props}
     />
   );
@@ -78,7 +78,7 @@ function TableCell({ className = "", ...props }: React.ComponentProps<"td">) {
   return (
     <td
       data-slot="table-cell"
-      className={`p-4 align-middle text-sm text-[var(--rd-text)] [&:has([role=checkbox])]:pr-0 ${className}`}
+      className={`p-4 align-middle text-base text-[var(--rd-text)] [&:has([role=checkbox])]:pr-0 ${className}`}
       {...props}
     />
   );
@@ -91,7 +91,7 @@ function TableCaption({
   return (
     <caption
       data-slot="table-caption"
-      className={`mt-4 text-xs text-[var(--rd-muted)] ${className}`}
+      className={`mt-4 text-base text-[var(--rd-muted)] ${className}`}
       {...props}
     />
   );

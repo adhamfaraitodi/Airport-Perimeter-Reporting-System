@@ -54,7 +54,7 @@ import {
 import { compressAvatarPhoto } from "../../_lib/signature-processor";
 
 const readOnlyInput =
-  "m-0 block w-full cursor-not-allowed rounded-[10px] border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)]/80 px-3.5 py-2.5 text-sm text-[var(--rd-muted)] opacity-85 select-all";
+  "m-0 block w-full cursor-not-allowed rounded-[10px] border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)]/80 px-3.5 py-2.5 text-base text-[var(--rd-muted)] opacity-85 select-all";
 
 const PROFILE_CACHE_KEY = "perimeter_profile_cache";
 
@@ -383,7 +383,7 @@ export default function ProfilePage() {
         {/* Breadcrumb */}
         <nav
           aria-label="Breadcrumb"
-          className="mb-3 flex items-center gap-2 text-xs md:text-[13px]"
+          className="mb-3 flex items-center gap-2 text-sm md:text-[13px]"
         >
           <Link
             href={homeRoute}
@@ -400,7 +400,7 @@ export default function ProfilePage() {
           <h1 className="m-0 mb-1.5 text-xl leading-tight font-normal sm:text-3xl">
             Profil Saya,
           </h1>
-          <p className="m-0 text-xs text-[var(--rd-muted)] sm:text-sm">
+          <p className="m-0 text-sm text-[var(--rd-muted)] sm:text-base">
             Perbarui foto profil, nama tampilan, dan nomor kontak Anda.
           </p>
         </div>
@@ -445,7 +445,7 @@ export default function ProfilePage() {
                       {t.header.roles[role] || roleLabels[role]}
                     </span>
                   </div>
-                  <p className="m-0 mt-1 text-xs text-[var(--rd-muted)]">
+                  <p className="m-0 mt-1 text-sm text-[var(--rd-muted)]">
                     {displayUnit}
                   </p>
                 </>
@@ -493,7 +493,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Contact & Metadata List */}
-            <ul className="m-0 list-none space-y-3.5 p-0 text-xs sm:text-[13px]">
+            <ul className="m-0 list-none space-y-3.5 p-0 text-sm sm:text-[13px]">
               <li className="flex items-center gap-3 text-[var(--rd-text)]">
                 <IdCard
                   size={16}
@@ -575,7 +575,7 @@ export default function ProfilePage() {
                   <h2 className="m-0 text-base font-bold text-[var(--rd-text)] sm:text-lg">
                     Pengaturan Profil
                   </h2>
-                  <p className="m-0 mt-0.5 text-xs text-[var(--rd-muted)]">
+                  <p className="m-0 mt-0.5 text-sm text-[var(--rd-muted)]">
                     Perbarui identitas tampilan, foto profil, dan kontak aktif Anda.
                   </p>
                 </div>
@@ -605,7 +605,7 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <p className="m-0 mb-1 text-xs font-semibold text-[var(--rd-text)] sm:text-sm">
+                    <p className="m-0 mb-1 text-sm font-semibold text-[var(--rd-text)] sm:text-base">
                       Foto Profil
                     </p>
                     <p className="m-0 mb-2.5 text-[11px] text-[var(--rd-muted)]">
@@ -623,7 +623,7 @@ export default function ProfilePage() {
                         type="button"
                         disabled={loading || saving}
                         onClick={() => avatarInputRef.current?.click()}
-                        className={`inline-flex min-h-9 items-center gap-2 rounded-lg bg-[var(--rd-primary)] px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--rd-primary-hover)] disabled:cursor-not-allowed disabled:opacity-55 ${focusRing}`}
+                        className={`inline-flex min-h-9 items-center gap-2 rounded-lg bg-[var(--rd-primary)] px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--rd-primary-hover)] disabled:cursor-not-allowed disabled:opacity-55 ${focusRing}`}
                       >
                         <Upload size={15} aria-hidden="true" />
                         <span>Upload foto</span>
@@ -634,7 +634,7 @@ export default function ProfilePage() {
                           type="button"
                           disabled={loading || saving}
                           onClick={handleRemoveAvatar}
-                          className={`${btnSecondary} !min-h-9 !px-3 !py-1.5 !text-xs text-[var(--rd-coral)]`}
+                          className={`${btnSecondary} !min-h-9 !px-3 !py-1.5 !text-sm text-[var(--rd-coral)]`}
                         >
                           <Trash2 size={14} aria-hidden="true" />
                           <span>Hapus</span>
@@ -650,7 +650,7 @@ export default function ProfilePage() {
                   <div>
                     <label
                       htmlFor="profile-name"
-                      className="mb-2 block text-xs font-semibold text-[var(--rd-text)] sm:text-sm"
+                      className="mb-2 block text-sm font-semibold text-[var(--rd-text)] sm:text-base"
                     >
                       Nama Lengkap
                     </label>
@@ -670,7 +670,7 @@ export default function ProfilePage() {
                         className={`${fieldControl} !mt-0`}
                       />
                     )}
-                    <p className="m-0 mt-1.5 text-xs leading-relaxed text-[var(--rd-muted)]">
+                    <p className="m-0 mt-1.5 text-sm leading-relaxed text-[var(--rd-muted)]">
                       Nama tampilan resmi pada laporan dan lembar pengesahan.
                     </p>
                   </div>
@@ -679,7 +679,7 @@ export default function ProfilePage() {
                   <div>
                     <label
                       htmlFor="profile-phone"
-                      className="mb-2 block text-xs font-semibold text-[var(--rd-text)] sm:text-sm"
+                      className="mb-2 block text-sm font-semibold text-[var(--rd-text)] sm:text-base"
                     >
                       Nomor Kontak Telepon
                     </label>
@@ -700,7 +700,7 @@ export default function ProfilePage() {
                         className={`${fieldControl} !mt-0 font-mono`}
                       />
                     )}
-                    <p className="m-0 mt-1.5 text-xs leading-relaxed text-[var(--rd-muted)]">
+                    <p className="m-0 mt-1.5 text-sm leading-relaxed text-[var(--rd-muted)]">
                       Nomor telepon atau WhatsApp aktif untuk koordinasi
                       lapangan.
                     </p>
@@ -715,7 +715,7 @@ export default function ProfilePage() {
                       className="shrink-0 text-[var(--rd-muted)]"
                       aria-hidden="true"
                     />
-                    <span className="text-xs font-semibold text-[var(--rd-muted)]">
+                    <span className="text-sm font-semibold text-[var(--rd-muted)]">
                       Informasi Kepegawaian & Hak Akses (Tidak dapat diubah)
                     </span>
                   </div>
@@ -725,7 +725,7 @@ export default function ProfilePage() {
                     <div>
                       <label
                         htmlFor="profile-nip"
-                        className="mb-1.5 block text-xs font-semibold text-[var(--rd-text)]"
+                        className="mb-1.5 block text-sm font-semibold text-[var(--rd-text)]"
                       >
                         NIP (Nomor Induk Pegawai)
                       </label>
@@ -747,7 +747,7 @@ export default function ProfilePage() {
                     <div className="sm:col-span-1 lg:col-span-2">
                       <label
                         htmlFor="profile-unit"
-                        className="mb-1.5 block text-xs font-semibold text-[var(--rd-text)]"
+                        className="mb-1.5 block text-sm font-semibold text-[var(--rd-text)]"
                       >
                         Unit Kerja / Divisi
                       </label>
@@ -769,7 +769,7 @@ export default function ProfilePage() {
                     <div>
                       <label
                         htmlFor="profile-role"
-                        className="mb-1.5 block text-xs font-semibold text-[var(--rd-text)]"
+                        className="mb-1.5 block text-sm font-semibold text-[var(--rd-text)]"
                       >
                         Peran Akses
                       </label>
@@ -791,7 +791,7 @@ export default function ProfilePage() {
                     <div>
                       <label
                         htmlFor="profile-status"
-                        className="mb-1.5 block text-xs font-semibold text-[var(--rd-text)]"
+                        className="mb-1.5 block text-sm font-semibold text-[var(--rd-text)]"
                       >
                         Status Akun
                       </label>
@@ -813,7 +813,7 @@ export default function ProfilePage() {
                     <div>
                       <label
                         htmlFor="profile-created"
-                        className="mb-1.5 block text-xs font-semibold text-[var(--rd-text)]"
+                        className="mb-1.5 block text-sm font-semibold text-[var(--rd-text)]"
                       >
                         Terdaftar
                       </label>

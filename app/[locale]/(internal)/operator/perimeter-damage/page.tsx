@@ -513,7 +513,7 @@ export default function PerimeterDamageMasterPage() {
         {/* Breadcrumb */}
         <nav
           aria-label="Breadcrumb"
-          className="mb-3 flex items-center gap-2 text-xs md:text-[13px]"
+          className="mb-3 flex items-center gap-2 text-sm md:text-[13px]"
         >
           <Link
             href={`/${locale}/operator`}
@@ -533,7 +533,7 @@ export default function PerimeterDamageMasterPage() {
             <h1 className="m-0 mb-1.5 text-xl leading-tight font-normal sm:text-3xl">
               Data Master Kerusakan Perimeter,
             </h1>
-            <p className="m-0 text-xs text-[var(--rd-muted)] sm:text-sm">
+            <p className="m-0 text-sm text-[var(--rd-muted)] sm:text-base">
               Kelola bagian pagar perimeter dan daftar klasifikasi jenis
               kerusakan untuk formulir pelaporan petugas.
             </p>
@@ -565,7 +565,7 @@ export default function PerimeterDamageMasterPage() {
               <Fence className="size-[18px] sm:size-[22px]" strokeWidth={1.8} aria-hidden="true" />
             </span>
             <div className="min-w-0 flex-1">
-              <span className="mt-2 block text-[10px] min-[390px]:text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
+              <span className="mt-2 block text-[10px] min-[390px]:text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-sm">
                 <span className="sm:hidden">Bagian Pagar</span>
                 <span className="hidden sm:inline">Bagian Pagar Perimeter</span>
               </span>
@@ -574,7 +574,7 @@ export default function PerimeterDamageMasterPage() {
               ) : (
                 <strong className="mt-2 block px-0.5 text-xl font-semibold leading-tight text-[var(--rd-text)] sm:mt-0 sm:px-0">
                   {totalParts}{" "}
-                  <span className="hidden text-xs font-normal text-[var(--rd-muted)] sm:inline">
+                  <span className="hidden text-sm font-normal text-[var(--rd-muted)] sm:inline">
                     bagian
                   </span>
                 </strong>
@@ -587,7 +587,7 @@ export default function PerimeterDamageMasterPage() {
               <Wrench className="size-[18px] sm:size-[21px]" strokeWidth={1.8} aria-hidden="true" />
             </span>
             <div className="min-w-0 flex-1">
-              <span className="mt-2 block text-[10px] min-[390px]:text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
+              <span className="mt-2 block text-[10px] min-[390px]:text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-sm">
                 <span className="sm:hidden">Jenis Kerusakan</span>
                 <span className="hidden sm:inline">Total Jenis Kerusakan</span>
               </span>
@@ -596,7 +596,7 @@ export default function PerimeterDamageMasterPage() {
               ) : (
                 <strong className="mt-2 block px-0.5 text-xl font-semibold leading-tight text-[var(--rd-text)] sm:mt-0 sm:px-0">
                   {totalDamages}{" "}
-                  <span className="hidden text-xs font-normal text-[var(--rd-muted)] sm:inline">
+                  <span className="hidden text-sm font-normal text-[var(--rd-muted)] sm:inline">
                     klasifikasi
                   </span>
                 </strong>
@@ -609,7 +609,7 @@ export default function PerimeterDamageMasterPage() {
               <ShieldAlert className="size-[18px] sm:size-[21px]" strokeWidth={1.8} aria-hidden="true" />
             </span>
             <div className="min-w-0 flex-1">
-              <span className="mt-2 block text-[10px] min-[390px]:text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-xs">
+              <span className="mt-2 block text-[10px] min-[390px]:text-[11px] leading-tight text-[var(--rd-muted)] sm:mt-0 sm:text-sm">
                 <span className="sm:hidden">Grup Eksklusif</span>
                 <span className="hidden sm:inline">Opsi Grup Eksklusif (Korosi)</span>
               </span>
@@ -618,7 +618,7 @@ export default function PerimeterDamageMasterPage() {
               ) : (
                 <strong className="mt-2 block px-0.5 text-xl font-semibold leading-tight text-[var(--rd-text)] sm:mt-0 sm:px-0">
                   {totalExclusive}{" "}
-                  <span className="hidden text-xs font-normal text-[var(--rd-muted)] sm:inline">
+                  <span className="hidden text-sm font-normal text-[var(--rd-muted)] sm:inline">
                     opsi tingkat korosi
                   </span>
                 </strong>
@@ -645,7 +645,7 @@ export default function PerimeterDamageMasterPage() {
                   role="tab"
                   aria-selected={viewMode === "BY_PART"}
                   onClick={() => setViewMode("BY_PART")}
-                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${focusRing} ${
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${focusRing} ${
                     viewMode === "BY_PART"
                       ? "bg-[var(--rd-surface)] text-[var(--rd-link)] shadow-xs"
                       : "text-[var(--rd-muted)] hover:text-[var(--rd-text)]"
@@ -659,7 +659,7 @@ export default function PerimeterDamageMasterPage() {
                   role="tab"
                   aria-selected={viewMode === "BY_DAMAGE"}
                   onClick={() => setViewMode("BY_DAMAGE")}
-                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${focusRing} ${
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${focusRing} ${
                     viewMode === "BY_DAMAGE"
                       ? "bg-[var(--rd-surface)] text-[var(--rd-link)] shadow-xs"
                       : "text-[var(--rd-muted)] hover:text-[var(--rd-text)]"
@@ -675,7 +675,7 @@ export default function PerimeterDamageMasterPage() {
                 aria-label="Filter bagian pagar"
                 value={partFilter}
                 onChange={(e) => setPartFilter(e.target.value)}
-                className={`min-h-9 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-3 py-1.5 text-xs font-medium text-[var(--rd-text)] ${focusRing}`}
+                className={`min-h-9 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-3 py-1.5 text-sm font-medium text-[var(--rd-text)] ${focusRing}`}
               >
                 <option value="ALL">Semua Bagian Pagar</option>
                 {parts.map((part) => (
@@ -699,7 +699,7 @@ export default function PerimeterDamageMasterPage() {
                 placeholder="Cari bagian pagar atau kerusakan…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="min-w-0 flex-1 border-0 bg-transparent py-2 text-xs text-[var(--rd-text)] outline-none placeholder:text-[var(--rd-muted)] sm:text-sm"
+                className="min-w-0 flex-1 border-0 bg-transparent py-2 text-sm text-[var(--rd-text)] outline-none placeholder:text-[var(--rd-muted)] sm:text-base"
               />
             </label>
           </div>
@@ -773,7 +773,7 @@ export default function PerimeterDamageMasterPage() {
                               {sortedDamages.map((damage) => (
                                 <span
                                   key={damage.id}
-                                  className="group inline-flex items-center gap-1.5 rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-2.5 py-1 text-xs font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-primary)]/40 hover:bg-[var(--rd-hover)]"
+                                  className="group inline-flex items-center gap-1.5 rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-2.5 py-1 text-sm font-medium text-[var(--rd-text)] transition-colors hover:border-[var(--rd-primary)]/40 hover:bg-[var(--rd-hover)]"
                                 >
                                   <button
                                     type="button"
@@ -816,7 +816,7 @@ export default function PerimeterDamageMasterPage() {
                               <button
                                 type="button"
                                 onClick={() => openCreateDamageModal(part.id)}
-                                className={`inline-flex items-center gap-1 rounded-lg border border-dashed border-[var(--rd-primary)]/50 bg-[var(--rd-active)]/50 px-2.5 py-1 text-xs font-semibold text-[var(--rd-link)] transition-colors hover:bg-[var(--rd-active)] ${focusRing}`}
+                                className={`inline-flex items-center gap-1 rounded-lg border border-dashed border-[var(--rd-primary)]/50 bg-[var(--rd-active)]/50 px-2.5 py-1 text-sm font-semibold text-[var(--rd-link)] transition-colors hover:bg-[var(--rd-active)] ${focusRing}`}
                               >
                                 <Plus size={13} aria-hidden="true" />
                                 <span>Tambah</span>
@@ -824,7 +824,7 @@ export default function PerimeterDamageMasterPage() {
                             </div>
                           </TableCell>
                           <TableCell className="text-center">
-                            <span className="inline-flex items-center rounded-full bg-[var(--rd-active)] px-2.5 py-0.5 text-xs font-semibold text-[var(--rd-link)]">
+                            <span className="inline-flex items-center rounded-full bg-[var(--rd-active)] px-2.5 py-0.5 text-sm font-semibold text-[var(--rd-link)]">
                               {part.damages.length} jenis
                             </span>
                           </TableCell>
@@ -925,7 +925,7 @@ export default function PerimeterDamageMasterPage() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className="inline-flex items-center gap-1.5 rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-2.5 py-1 text-xs font-medium text-[var(--rd-text)]">
+                          <span className="inline-flex items-center gap-1.5 rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] px-2.5 py-1 text-sm font-medium text-[var(--rd-text)]">
                             <Fence
                               size={13}
                               className="text-[var(--rd-link)]"
@@ -936,11 +936,11 @@ export default function PerimeterDamageMasterPage() {
                         </TableCell>
                         <TableCell>
                           {item.damage.exclusiveGroup ? (
-                            <span className="inline-flex items-center rounded-full bg-[var(--rd-brown)]/15 px-2.5 py-0.5 text-xs font-semibold text-[var(--rd-brown)]">
+                            <span className="inline-flex items-center rounded-full bg-[var(--rd-brown)]/15 px-2.5 py-0.5 text-sm font-semibold text-[var(--rd-brown)]">
                               Eksklusif ({item.damage.exclusiveGroup})
                             </span>
                           ) : (
-                            <span className="text-xs text-[var(--rd-muted)]">
+                            <span className="text-sm text-[var(--rd-muted)]">
                               Pilihan majemuk (bebas)
                             </span>
                           )}
@@ -1045,14 +1045,14 @@ export default function PerimeterDamageMasterPage() {
               </label>
 
               <div className="mb-4">
-                <span className="mb-2 block text-xs font-semibold">
+                <span className="mb-2 block text-sm font-semibold">
                   Daftar Jenis Kerusakan ({partModal.damages.length})
                 </span>
                 <div className="mb-3 flex flex-wrap gap-1.5 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] p-3">
                   {partModal.damages.map((d) => (
                     <span
                       key={d.id}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-2.5 py-1 text-xs font-medium"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-2.5 py-1 text-sm font-medium"
                     >
                       <span>{d.name}</span>
                       {d.exclusiveGroup && (
@@ -1079,7 +1079,7 @@ export default function PerimeterDamageMasterPage() {
                     </span>
                   ))}
                   {partModal.damages.length === 0 && (
-                    <span className="text-xs text-[var(--rd-muted)]">
+                    <span className="text-sm text-[var(--rd-muted)]">
                       Belum ada jenis kerusakan ditambahkan.
                     </span>
                   )}
@@ -1105,7 +1105,7 @@ export default function PerimeterDamageMasterPage() {
                           addDraftDamageInPartModal();
                         }
                       }}
-                      className="min-h-9 flex-1 rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-1.5 text-xs text-[var(--rd-text)] placeholder:text-[var(--rd-muted)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+                      className="min-h-9 flex-1 rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-1.5 text-sm text-[var(--rd-text)] placeholder:text-[var(--rd-muted)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
                     />
                     <button
                       type="button"
@@ -1116,7 +1116,7 @@ export default function PerimeterDamageMasterPage() {
                       <span>Tambah</span>
                     </button>
                   </div>
-                  <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-[var(--rd-muted)]">
+                  <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-[var(--rd-muted)]">
                     <input
                       type="checkbox"
                       checked={partModal.newDamageExclusive}
@@ -1140,7 +1140,7 @@ export default function PerimeterDamageMasterPage() {
               {confirmDiscardPart && (
                 <div
                   role="alert"
-                  className="mb-4 rounded-xl border border-solid border-[var(--rd-coral)]/40 bg-[var(--rd-coral)]/10 p-3 text-xs leading-relaxed text-[var(--rd-text)]"
+                  className="mb-4 rounded-xl border border-solid border-[var(--rd-coral)]/40 bg-[var(--rd-coral)]/10 p-3 text-sm leading-relaxed text-[var(--rd-text)]"
                 >
                   <strong className="block font-semibold text-[var(--rd-coral)]">
                     Batalkan perubahan bagian pagar?
@@ -1153,7 +1153,7 @@ export default function PerimeterDamageMasterPage() {
                     <button
                       type="button"
                       onClick={() => setConfirmDiscardPart(false)}
-                      className={`${btnBase} min-h-8 rounded-lg border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-1 text-xs text-[var(--rd-text)] hover:bg-[var(--rd-hover)]`}
+                      className={`${btnBase} min-h-8 rounded-lg border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-1 text-sm text-[var(--rd-text)] hover:bg-[var(--rd-hover)]`}
                     >
                       Lanjut Mengisi
                     </button>
@@ -1163,7 +1163,7 @@ export default function PerimeterDamageMasterPage() {
                         setConfirmDiscardPart(false);
                         setPartModal(null);
                       }}
-                      className={`${btnBase} min-h-8 rounded-lg bg-[var(--rd-coral)] px-3 py-1 text-xs text-white hover:brightness-95`}
+                      className={`${btnBase} min-h-8 rounded-lg bg-[var(--rd-coral)] px-3 py-1 text-sm text-white hover:brightness-95`}
                     >
                       Ya, Batalkan
                     </button>
@@ -1256,7 +1256,7 @@ export default function PerimeterDamageMasterPage() {
                 />
               </label>
 
-              <label className="mb-5 flex cursor-pointer items-start gap-2.5 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] p-3 text-xs leading-relaxed">
+              <label className="mb-5 flex cursor-pointer items-start gap-2.5 rounded-xl border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)] p-3 text-sm leading-relaxed">
                 <input
                   type="checkbox"
                   checked={damageModal.exclusiveKorosi}
@@ -1284,7 +1284,7 @@ export default function PerimeterDamageMasterPage() {
               {confirmDiscardDamage && (
                 <div
                   role="alert"
-                  className="mb-4 rounded-xl border border-solid border-[var(--rd-coral)]/40 bg-[var(--rd-coral)]/10 p-3 text-xs leading-relaxed text-[var(--rd-text)]"
+                  className="mb-4 rounded-xl border border-solid border-[var(--rd-coral)]/40 bg-[var(--rd-coral)]/10 p-3 text-sm leading-relaxed text-[var(--rd-text)]"
                 >
                   <strong className="block font-semibold text-[var(--rd-coral)]">
                     Batalkan pengisian jenis kerusakan?
@@ -1297,7 +1297,7 @@ export default function PerimeterDamageMasterPage() {
                     <button
                       type="button"
                       onClick={() => setConfirmDiscardDamage(false)}
-                      className={`${btnBase} min-h-8 rounded-lg border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-1 text-xs text-[var(--rd-text)] hover:bg-[var(--rd-hover)]`}
+                      className={`${btnBase} min-h-8 rounded-lg border-[var(--rd-border)] bg-[var(--rd-surface)] px-3 py-1 text-sm text-[var(--rd-text)] hover:bg-[var(--rd-hover)]`}
                     >
                       Lanjut Mengisi
                     </button>
@@ -1307,7 +1307,7 @@ export default function PerimeterDamageMasterPage() {
                         setConfirmDiscardDamage(false);
                         setDamageModal(null);
                       }}
-                      className={`${btnBase} min-h-8 rounded-lg bg-[var(--rd-coral)] px-3 py-1 text-xs text-white hover:brightness-95`}
+                      className={`${btnBase} min-h-8 rounded-lg bg-[var(--rd-coral)] px-3 py-1 text-sm text-white hover:brightness-95`}
                     >
                       Ya, Batalkan
                     </button>
@@ -1369,7 +1369,7 @@ export default function PerimeterDamageMasterPage() {
                 <X size={18} aria-hidden="true" />
               </button>
             </div>
-            <p className="m-0 mb-5 text-xs leading-relaxed text-[var(--rd-muted)] sm:text-sm">
+            <p className="m-0 mb-5 text-sm leading-relaxed text-[var(--rd-muted)] sm:text-base">
               {deleteTarget.type === "PART" ? (
                 <>
                   Bagian pagar{" "}
@@ -1440,7 +1440,7 @@ export default function PerimeterDamageMasterPage() {
                 <X size={18} aria-hidden="true" />
               </button>
             </div>
-            <p className="m-0 mb-5 text-xs leading-relaxed text-[var(--rd-muted)] sm:text-sm">
+            <p className="m-0 mb-5 text-sm leading-relaxed text-[var(--rd-muted)] sm:text-base">
               Seluruh bagian pagar perimeter dan jenis kerusakan akan
               dikembalikan ke konfigurasi awal sistem.
             </p>

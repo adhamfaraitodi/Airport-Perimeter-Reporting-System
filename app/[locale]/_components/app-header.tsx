@@ -297,7 +297,7 @@ export function AppHeader({
               alt="InJourney Airports"
               className="h-auto w-[64px] shrink-0 sm:w-24"
             />
-            <span className="max-w-[140px] text-[11px] leading-tight text-[var(--rd-text)] sm:max-w-56 sm:text-sm">
+            <span className="max-w-[140px] text-[11px] leading-tight text-[var(--rd-text)] sm:max-w-56 sm:text-base">
               Airport Perimeter
               <br />
               Reporting System
@@ -309,7 +309,7 @@ export function AppHeader({
             <nav className="hidden items-center gap-1.5 md:flex">
               <Link
                 href={`/${locale}/operator`}
-                className={`inline-flex h-9 items-center gap-2 rounded-2xl px-3 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
+                className={`inline-flex h-9 items-center gap-2 rounded-2xl px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
                   isOperatorHomeActive
                     ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
                     : "text-[var(--rd-text)] hover:bg-[var(--rd-active)] hover:text-[var(--rd-link)]"
@@ -332,7 +332,7 @@ export function AppHeader({
                   }}
                   aria-expanded={dataMasterOpen}
                   aria-haspopup="menu"
-                  className={`inline-flex h-9 items-center gap-2 rounded-2xl px-3 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
+                  className={`inline-flex h-9 items-center gap-2 rounded-2xl px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
                     dataMasterOpen || isDataMasterActive
                       ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
                       : "text-[var(--rd-text)] hover:bg-[var(--rd-active)] hover:text-[var(--rd-link)]"
@@ -360,7 +360,7 @@ export function AppHeader({
                       href={`/${locale}/operator/perimeter-damage`}
                       role="menuitem"
                       onClick={() => setDataMasterOpen(false)}
-                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
+                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
                         isPerimeterDamageActive
                           ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
                           : "hover:bg-[var(--rd-hover)] hover:text-[var(--rd-link)]"
@@ -384,7 +384,7 @@ export function AppHeader({
                       href={`/${locale}/operator/accounts`}
                       role="menuitem"
                       onClick={() => setDataMasterOpen(false)}
-                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
+                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
                         isAccountsActive
                           ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
                           : "hover:bg-[var(--rd-hover)] hover:text-[var(--rd-link)]"
@@ -417,7 +417,7 @@ export function AppHeader({
           <button
             type="button"
             onClick={handleToggleLanguage}
-            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-transparent px-2.5 text-xs font-semibold text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-active)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] sm:h-10 sm:px-3"
+            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-transparent px-2.5 text-sm font-semibold text-[var(--rd-text)] transition-colors hover:bg-[var(--rd-active)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] sm:h-10 sm:px-3"
             aria-label={
               locale === "id"
                 ? "Beralih ke Bahasa Inggris"
@@ -479,7 +479,7 @@ export function AppHeader({
               <PopoverHeader className="border-b border-solid border-[var(--rd-border)] px-4 pt-3.5 pb-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <PopoverTitle className="text-sm font-semibold">
+                    <PopoverTitle className="text-base font-semibold">
                       {t.header.notifications}
                     </PopoverTitle>
                     {unreadCount > 0 && (
@@ -558,7 +558,7 @@ export function AppHeader({
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
                           <span
-                            className={`text-xs leading-snug ${
+                            className={`text-sm leading-snug ${
                               !item.read
                                 ? "font-semibold text-[var(--rd-text)]"
                                 : "font-medium text-[var(--rd-text)]"
@@ -592,7 +592,7 @@ export function AppHeader({
                       className="mx-auto mb-2 text-[var(--rd-muted)]/60"
                       aria-hidden="true"
                     />
-                    <p className="m-0 text-xs font-medium text-[var(--rd-text)]">
+                    <p className="m-0 text-sm font-medium text-[var(--rd-text)]">
                       {t.header.noNotif}
                     </p>
                     <p className="m-0 mt-0.5 text-[11px] text-[var(--rd-muted)]">
@@ -612,7 +612,7 @@ export function AppHeader({
                     setNotifOpen(false);
                     router.push(getHomeRoute());
                   }}
-                  className="block w-full rounded-xl py-2 text-center text-xs font-semibold text-[var(--rd-link)] transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+                  className="block w-full rounded-xl py-2 text-center text-sm font-semibold text-[var(--rd-link)] transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
                 >
                   {isOperator
                     ? t.header.viewAllOperatorReports
@@ -649,7 +649,7 @@ export function AppHeader({
                   />
                 ) : (
                   <span
-                    className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-surface)] text-xs font-semibold tracking-wide text-[var(--rd-text)] shadow-xs sm:size-10 sm:rounded-2xl sm:text-sm"
+                    className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--rd-surface)] text-sm font-semibold tracking-wide text-[var(--rd-text)] shadow-xs sm:size-10 sm:rounded-2xl sm:text-base"
                     title={displayName}
                     aria-label={displayName}
                   >
@@ -770,7 +770,7 @@ export function AppHeader({
                             }`}
                             aria-hidden="true"
                           />
-                          <span className="block text-xs font-medium">
+                          <span className="block text-sm font-medium">
                             {t.header.perimeterDamage}
                           </span>
                         </Link>
@@ -797,7 +797,7 @@ export function AppHeader({
                             }`}
                             aria-hidden="true"
                           />
-                          <span className="block text-xs font-medium">
+                          <span className="block text-sm font-medium">
                             {t.header.accounts}
                           </span>
                         </Link>

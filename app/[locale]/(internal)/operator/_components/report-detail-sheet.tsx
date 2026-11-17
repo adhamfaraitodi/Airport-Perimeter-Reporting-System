@@ -90,7 +90,7 @@ export function ReportDetailSheet({
               key={finding.partId || index}
               className="rounded-lg border border-solid border-[var(--rd-border)] bg-[var(--rd-bg)]/60 p-2.5"
             >
-              <div className="mb-1.5 text-xs font-semibold text-[var(--rd-text)]">
+              <div className="mb-1.5 text-sm font-semibold text-[var(--rd-text)]">
                 {finding.partName}
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -111,7 +111,7 @@ export function ReportDetailSheet({
       <p className={narrative}>{report.narrative}</p>
       <Gallery images={report.images} />
       {report.deletedAt && (
-        <div className="my-5 border-l-[3px] border-solid border-[var(--rd-brown)] bg-[var(--rd-bg)] p-[15px] text-xs">
+        <div className="my-5 border-l-[3px] border-solid border-[var(--rd-brown)] bg-[var(--rd-bg)] p-[15px] text-sm">
           <strong>Laporan ditutup · {dateText(report.deletedAt)}</strong>
           <p className={`${narrative} mt-2.5`}>{report.deletionReason}</p>
           <span>Status penanganan terakhir: {labels[report.status]}</span>
@@ -140,8 +140,8 @@ export function ReportDetailSheet({
               disabled={statusActionDisabled}
               className={`${
                 statusActionDisabled
-                  ? `${btnBase} min-h-10 flex-1 border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)]/70 px-4 py-2 text-xs font-semibold text-[var(--rd-muted)] cursor-not-allowed opacity-60 shadow-none`
-                  : `${btnPrimary} flex-1 text-xs`
+                  ? `${btnBase} min-h-10 flex-1 border border-solid border-[var(--rd-border)] bg-[var(--rd-surface)]/70 px-4 py-2 text-sm font-semibold text-[var(--rd-muted)] cursor-not-allowed opacity-60 shadow-none`
+                  : `${btnPrimary} flex-1 text-sm`
               }`}
               onClick={() => {
                 if (!statusActionDisabled) {
@@ -155,7 +155,7 @@ export function ReportDetailSheet({
           {canDelete && (
             <button
               type="button"
-              className={`${btnDangerGhost} flex-1 text-xs`}
+              className={`${btnDangerGhost} flex-1 text-sm`}
               onClick={() => onAction("DELETE")}
             >
               Tutup laporan

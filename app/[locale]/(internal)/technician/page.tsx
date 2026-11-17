@@ -23,7 +23,7 @@ import { getTechnicianDashboardDataAction } from "./_lib/technician.actions";
 import type { TechnicianTaskSummary } from "./_lib/technician.schema";
 import { useTranslation } from "@/lib/i18n";
 
-const inlineAlertButton = `ml-2.5 rounded-md bg-[var(--rd-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--rd-coral)] disabled:cursor-not-allowed disabled:opacity-55 ${focusRing}`;
+const inlineAlertButton = `ml-2.5 rounded-md bg-[var(--rd-surface)] px-2.5 py-1 text-sm font-semibold text-[var(--rd-coral)] disabled:cursor-not-allowed disabled:opacity-55 ${focusRing}`;
 
 export default function TechnicianDashboardPage() {
   const params = useParams<{ locale?: string }>();
@@ -181,7 +181,7 @@ export default function TechnicianDashboardPage() {
       <main className="mx-auto flex w-full max-w-[1700px] flex-1 flex-col px-3 pt-4 md:px-[3%] md:pt-6 min-[1100px]:px-[5%]">
         <nav
           aria-label="Breadcrumb"
-          className="mb-3 flex items-center gap-2 text-xs md:text-[13px]"
+          className="mb-3 flex items-center gap-2 text-sm md:text-[13px]"
         >
           <span className="text-[var(--rd-muted)]">Dashboard</span>
           <span className="text-[var(--rd-muted)]/50 select-none">/</span>
@@ -200,7 +200,7 @@ export default function TechnicianDashboardPage() {
               <Wrench className="size-[18px]" aria-hidden="true" />
             </span>
             <div className="min-w-0 flex-1">
-              <span className="block text-[10px] text-[var(--rd-muted)] sm:text-xs">
+              <span className="block text-[10px] text-[var(--rd-muted)] sm:text-sm">
                 Perlu Ditangani
               </span>
               {loading ? (
@@ -220,7 +220,7 @@ export default function TechnicianDashboardPage() {
               <Clock className="size-[18px]" aria-hidden="true" />
             </span>
             <div className="min-w-0 flex-1">
-              <span className="block text-[10px] text-[var(--rd-muted)] sm:text-xs">
+              <span className="block text-[10px] text-[var(--rd-muted)] sm:text-sm">
                 Sedang Dikerjakan
               </span>
               {loading ? (
@@ -240,7 +240,7 @@ export default function TechnicianDashboardPage() {
               <CheckCircle2 className="size-[18px]" aria-hidden="true" />
             </span>
             <div className="min-w-0 flex-1">
-              <span className="block text-[10px] text-[var(--rd-muted)] sm:text-xs">
+              <span className="block text-[10px] text-[var(--rd-muted)] sm:text-sm">
                 Selesai Diperbaiki
               </span>
               {loading ? (
@@ -257,7 +257,7 @@ export default function TechnicianDashboardPage() {
               <ClipboardList className="size-[18px]" aria-hidden="true" />
             </span>
             <div className="min-w-0 flex-1">
-              <span className="block text-[10px] text-[var(--rd-muted)] sm:text-xs">
+              <span className="block text-[10px] text-[var(--rd-muted)] sm:text-sm">
                 Total Seluruh Laporan
               </span>
               {loading ? (
