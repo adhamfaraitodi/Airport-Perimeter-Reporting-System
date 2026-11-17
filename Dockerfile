@@ -48,4 +48,4 @@ USER node
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "node migrate.mjs && node server.js"]
+CMD ["sh", "-c", "node migrate.mjs && exec node server.js"]

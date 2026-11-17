@@ -2,37 +2,18 @@ import { auth, nipToEmail } from "@/lib/auth";
 import { db, schema, pool } from "@/db";
 import { and, eq } from "drizzle-orm";
 
-const DEFAULT_SEED_PASSWORD = process.env.SEED_DEFAULT_PASSWORD || "password123";
-
-const DEFAULT_USERS = [
-  {
-    nip: "1234567",
-    name: "Operator Admin",
-    role: "OPERATOR" as const,
-    position: "Supervisor",
-    unit: "Aviation Security (AVSEC)",
-    phone: "081234567800",
-    password: DEFAULT_SEED_PASSWORD,
-  },
-  {
-    nip: "1122334",
-    name: "Adham",
-    role: "REPORTER" as const,
-    position: "Officer",
-    unit: "Aviation Security (AVSEC)",
-    phone: "081234567801",
-    password: DEFAULT_SEED_PASSWORD,
-  },
-  {
-    nip: "5566778",
-    name: "AF",
-    role: "TECHNICIAN" as const,
-    position: "Officer",
-    unit: "Facility Operation",
-    phone: "081234567802",
-    password: DEFAULT_SEED_PASSWORD,
-  },
-];
+function resolveSeedPassword(): string {
+  const envPassword = process.env.SEED_DEFAULT_PASSWORD;
+  if (process.env.NODE_ENV === "production") {
+    if (!envPassword || envPassword.length < 12) {
+      throw new Error(
+        "SEED_DEFAULT_PASSWORD environment variable is required in production and must be at least 12 characters long."
+      );
+    }
+    return envPassword;
+  }
+  return envPassword || "password123";
+}
 
 const DEFAULT_PARTS: Array<{
   id: string;
@@ -100,6 +81,38 @@ const DEFAULT_PARTS: Array<{
 ];
 
 async function seed() {
+  const seedPassword = resolveSeedPassword();
+
+  const DEFAULT_USERS = [
+    {
+      nip: "1234567",
+      name: "Operator Admin",
+      role: "OPERATOR" as const,
+      position: "Supervisor",
+      unit: "Aviation Security (AVSEC)",
+      phone: "081234567800",
+      password: seedPassword,
+    },
+    {
+      nip: "1122334",
+      name: "Adham",
+      role: "REPORTER" as const,
+      position: "Officer",
+      unit: "Aviation Security (AVSEC)",
+      phone: "081234567801",
+      password: seedPassword,
+    },
+    {
+      nip: "5566778",
+      name: "AF",
+      role: "TECHNICIAN" as const,
+      position: "Officer",
+      unit: "Facility Operation",
+      phone: "081234567802",
+      password: seedPassword,
+    },
+  ];
+
   console.log("🌱 [Seed] Memulai seeding database...");
 
   // 1. Seed Perimeter Parts & Damage Types
@@ -192,8 +205,8 @@ async function seed() {
 
 seed()
   .catch((err) => {
-    console.error("❌ [Seed] Gagal:", err);
-    process.exit(1);
+    console.error("❌ [Seed] Gagal:", err instanceof Error ? err.message : err);
+    process.exitCode = 1;
   })
   .finally(async () => {
     await pool.end();
