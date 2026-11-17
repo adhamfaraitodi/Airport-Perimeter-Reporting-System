@@ -2,6 +2,8 @@ import { auth, nipToEmail } from "@/lib/auth";
 import { db, schema, pool } from "@/db";
 import { and, eq } from "drizzle-orm";
 
+const DEFAULT_SEED_PASSWORD = process.env.SEED_DEFAULT_PASSWORD || "password123";
+
 const DEFAULT_USERS = [
   {
     nip: "1234567",
@@ -10,7 +12,7 @@ const DEFAULT_USERS = [
     position: "Supervisor",
     unit: "Aviation Security (AVSEC)",
     phone: "081234567800",
-    password: "password123",
+    password: DEFAULT_SEED_PASSWORD,
   },
   {
     nip: "1122334",
@@ -19,7 +21,7 @@ const DEFAULT_USERS = [
     position: "Officer",
     unit: "Aviation Security (AVSEC)",
     phone: "081234567801",
-    password: "password123",
+    password: DEFAULT_SEED_PASSWORD,
   },
   {
     nip: "5566778",
@@ -28,7 +30,7 @@ const DEFAULT_USERS = [
     position: "Officer",
     unit: "Facility Operation",
     phone: "081234567802",
-    password: "password123",
+    password: DEFAULT_SEED_PASSWORD,
   },
 ];
 

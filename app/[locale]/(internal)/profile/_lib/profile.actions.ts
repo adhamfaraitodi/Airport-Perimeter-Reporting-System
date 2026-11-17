@@ -7,6 +7,7 @@ import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { auth, type UserRole } from "@/lib/auth";
+import { getUploadRootDir } from "@/lib/evidence-image";
 import { updateProfileSchema } from "./profile.schema";
 
 export interface ProfileData {
@@ -89,7 +90,7 @@ export async function getProfileAction(): Promise<{
 /**
  * Autonomous Update Profile:
  * - Updates name, phone
- * - Saves compressed WebP avatar to public/uploads/avatars/
+ * - Saves compressed WebP avatar to <UPLOAD_DIR>/avatars/
  * - Persists updates to PostgreSQL `user` table
  * - Validates input via Zod updateProfileSchema
  */
@@ -121,37 +122,31 @@ export async function updateProfileAction(
     }
 
     let finalImageUrl = existing.image;
+    const avatarsDir = path.join(/*turbopackIgnore: true*/ getUploadRootDir(), "avatars");
 
     // 1. Process Avatar
     if (parsed.data.avatarDataUrl !== undefined) {
       if (parsed.data.avatarDataUrl === null) {
         // Remove existing avatar file
         finalImageUrl = null;
-        const oldFile = path.join(
-          process.cwd(),
-          "public",
-          "uploads",
-          "avatars",
-          `${targetUserId}.webp`
-        );
-        if (fs.existsSync(oldFile)) {
-          fs.unlinkSync(oldFile);
+        const oldFile = path.join(/*turbopackIgnore: true*/ avatarsDir, `${targetUserId}.webp`);
+        if (fs.existsSync(/*turbopackIgnore: true*/ oldFile)) {
+          fs.unlinkSync(/*turbopackIgnore: true*/ oldFile);
         }
       } else if (parsed.data.avatarDataUrl.startsWith("data:image/")) {
         // Save avatar file converted to genuine WebP (512x512 cover, quality 85)
         const base64Data = parsed.data.avatarDataUrl.replace(/^data:image\/\w+;base64,/, "");
         const buffer = Buffer.from(base64Data, "base64");
-        const dir = path.join(process.cwd(), "public", "uploads", "avatars");
-        if (!fs.existsSync(dir)) {
-          fs.mkdirSync(dir, { recursive: true });
+        if (!fs.existsSync(/*turbopackIgnore: true*/ avatarsDir)) {
+          fs.mkdirSync(/*turbopackIgnore: true*/ avatarsDir, { recursive: true });
         }
-        const filePath = path.join(dir, `${targetUserId}.webp`);
+        const filePath = path.join(/*turbopackIgnore: true*/ avatarsDir, `${targetUserId}.webp`);
         const webpBuffer = await sharp(buffer)
           .rotate()
           .resize(512, 512, { fit: "cover" })
           .webp({ quality: 85, effort: 4 })
           .toBuffer();
-        fs.writeFileSync(filePath, webpBuffer);
+        fs.writeFileSync(/*turbopackIgnore: true*/ filePath, webpBuffer);
         finalImageUrl = `/uploads/avatars/${targetUserId}.webp?t=${Date.now()}`;
       }
     }

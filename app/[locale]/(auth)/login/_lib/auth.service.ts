@@ -129,12 +129,17 @@ export async function authenticateWithNip(
         : "REPORTER";
 
     // Store HMAC-signed role cookie alongside Better-Auth session for fast proxy RBAC routing
+    const forwardedProto = reqHeaders.get("x-forwarded-proto")?.split(",")[0]?.trim();
+    const isHttps =
+      forwardedProto === "https" ||
+      Boolean(process.env.BETTER_AUTH_URL?.startsWith("https://"));
+
     const cookieStore = await cookies();
     cookieStore.set(ROLE_COOKIE_NAME, signRoleCookie(role), {
       httpOnly: true,
       sameSite: "lax",
       path: "/",
-      secure: process.env.NODE_ENV === "production",
+      secure: isHttps,
       maxAge: rememberMe ? 60 * 60 * 24 * 7 : undefined,
     });
 

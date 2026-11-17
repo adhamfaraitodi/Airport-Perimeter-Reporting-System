@@ -21,6 +21,17 @@ export interface ProcessEvidenceOptions {
 }
 
 /**
+ * Resolves the root uploads directory on disk.
+ * Uses `UPLOAD_DIR` env var in containerized deployments (e.g. `/app/uploads`)
+ * and defaults to `<cwd>/public/uploads` for local development.
+ */
+export function getUploadRootDir(): string {
+  return process.env.UPLOAD_DIR
+    ? path.resolve(/*turbopackIgnore: true*/ process.env.UPLOAD_DIR)
+    : path.join(/*turbopackIgnore: true*/ process.cwd(), "public", "uploads");
+}
+
+/**
  * Normalizes and converts uploaded evidence photos (JPEG, PNG, WebP)
  * to compressed, auto-oriented WebP format for optimal storage and fast mobile loading.
  */
@@ -30,11 +41,14 @@ export async function processAndSaveEvidencePhoto(
 ): Promise<ProcessedEvidencePhoto> {
   const photoId = crypto.randomUUID();
   const fileName = `${photoId}.webp`;
-  const subDir = options?.subDir || path.join("uploads", "reports");
-  const uploadDir = path.join(process.cwd(), "public", subDir);
+  const rawSubDir = options?.subDir || "reports";
+  const normalizedSubDir =
+    rawSubDir.replace(/^[/\\]?uploads[/\\]?/, "").replace(/^[/\\]+|[/\\]+$/g, "") ||
+    "reports";
+  const uploadDir = path.join(/*turbopackIgnore: true*/ getUploadRootDir(), normalizedSubDir);
 
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
+  if (!fs.existsSync(/*turbopackIgnore: true*/ uploadDir)) {
+    fs.mkdirSync(/*turbopackIgnore: true*/ uploadDir, { recursive: true });
   }
 
   // Strip data URI prefix (e.g. data:image/png;base64,) if present
@@ -65,10 +79,10 @@ export async function processAndSaveEvidencePhoto(
     .webp({ quality: options?.quality ?? 80, effort: 4 })
     .toBuffer({ resolveWithObject: true });
 
-  const targetPath = path.join(uploadDir, fileName);
-  fs.writeFileSync(targetPath, outputBuffer);
+  const targetPath = path.join(/*turbopackIgnore: true*/ uploadDir, fileName);
+  fs.writeFileSync(/*turbopackIgnore: true*/ targetPath, outputBuffer);
 
-  const relativeUrl = `/${subDir.replace(/\\/g, "/")}/${fileName}`;
+  const relativeUrl = `/uploads/${normalizedSubDir.replace(/\\/g, "/")}/${fileName}`;
 
   return {
     photoId,

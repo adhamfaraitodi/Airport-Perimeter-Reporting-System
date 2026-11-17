@@ -8,13 +8,17 @@ export type UserRole = "REPORTER" | "OPERATOR" | "TECHNICIAN";
 export type AccountStatus = "ACTIVE" | "INACTIVE";
 export type { UserPosition } from "@/db/schema";
 
-if (!process.env.BETTER_AUTH_SECRET) {
+const isNextBuild = process.env.NEXT_PHASE === "phase-production-build";
+
+if (!process.env.BETTER_AUTH_SECRET && !isNextBuild) {
   throw new Error(
     "FATAL: Environment variable BETTER_AUTH_SECRET wajib dikonfigurasi di .env.local / environment server."
   );
 }
 
-export const AUTH_SECRET = process.env.BETTER_AUTH_SECRET;
+export const AUTH_SECRET =
+  process.env.BETTER_AUTH_SECRET ||
+  (isNextBuild ? "build-time-placeholder-secret-not-for-runtime" : "");
 
 /**
  * Helper to derive a deterministic internal email from NIP when Better-Auth
