@@ -124,7 +124,7 @@ export async function authenticateWithNip(
 
     const rawRole = userRecord.role as string | undefined;
     const role: UserRole =
-      rawRole === "OPERATOR" || rawRole === "TECHNICIAN"
+      rawRole === "OPERATOR" || rawRole === "CHIEF" || rawRole === "TECHNICIAN"
         ? rawRole
         : "REPORTER";
 
@@ -151,10 +151,16 @@ export async function authenticateWithNip(
       !callbackUrl.startsWith(`/${locale}/login`)
     ) {
       const isOperatorRoute = callbackUrl.startsWith(`/${locale}/operator`);
+      const isMasterDataRoute =
+        callbackUrl.startsWith(`/${locale}/operator/accounts`) ||
+        callbackUrl.startsWith(`/${locale}/operator/perimeter-damage`);
       const isTechnicianRoute = callbackUrl.startsWith(`/${locale}/technician`);
       const isReportsRoute = callbackUrl.startsWith(`/${locale}/reports`);
 
-      if (isOperatorRoute && role === "OPERATOR") {
+      if (
+        isOperatorRoute &&
+        (role === "OPERATOR" || (role === "CHIEF" && !isMasterDataRoute))
+      ) {
         redirectTo = callbackUrl;
       } else if (
         isTechnicianRoute &&

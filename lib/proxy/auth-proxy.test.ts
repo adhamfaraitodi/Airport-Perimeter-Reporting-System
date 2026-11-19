@@ -12,9 +12,13 @@ function buildSignedSessionToken(token: string, secret: string): string {
 export async function runAuthProxyTests(): Promise<boolean> {
   console.log("Running auth proxy regression tests...");
 
-  const { handleAuthProxy, ROLE_COOKIE_NAME, signRoleCookie } = await import(
-    "./auth-proxy"
-  );
+  const {
+    handleAuthProxy,
+    ROLE_COOKIE_NAME,
+    signRoleCookie,
+    verifyRoleCookie,
+    getHomeRouteForRole,
+  } = await import("./auth-proxy");
   const { AUTH_SECRET } = await import("@/lib/auth");
 
   const sessionToken = buildSignedSessionToken("session-token-123", AUTH_SECRET);
@@ -104,6 +108,141 @@ export async function runAuthProxyTests(): Promise<boolean> {
   if (!clearedToken || clearedToken.value !== "") {
     throw new Error(
       "FAIL: Stale-cookie GET to /id/login did not clear better-auth.session_token"
+    );
+  }
+
+  // 5. signRoleCookie("CHIEF") is accepted by verifyRoleCookie(...) and returns "CHIEF"
+  const chiefRoleCookie = signRoleCookie("CHIEF");
+  const verifiedChiefRole = verifyRoleCookie(chiefRoleCookie);
+  if (verifiedChiefRole !== "CHIEF") {
+    throw new Error(
+      `FAIL: verifyRoleCookie(signRoleCookie("CHIEF")) should return "CHIEF", got ${String(verifiedChiefRole)}`
+    );
+  }
+
+  // 6. getHomeRouteForRole("id", "CHIEF") === "/id/operator"
+  const chiefHomeRoute = getHomeRouteForRole("id", "CHIEF");
+  if (chiefHomeRoute !== "/id/operator") {
+    throw new Error(
+      `FAIL: getHomeRouteForRole("id", "CHIEF") should return "/id/operator", got "${chiefHomeRoute}"`
+    );
+  }
+
+  const chiefCookieHeader = `better-auth.session_token=${encodeURIComponent(sessionToken)}; ${ROLE_COOKIE_NAME}=${chiefRoleCookie}`;
+
+  // 7. Authenticated CHIEF GET /id/operator returns non-redirect (status === 200)
+  const chiefOperatorReq = new NextRequest("http://localhost:3000/id/operator", {
+    method: "GET",
+    headers: {
+      cookie: chiefCookieHeader,
+    },
+  });
+  const chiefOperatorRes = await handleAuthProxy(chiefOperatorReq, {
+    locale: "id",
+    routeSegment: "operator",
+    subSegments: [],
+  });
+  if (chiefOperatorRes.status !== 200) {
+    throw new Error(
+      `FAIL: Authenticated CHIEF GET /id/operator should return 200, got status ${chiefOperatorRes.status} location=${chiefOperatorRes.headers.get("location")}`
+    );
+  }
+
+  // 8. Authenticated CHIEF GET /id/operator/accounts redirects (307) to http://localhost:3000/id/operator
+  const chiefAccountsReq = new NextRequest(
+    "http://localhost:3000/id/operator/accounts",
+    {
+      method: "GET",
+      headers: {
+        cookie: chiefCookieHeader,
+      },
+    }
+  );
+  const chiefAccountsRes = await handleAuthProxy(chiefAccountsReq, {
+    locale: "id",
+    routeSegment: "operator",
+    subSegments: ["accounts"],
+  });
+  if (
+    chiefAccountsRes.status !== 307 ||
+    chiefAccountsRes.headers.get("location") !==
+      "http://localhost:3000/id/operator"
+  ) {
+    throw new Error(
+      `FAIL: Authenticated CHIEF GET /id/operator/accounts should redirect (307) to http://localhost:3000/id/operator, got status ${chiefAccountsRes.status} location=${chiefAccountsRes.headers.get("location")}`
+    );
+  }
+
+  // 9. Authenticated CHIEF GET /id/operator/perimeter-damage redirects (307) to http://localhost:3000/id/operator
+  const chiefDamageReq = new NextRequest(
+    "http://localhost:3000/id/operator/perimeter-damage",
+    {
+      method: "GET",
+      headers: {
+        cookie: chiefCookieHeader,
+      },
+    }
+  );
+  const chiefDamageRes = await handleAuthProxy(chiefDamageReq, {
+    locale: "id",
+    routeSegment: "operator",
+    subSegments: ["perimeter-damage"],
+  });
+  if (
+    chiefDamageRes.status !== 307 ||
+    chiefDamageRes.headers.get("location") !==
+      "http://localhost:3000/id/operator"
+  ) {
+    throw new Error(
+      `FAIL: Authenticated CHIEF GET /id/operator/perimeter-damage should redirect (307) to http://localhost:3000/id/operator, got status ${chiefDamageRes.status} location=${chiefDamageRes.headers.get("location")}`
+    );
+  }
+
+  // 10. Authenticated OPERATOR GET /id/operator/accounts returns non-redirect (status === 200)
+  const operatorRoleCookie = signRoleCookie("OPERATOR");
+  const operatorCookieHeader = `better-auth.session_token=${encodeURIComponent(sessionToken)}; ${ROLE_COOKIE_NAME}=${operatorRoleCookie}`;
+  const operatorAccountsReq = new NextRequest(
+    "http://localhost:3000/id/operator/accounts",
+    {
+      method: "GET",
+      headers: {
+        cookie: operatorCookieHeader,
+      },
+    }
+  );
+  const operatorAccountsRes = await handleAuthProxy(operatorAccountsReq, {
+    locale: "id",
+    routeSegment: "operator",
+    subSegments: ["accounts"],
+  });
+  if (operatorAccountsRes.status !== 200) {
+    throw new Error(
+      `FAIL: Authenticated OPERATOR GET /id/operator/accounts should return 200, got status ${operatorAccountsRes.status} location=${operatorAccountsRes.headers.get("location")}`
+    );
+  }
+
+  // 11. Authenticated CHIEF GET /id/login?callbackUrl=/id/operator/accounts redirects (307) to http://localhost:3000/id/operator (NOT /id/operator/accounts)
+  const chiefLoginCallbackReq = new NextRequest(
+    "http://localhost:3000/id/login?callbackUrl=/id/operator/accounts",
+    {
+      method: "GET",
+      headers: {
+        cookie: chiefCookieHeader,
+      },
+    }
+  );
+  const chiefLoginCallbackRes = await handleAuthProxy(chiefLoginCallbackReq, {
+    locale: "id",
+    routeSegment: "login",
+    subSegments: [],
+  });
+  if (
+    chiefLoginCallbackRes.status !== 307 ||
+    chiefLoginCallbackRes.headers.get("location") !==
+      "http://localhost:3000/id/operator"
+  ) {
+    throw new Error(
+      `FAIL: Authenticated CHIEF GET /id/login?callbackUrl=/id/operator/accounts should redirect (307) to http://localhost:3000/id/operator, got status ${chiefLoginCallbackRes.status} location=${chiefLoginCallbackRes.headers.get("location")}`
     );
   }
 

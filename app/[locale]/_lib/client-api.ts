@@ -7,7 +7,7 @@ import {
 import { authClient } from "@/lib/auth-client";
 import { getDamageCatalogAction, type CatalogPartDto } from "../(internal)/operator/perimeter-damage/_lib/damage-catalog.actions";
 
-export type UserRole = "REPORTER" | "OPERATOR" | "TECHNICIAN";
+export type UserRole = "REPORTER" | "OPERATOR" | "CHIEF" | "TECHNICIAN";
 export type LifecycleStatus = "OPEN" | "IN_PROGRESS" | "RESOLVED";
 
 export interface SessionUser {
@@ -116,6 +116,14 @@ const users: Record<UserRole, SessionUser> = {
     role: "OPERATOR",
     position: "Officer",
   },
+  CHIEF: {
+    id: "usr-admin-chief",
+    name: "Chief Lapangan",
+    email: "2233445@perimeter.yia.id",
+    nip: "2233445",
+    role: "CHIEF",
+    position: "Chief",
+  },
   TECHNICIAN: {
     id: "usr-admin-technician",
     name: "Operator Admin",
@@ -174,7 +182,9 @@ export const api = {
       if (sessionUser && typeof sessionUser.id === "string") {
         const rawRole = sessionUser.role as string | undefined;
         const resolvedRole: UserRole =
-          rawRole === "OPERATOR" || rawRole === "TECHNICIAN"
+          rawRole === "OPERATOR" ||
+          rawRole === "CHIEF" ||
+          rawRole === "TECHNICIAN"
             ? rawRole
             : "REPORTER";
         role = resolvedRole;
