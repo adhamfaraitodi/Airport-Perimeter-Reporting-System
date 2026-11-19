@@ -158,7 +158,7 @@ export const en: typeof id = {
     closeReport: "Close Report",
     accountsTitle: "User Accounts Management",
     createAccount: "Add Account",
-    nip: "Employee ID (NIP)",
+    nip: "Employee ID",
     name: "Full Name",
     email: "Email",
     phone: "Phone Number",

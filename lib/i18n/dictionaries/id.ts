@@ -156,7 +156,7 @@ export const id = {
     closeReport: "Tutup Laporan",
     accountsTitle: "Manajemen Akun Pengguna",
     createAccount: "Tambah Akun",
-    nip: "NIP",
+    nip: "ID pegawai",
     name: "Nama Lengkap",
     email: "Email",
     phone: "Nomor Telepon",
@@ -192,7 +192,7 @@ export const id = {
   auth: {
     loginTitle: "Sign in",
     loginSubtitle: "di Airport Perimeter Monitoring System",
-    nipPlaceholder: "Masukkan NIP",
+    nipPlaceholder: "Masukkan ID pegawai",
     passwordPlaceholder: "Masukkan password",
     rememberMe: "Tetap masuk",
     loginButton: "Masuk",

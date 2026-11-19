@@ -155,7 +155,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
         result.errorMessage ||
           (locale === "en"
             ? "The Employee ID or password you entered is incorrect."
-            : "NIP atau password yang Anda masukkan salah.")
+            : "ID pegawai atau password yang Anda masukkan salah.")
       );
     } catch {
       setNotice(

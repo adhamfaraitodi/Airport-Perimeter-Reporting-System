@@ -17,9 +17,9 @@ export const createAccountSchema = z.object({
   nip: z
   .string()
   .trim()
-  .min(3, "NIP minimal 3 karakter.")
-  .max(30, "NIP maksimal 30 karakter.")
-  .regex(/^[0-9]+$/, "NIP hanya boleh berisi angka tanpa spasi."),
+  .min(3, "ID pegawai minimal 3 karakter.")
+  .max(30, "ID pegawai maksimal 30 karakter.")
+  .regex(/^[0-9]+$/, "ID pegawai hanya boleh berisi angka tanpa spasi."),
   name: z
   .string()
   .trim()
@@ -56,9 +56,9 @@ export const updateAccountSchema = z.object({
   nip: z
   .string()
   .trim()
-  .min(3, "NIP minimal 3 karakter.")
-  .max(30, "NIP maksimal 30 karakter.")
-  .regex(/^[0-9]+$/, "NIP hanya boleh berisi angka tanpa spasi."),
+  .min(3, "ID pegawai minimal 3 karakter.")
+  .max(30, "ID pegawai maksimal 30 karakter.")
+  .regex(/^[0-9]+$/, "ID pegawai hanya boleh berisi angka tanpa spasi."),
   name: z
   .string()
   .trim()

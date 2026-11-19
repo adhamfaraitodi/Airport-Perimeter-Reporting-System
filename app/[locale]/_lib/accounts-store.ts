@@ -70,12 +70,12 @@ export const useAccountsStore = create<AccountsState>()(
         const position = input.position?.trim() || "Officer";
 
         if (!nip || !name) {
-          throw new Error("NIP dan nama lengkap wajib diisi.");
+          throw new Error("ID pegawai dan nama lengkap wajib diisi.");
         }
 
         const current = get().accounts;
         if (current.some((a) => a.nip.toLowerCase() === nip.toLowerCase())) {
-          throw new Error("NIP sudah terdaftar pada akun lain.");
+          throw new Error("ID pegawai sudah terdaftar pada akun lain.");
         }
 
         const created: ManagedAccount = {
@@ -105,7 +105,7 @@ export const useAccountsStore = create<AccountsState>()(
           patch.phone !== undefined ? patch.phone.trim() || "-" : undefined;
 
         if (!nip || !name) {
-          throw new Error("NIP dan nama lengkap wajib diisi.");
+          throw new Error("ID pegawai dan nama lengkap wajib diisi.");
         }
 
         const current = get().accounts;

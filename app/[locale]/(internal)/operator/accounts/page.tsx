@@ -630,7 +630,7 @@ export default function ManageAccountsPage() {
               <input
                 type="search"
                 aria-label="Cari akun pengguna"
-                placeholder="Cari nama, NIP, kontak, atau unit…"
+                placeholder="Cari nama, ID pegawai, kontak, atau unit…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="min-w-0 flex-1 border-0 bg-transparent py-2 text-sm text-[var(--rd-text)] outline-none placeholder:text-[var(--rd-muted)] sm:text-base"
@@ -644,7 +644,7 @@ export default function ManageAccountsPage() {
               <TableRow>
                 <TableHead className="w-14 text-center">No</TableHead>
                 <TableHead>Pengguna</TableHead>
-                <TableHead>NIP & Unit Kerja</TableHead>
+                <TableHead>ID pegawai & Unit Kerja</TableHead>
                 <TableHead className="w-44">Kontak Person</TableHead>
                 <TableHead className="w-48">Peran & Posisi</TableHead>
                 <TableHead className="w-32 text-center">Status</TableHead>
@@ -908,7 +908,7 @@ export default function ManageAccountsPage() {
                 </label>
 
                 <label className={fieldLabel}>
-                  NIP (Nomor Induk Pegawai)
+                  ID pegawai
                   <input
                     type="text"
                     inputMode="numeric"
@@ -1140,7 +1140,7 @@ export default function ManageAccountsPage() {
               <strong className="text-[var(--rd-text)]">
                 {passwordModal.account.name}
               </strong>{" "}
-              (NIP: {passwordModal.account.nip}).
+              (ID pegawai: {passwordModal.account.nip}).
             </p>
 
             <form onSubmit={handleSavePasswordModal}>
@@ -1276,7 +1276,7 @@ export default function ManageAccountsPage() {
               <strong className="text-[var(--rd-text)]">
                 {deleteTarget.name}
               </strong>{" "}
-              (NIP: {deleteTarget.nip}) akan dihapus dari daftar akses sistem.
+              (ID pegawai: {deleteTarget.nip}) akan dihapus dari daftar akses sistem.
             </p>
             <div className="flex justify-end gap-2.5">
               <button

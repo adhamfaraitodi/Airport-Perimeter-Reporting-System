@@ -104,7 +104,7 @@ export async function authenticateWithNip(
       recordFailedAttempt(rateKey);
       return {
         success: false,
-        errorMessage: "NIP atau password yang Anda masukkan tidak sesuai.",
+        errorMessage: "ID pegawai atau password yang Anda masukkan tidak sesuai.",
       };
     }
 
@@ -195,7 +195,7 @@ export async function authenticateWithNip(
     recordFailedAttempt(rateKey);
     return {
       success: false,
-      errorMessage: "NIP atau password yang Anda masukkan tidak sesuai.",
+      errorMessage: "ID pegawai atau password yang Anda masukkan tidak sesuai.",
     };
   }
 }
