@@ -40,10 +40,15 @@ export function canRoleTransitionReportStatus(
 
 /**
  * Validates whether a given user role is permitted to close / archive a report.
+ * Reports that are already RESOLVED or CLOSED cannot be closed.
  */
 export function canRoleCloseReport(
-  role: UserRole | string | undefined
+  role: UserRole | string | undefined,
+  currentStatus?: string
 ): boolean {
+  if (currentStatus === "RESOLVED" || currentStatus === "CLOSED") {
+    return false;
+  }
   return role === "OPERATOR" || role === "CHIEF";
 }
 

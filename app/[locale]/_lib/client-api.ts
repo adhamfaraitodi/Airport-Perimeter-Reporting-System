@@ -342,8 +342,12 @@ export const api = {
       if (report.status !== payload.expectedStatus) {
         fail("Status telah berubah.");
       }
-      if (payload.action === "DELETE" && !canRoleCloseReport(role)) {
-        fail("Hanya Operator atau Chief yang dapat menutup laporan.");
+      if (payload.action === "DELETE" && !canRoleCloseReport(role, report.status)) {
+        fail(
+          report.status === "RESOLVED"
+            ? "Laporan yang sudah selesai tidak dapat ditutup."
+            : "Hanya Operator atau Chief yang dapat menutup laporan."
+        );
       }
       if (
         payload.action === "STATUS" &&

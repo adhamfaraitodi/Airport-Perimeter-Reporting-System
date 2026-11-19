@@ -68,7 +68,9 @@ export function ReportDetailSheet({
     canVerifyRepair && report.status === "IN_PROGRESS" && onVerifyAction
   );
   const showStatusAction = Boolean(canUpdateStatus && onAction);
-  const showDeleteAction = Boolean(canDelete && onAction);
+  const showDeleteAction = Boolean(
+    canDelete && report.status !== "RESOLVED" && onAction
+  );
 
   return (
     <article className="px-[18px] py-[21px] md:p-[26px]">
@@ -196,8 +198,13 @@ export function ReportDetailSheet({
             {showDeleteAction && onAction && (
               <button
                 type="button"
+                disabled={report.status === "RESOLVED"}
                 className={`${btnDangerGhost} flex-1 text-sm`}
-                onClick={() => onAction("DELETE")}
+                onClick={() => {
+                  if (report.status !== "RESOLVED") {
+                    onAction("DELETE");
+                  }
+                }}
               >
                 Tutup laporan
               </button>

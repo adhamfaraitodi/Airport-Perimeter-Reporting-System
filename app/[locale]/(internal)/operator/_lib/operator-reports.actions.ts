@@ -318,8 +318,12 @@ export async function commitReportSubmissionAction(input: CommitReportSubmission
     }
 
     if (payload.action === "DELETE") {
-      if (!canRoleCloseReport(userRole)) {
-        throw new Error("Hanya Operator atau Chief yang dapat menutup laporan.");
+      if (!canRoleCloseReport(userRole, report.status)) {
+        throw new Error(
+          report.status === "RESOLVED"
+            ? "Laporan yang sudah selesai tidak dapat ditutup."
+            : "Hanya Operator atau Chief yang dapat menutup laporan."
+        );
       }
 
       const savedPhotos = await saveBatchPhotos(files);

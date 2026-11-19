@@ -232,12 +232,16 @@ export default function DashboardPage() {
                 report={selected}
                 operator
                 canVerifyRepair={isOperatorOrChief}
-                canDelete={isOperatorOrChief}
+                canDelete={
+                  isOperatorOrChief && selected.status !== "RESOLVED"
+                }
                 onVerifyAction={(targetStatus) =>
                   setPendingAction({ type: "STATUS", targetStatus })
                 }
                 onAction={(a) =>
-                  a === "DELETE" && setPendingAction({ type: "DELETE" })
+                  a === "DELETE" &&
+                  selected.status !== "RESOLVED" &&
+                  setPendingAction({ type: "DELETE" })
                 }
                 onBack={() => setSelectedId(null)}
               />

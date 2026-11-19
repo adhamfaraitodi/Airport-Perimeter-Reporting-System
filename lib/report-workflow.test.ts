@@ -42,7 +42,14 @@ export function runReportWorkflowTests() {
   // 4. canRoleCloseReport
   assert.equal(canRoleCloseReport("OPERATOR"), true);
   assert.equal(canRoleCloseReport("CHIEF"), true);
+  assert.equal(canRoleCloseReport("OPERATOR", "OPEN"), true);
+  assert.equal(canRoleCloseReport("CHIEF", "IN_PROGRESS"), true);
+  assert.equal(canRoleCloseReport("OPERATOR", "RESOLVED"), false);
+  assert.equal(canRoleCloseReport("CHIEF", "RESOLVED"), false);
+  assert.equal(canRoleCloseReport("OPERATOR", "CLOSED"), false);
+  assert.equal(canRoleCloseReport("CHIEF", "CLOSED"), false);
   assert.equal(canRoleCloseReport("TECHNICIAN"), false);
+  assert.equal(canRoleCloseReport("TECHNICIAN", "OPEN"), false);
   assert.equal(canRoleCloseReport("REPORTER"), false);
   assert.equal(canRoleCloseReport(undefined), false);
 
