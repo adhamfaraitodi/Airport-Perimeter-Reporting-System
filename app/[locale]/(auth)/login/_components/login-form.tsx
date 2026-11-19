@@ -250,11 +250,11 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
       </section>
 
       <section
-        className="flex flex-1 items-center justify-center p-6 min-[900px]:p-12"
+        className="relative z-10 flex flex-1 items-center justify-center bg-[var(--login-bg)] p-6 [box-shadow:var(--login-section-shadow)] min-[900px]:p-12"
         aria-labelledby="login-title"
       >
         <div className="w-full max-w-[304px] min-[600px]:max-w-[380px] min-[900px]:max-w-[400px]">
-          <div className="relative overflow-hidden rounded-xl border border-solid border-[var(--login-border)] bg-[var(--login-surface)] p-6 min-[600px]:p-8 min-[900px]:rounded-2xl">
+          <div className="relative overflow-hidden rounded-xl border border-solid border-[var(--login-border)] bg-[var(--login-surface)] p-6 [box-shadow:var(--login-card-shadow)] min-[600px]:p-8 min-[900px]:rounded-2xl">
             <div
               className="absolute inset-x-0 top-0 flex h-[3px]"
               aria-hidden="true"
