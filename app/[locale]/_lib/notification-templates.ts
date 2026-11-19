@@ -93,7 +93,7 @@ export const NOTIFICATION_TEMPLATES: Record<
           return `Laporan Dikembalikan · ${part}`;
         }
         if (p.status === "RESOLVED") {
-          return `Perbaikan Disetujui · ${part}`;
+          return `Perbaikan Diverifikasi · ${part}`;
         }
         if (p.status === "IN_PROGRESS") {
           return `Menunggu Verifikasi · ${part}`;
@@ -121,7 +121,7 @@ export const NOTIFICATION_TEMPLATES: Record<
           return `Perbaikan Dikembalikan · ${part}`;
         }
         if (p.status === "RESOLVED") {
-          return `Perbaikan Disetujui · ${part}`;
+          return `Perbaikan Diverifikasi · ${part}`;
         }
         return `Menunggu Verifikasi · ${part}`;
       },
@@ -133,7 +133,7 @@ export const NOTIFICATION_TEMPLATES: Record<
           return `Perbaikan di ${location} dikembalikan${actor} untuk penanganan ulang.${noteSuffix}`;
         }
         if (p.status === "RESOLVED") {
-          return `Perbaikan di ${location} telah diverifikasi dan disetujui${actor}.`;
+          return `Perbaikan di ${location} telah diverifikasi dan Diverifikasi ${actor}.`;
         }
         return `Perbaikan di ${location} telah dikirim${actor} dan menunggu verifikasi operator.`;
       },

@@ -100,8 +100,8 @@ export function formatApprovalLabel(
 ): string {
   const isEn = locale === "en";
   const roleLabel = info.actorRole === "CHIEF" ? "Chief" : "Operator";
-  const prefix = isEn ? "Approved by" : "Disetujui oleh";
-  return `${prefix} ${roleLabel} ${info.actorName}`.trim();
+  const prefix = isEn ? "Approved by" : "Diverifikasi oleh";
+  return `${prefix} ${info.actorName}`.trim();
 }
 
 /**
