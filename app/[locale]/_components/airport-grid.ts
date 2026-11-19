@@ -86,14 +86,15 @@ function gridToGeoJsonCoord(col: number, row: number): [number, number] {
 }
 
 /**
- * Inverse projection: given a geographic `(lat, lng)` point, returns the
- * 1-based column (`1..29`), row label (`A..N`), and combined code (e.g. `"K14"`),
- * or `null` if the point lies outside the 29x14 grid.
+ * Continuous inverse projection: given a geographic `(lat, lng)` point,
+ * returns continuous `(colFloat, rowFloat)` grid coordinates where
+ * `colFloat` in `[0, 29)` corresponds to columns `1..29` and
+ * `rowFloat` in `[0, 14)` corresponds to rows `A..N`.
  */
-export function getGridCellFromLatLng(
+export function latLngToGridFloat(
   lat: number,
   lng: number
-): { col: number; row: string; code: string } | null {
+): { colFloat: number; rowFloat: number } {
   const northMeters = (lat - SW_ANCHOR_LAT) * METERS_PER_DEG_LAT;
   const eastMeters = (lng - SW_ANCHOR_LNG) * METERS_PER_DEG_LNG;
 
@@ -102,6 +103,20 @@ export function getGridCellFromLatLng(
 
   const colFloat = xMeters / CELL_WIDTH_M + SW_COL_OFFSET;
   const rowFloat = SW_ROW_OFFSET - yNorthMeters / CELL_HEIGHT_M;
+
+  return { colFloat, rowFloat };
+}
+
+/**
+ * Inverse projection: given a geographic `(lat, lng)` point, returns the
+ * 1-based column (`1..29`), row label (`A..N`), and combined code (e.g. `"K14"`),
+ * or `null` if the point lies outside the 29x14 grid.
+ */
+export function getGridCellFromLatLng(
+  lat: number,
+  lng: number
+): { col: number; row: string; code: string } | null {
+  const { colFloat, rowFloat } = latLngToGridFloat(lat, lng);
 
   const colIndex = Math.floor(colFloat);
   const rowIndex = Math.floor(rowFloat);

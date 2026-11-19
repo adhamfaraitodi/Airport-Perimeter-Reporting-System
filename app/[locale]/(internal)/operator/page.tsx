@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   api,
@@ -12,7 +12,9 @@ import { useTheme } from "../../_lib/use-theme";
 import { alertBox, focusRing } from "../../_lib/ui-classes";
 import { AppHeader } from "../../_components/app-header";
 import { toast } from "@/components/ui/sonner";
+import { calculatePerimeterReadiness } from "@/lib/perimeter-readiness";
 import { PerimeterMap } from "./_components/perimeter-map";
+import { PerimeterReadinessCard } from "./_components/perimeter-readiness-card";
 import { ReportDetailSheet } from "./_components/report-detail-sheet";
 import { UpdateStatusDialog } from "./_components/update-status-dialog";
 import { DashboardFooter } from "./_components/dashboard-footer";
@@ -122,6 +124,11 @@ export default function DashboardPage() {
       .includes(search.toLocaleLowerCase("id"));
   });
 
+  const readiness = useMemo(
+    () => calculatePerimeterReadiness(reports),
+    [reports]
+  );
+
   const selected = reports.find((report) => report.id === selectedId) || null;
   const isOperatorOrChief =
     user?.role === "OPERATOR" || user?.role === "CHIEF";
@@ -148,6 +155,16 @@ export default function DashboardPage() {
             Pantau Perimeter
           </span>
         </nav>
+
+        <PerimeterReadinessCard
+          summary={readiness}
+          loading={loading}
+          activeSearch={search}
+          onSelectGrid={(code) => {
+            setFilter("ALL");
+            setSearch((prev) => (prev.toUpperCase() === code ? "" : code));
+          }}
+        />
 
         {abandonedSubmissionId && (
           <div className={alertBox} role="status">
@@ -177,7 +194,7 @@ export default function DashboardPage() {
             </button>
           </div>
         )}
-        <div className="flex h-auto min-h-0 flex-col md:grid md:h-[calc(100dvh-280px)] md:min-h-[550px] md:grid-cols-[minmax(0,1fr)_400px] md:gap-3 min-[1100px]:grid-cols-[minmax(0,1fr)_580px] min-[1100px]:gap-5">
+        <div className="flex h-auto min-h-0 flex-col md:grid md:h-[calc(100dvh-350px)] md:min-h-[520px] md:grid-cols-[minmax(0,1fr)_400px] md:gap-3 min-[1100px]:grid-cols-[minmax(0,1fr)_580px] min-[1100px]:gap-5">
           <PerimeterMap
             reports={visible}
             selectedId={selectedId}
