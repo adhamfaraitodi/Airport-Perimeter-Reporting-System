@@ -67,7 +67,9 @@ export default function TechnicianDashboardPage() {
       }
       if (session.role !== "TECHNICIAN") {
         window.location.href = `/${locale}/${
-          session.role === "OPERATOR" ? "operator" : "reports"
+          session.role === "OPERATOR" || session.role === "CHIEF"
+            ? "operator"
+            : "reports"
         }`;
         return;
       }
@@ -221,7 +223,7 @@ export default function TechnicianDashboardPage() {
             </span>
             <div className="min-w-0 flex-1">
               <span className="block text-[10px] text-[var(--rd-muted)] sm:text-sm">
-                Sedang Dikerjakan
+                Menunggu Verifikasi
               </span>
               {loading ? (
                 <Skeleton className="mt-1 h-5 w-10 rounded" />
@@ -315,10 +317,11 @@ export default function TechnicianDashboardPage() {
           >
             {action && user ? (
               <UpdateStatusDialog
-                key={`${user.id}:${action}:${selected?.id || "new"}`}
+                key={`${user.id}:${action}:IN_PROGRESS:${selected?.id || "new"}`}
                 user={user}
                 report={selected}
                 action="STATUS"
+                fixedStatus="IN_PROGRESS"
                 onSuccess={success}
                 onCancel={cancelSubmission}
                 onLock={setLocked}
@@ -330,12 +333,16 @@ export default function TechnicianDashboardPage() {
                 canDelete={false}
                 canUpdateStatus
                 statusActionDisabled={
-                  selected.status === "RESOLVED" || !!selected.deletedAt
+                  selected.status !== "OPEN" || !!selected.deletedAt
                 }
                 statusActionLabel={
-                  selected.status === "OPEN"
-                    ? "Mulai Kerjakan"
-                    : "Selesai Diperbaiki"
+                  selected.deletedAt
+                    ? "Laporan Ditutup"
+                    : selected.status === "OPEN"
+                      ? "Tandai Ditangani"
+                      : selected.status === "IN_PROGRESS"
+                        ? "Menunggu Verifikasi Operator"
+                        : "Selesai Diverifikasi"
                 }
                 onAction={() => setAction("STATUS")}
                 onBack={() => setSelectedId(null)}

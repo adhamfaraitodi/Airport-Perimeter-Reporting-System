@@ -18,6 +18,11 @@ import { UpdateStatusDialog } from "./_components/update-status-dialog";
 import { DashboardFooter } from "./_components/dashboard-footer";
 import { ReportHistoryPanel } from "../../_components/report-history-panel";
 
+type OperatorAction =
+  | { type: "DELETE" }
+  | { type: "STATUS"; targetStatus: "RESOLVED" | "OPEN" }
+  | null;
+
 const inlineAlertButton = `ml-2.5 rounded-md bg-[var(--rd-surface)] px-2.5 py-1 text-sm font-semibold text-[var(--rd-coral)] disabled:cursor-not-allowed disabled:opacity-55 ${focusRing}`;
 
 export default function DashboardPage() {
@@ -32,7 +37,7 @@ export default function DashboardPage() {
     string | null
   >(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [action, setAction] = useState<"STATUS" | "DELETE" | null>(null);
+  const [pendingAction, setPendingAction] = useState<OperatorAction>(null);
   const [locked, setLocked] = useState(false);
   const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
@@ -47,7 +52,7 @@ export default function DashboardPage() {
         window.location.href = `/${locale}/login`;
         return;
       }
-      if (session.role !== "OPERATOR") {
+      if (session.role !== "OPERATOR" && session.role !== "CHIEF") {
         window.location.href = `/${locale}/${
           session.role === "TECHNICIAN" ? "technician" : "reports"
         }`;
@@ -68,7 +73,7 @@ export default function DashboardPage() {
   }, [load]);
 
   async function cancelSubmission(options?: { abandonedSubmissionId?: string }) {
-    setAction(null);
+    setPendingAction(null);
     setLocked(false);
     if (options?.abandonedSubmissionId) {
       setAbandonedSubmissionId(options.abandonedSubmissionId);
@@ -84,7 +89,7 @@ export default function DashboardPage() {
       report,
       ...old.filter((item) => item.id !== report.id),
     ]);
-    setAction(null);
+    setPendingAction(null);
     setLocked(false);
     setSelectedId(report.id);
     toast.success("Perubahan berhasil disimpan", {
@@ -118,6 +123,8 @@ export default function DashboardPage() {
   });
 
   const selected = reports.find((report) => report.id === selectedId) || null;
+  const isOperatorOrChief =
+    user?.role === "OPERATOR" || user?.role === "CHIEF";
 
   return (
     <div
@@ -163,7 +170,7 @@ export default function DashboardPage() {
             <button
               type="button"
               className={inlineAlertButton}
-              disabled={locked || !!action}
+              disabled={locked || !!pendingAction}
               onClick={load}
             >
               Coba lagi
@@ -175,7 +182,7 @@ export default function DashboardPage() {
             reports={visible}
             selectedId={selectedId}
             onSelect={(id) => {
-              if (!action && !locked) setSelectedId(id);
+              if (!pendingAction && !locked) setSelectedId(id);
             }}
           />
           <section
@@ -183,12 +190,21 @@ export default function DashboardPage() {
             aria-label="Panel laporan operator"
             aria-busy={loading}
           >
-            {action && user ? (
+            {pendingAction && user ? (
               <UpdateStatusDialog
-                key={`${user.id}:${action}:${selected?.id || "new"}`}
+                key={`${user.id}:${pendingAction.type}:${
+                  pendingAction.type === "STATUS"
+                    ? pendingAction.targetStatus
+                    : ""
+                }:${selected?.id || "new"}`}
                 user={user}
                 report={selected}
-                action={action}
+                action={pendingAction.type}
+                fixedStatus={
+                  pendingAction.type === "STATUS"
+                    ? pendingAction.targetStatus
+                    : undefined
+                }
                 onSuccess={success}
                 onCancel={cancelSubmission}
                 onLock={setLocked}
@@ -197,7 +213,14 @@ export default function DashboardPage() {
               <ReportDetailSheet
                 report={selected}
                 operator
-                onAction={setAction}
+                canVerifyRepair={isOperatorOrChief}
+                canDelete={isOperatorOrChief}
+                onVerifyAction={(targetStatus) =>
+                  setPendingAction({ type: "STATUS", targetStatus })
+                }
+                onAction={(a) =>
+                  a === "DELETE" && setPendingAction({ type: "DELETE" })
+                }
                 onBack={() => setSelectedId(null)}
               />
             ) : (
@@ -206,7 +229,7 @@ export default function DashboardPage() {
                 loading={loading}
                 selectedId={selectedId}
                 onSelect={(r) => {
-                  if (!action && !locked) setSelectedId(r.id);
+                  if (!pendingAction && !locked) setSelectedId(r.id);
                 }}
                 searchQuery={search}
                 onSearchChange={setSearch}

@@ -16,11 +16,13 @@ import {
   Loader2,
   MapPin,
   Search,
+  ShieldCheck,
   UserRound,
   X,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/lib/i18n";
+import { formatApprovalLabel, getApprovalInfo } from "@/lib/report-workflow";
 import type { ReportRecord } from "../_lib/client-api";
 import { downloadAllReportsPdf, filterReportsByDateRange } from "../_lib/report-document";
 
@@ -76,6 +78,7 @@ export function ReportCardItem({
   const { t, locale } = useTranslation();
   const effectiveStatus = report.deletedAt ? "CLOSED" : report.status;
   const StatusIcon = statusIconMap[effectiveStatus] || ClipboardClock;
+  const approvalInfo = getApprovalInfo(report);
 
   const statusLabels: Record<string, string> = {
     OPEN: t.historyPanel.statusMeta.OPEN,
@@ -213,6 +216,12 @@ export function ReportCardItem({
             />
             {report.reporterName || t.historyPanel.reporterDefault}
           </span>
+          {approvalInfo && (
+            <span className="inline-flex items-center gap-1.5 font-medium text-[var(--rd-lime)]">
+              <ShieldCheck size={15} aria-hidden="true" />
+              {formatApprovalLabel(approvalInfo, locale)}
+            </span>
+          )}
         </div>
       </div>
     </div>

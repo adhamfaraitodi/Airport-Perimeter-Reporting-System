@@ -82,6 +82,7 @@ export interface SubmissionFormProps {
   user: SessionUser;
   report?: ReportRecord | null;
   action?: "CREATE" | "STATUS" | "DELETE";
+  fixedStatus?: LifecycleStatus;
   customSubtitle?: string;
   onSuccess: (report: ReportRecord) => void;
   onCancel: (options?: { abandonedSubmissionId?: string }) => void;
@@ -92,31 +93,35 @@ export function UpdateStatusDialog({
   user,
   report,
   action = "STATUS",
+  fixedStatus,
   customSubtitle,
   onSuccess,
   onCancel,
   onLock,
 }: SubmissionFormProps) {
   const isTechnician = user.role === "TECHNICIAN";
-  const technicianNextStatus: LifecycleStatus =
-    report?.status === "OPEN" ? "IN_PROGRESS" : "RESOLVED";
+  const resolvedFixedStatus: LifecycleStatus | undefined =
+    fixedStatus ??
+    (isTechnician && action === "STATUS" ? "IN_PROGRESS" : undefined);
 
-  const key = `${user.id}:${action}:${report?.id || "new"}`;
+  const key = `${user.id}:${action}:${resolvedFixedStatus || ""}:${report?.id || "new"}`;
   const draft = useDrafts((state) => state.drafts[key]);
   const update = useDrafts((state) => state.update);
   const clear = useDrafts((state) => state.clear);
   const narrative = draft?.narrative || "";
   const side = draft?.side || "";
 
-  const defaultStatus: LifecycleStatus = isTechnician
-    ? technicianNextStatus
-    : report?.status === "RESOLVED"
+  const defaultStatus: LifecycleStatus =
+    resolvedFixedStatus ??
+    (report?.status === "RESOLVED"
       ? "OPEN"
       : report?.status === "OPEN"
         ? "IN_PROGRESS"
-        : "RESOLVED";
+        : "RESOLVED");
 
-  const [status, setStatus] = useState<LifecycleStatus>(defaultStatus);
+  const [status, setStatus] = useState<LifecycleStatus>(
+    resolvedFixedStatus ?? defaultStatus
+  );
   const [files, setFiles] = useState<PendingFile[]>([]);
   const [point, setPoint] = useState<LatLngPoint | null>(null);
   const [gps, setGps] = useState<GpsPoint | null>(null);
@@ -248,7 +253,7 @@ export function UpdateStatusDialog({
       narrative.trim() !== "" ||
       files.length > 0 ||
       (action === "CREATE" && (side !== "" || manual.current)) ||
-      (!isTechnician && action === "STATUS" && status !== defaultStatus)
+      (!resolvedFixedStatus && action === "STATUS" && status !== defaultStatus)
     );
   }
 
@@ -289,8 +294,7 @@ export function UpdateStatusDialog({
         return;
       }
 
-      const targetStatus: LifecycleStatus =
-        isTechnician && action === "STATUS" ? technicianNextStatus : status;
+      const targetStatus: LifecycleStatus = resolvedFixedStatus ?? status;
 
       const detected = point
         ? getLocationGridAndSide(point.latitude, point.longitude)
@@ -354,28 +358,85 @@ export function UpdateStatusDialog({
   }
 
   const overLimit = countText(narrative) > 2000;
+  const isVerifyApprove =
+    !isTechnician && action === "STATUS" && resolvedFixedStatus === "RESOLVED";
+  const isVerifyReturn =
+    !isTechnician && action === "STATUS" && resolvedFixedStatus === "OPEN";
+
+  const dialogEyebrow = isTechnician
+    ? "TINDAKAN TEKNISI"
+    : action === "CREATE"
+      ? "PELAPORAN BARU"
+      : isVerifyApprove || isVerifyReturn
+        ? user.role === "CHIEF"
+          ? "VERIFIKASI CHIEF"
+          : "VERIFIKASI OPERATOR"
+        : user.role === "CHIEF"
+          ? "TINDAKAN CHIEF"
+          : "TINDAKAN OPERATOR";
+
+  const dialogTitle =
+    action === "CREATE"
+      ? "Buat laporan baru"
+      : action === "DELETE"
+        ? "Tutup laporan"
+        : isTechnician
+          ? "Tandai Sedang Ditangani"
+          : isVerifyApprove
+            ? "Verifikasi & Setujui Perbaikan"
+            : isVerifyReturn
+              ? "Kembalikan Laporan ke Teknisi"
+              : "Perbarui penanganan";
+
+  const dialogSubtitle =
+    customSubtitle ||
+    (action === "DELETE"
+      ? "Penutupan menyembunyikan titik dari peta, bukan menghapus bukti atau menyatakan masalah selesai."
+      : action === "CREATE"
+        ? "Informasi yang jelas membantu tim menindaklanjuti kondisi perimeter."
+        : isTechnician
+          ? "Catat tindakan perbaikan yang telah dilakukan dan unggah foto bukti lapangan untuk diverifikasi oleh Operator atau Chief."
+          : isVerifyApprove
+            ? "Lakukan pengecekan aktual di lapangan. Lengkapi catatan verifikasi dan unggah foto bukti kondisi lapangan untuk menyetujui perbaikan."
+            : isVerifyReturn
+              ? "Unggah foto kondisi aktual di lapangan dan jelaskan alasan perbaikan belum memenuhi standar agar ditindaklanjuti kembali oleh teknisi."
+              : "Informasi yang jelas membantu tim menindaklanjuti kondisi perimeter.");
+
+  const narrativeLabelText =
+    action === "DELETE"
+      ? "Alasan penutupan"
+      : isVerifyApprove
+        ? "Narasi verifikasi lapangan"
+        : isVerifyReturn
+          ? "Alasan pengembalian (kondisi lapangan)"
+          : "Narasi laporan / tindakan";
+
+  const narrativePlaceholderText = isVerifyApprove
+    ? "Catat hasil pengecekan aktual di lapangan dan konfirmasi kelayakan perbaikan."
+    : isVerifyReturn
+      ? "Jelaskan kekurangan hasil perbaikan di lapangan agar dapat ditindaklanjuti kembali oleh teknisi."
+      : "Jelaskan kondisi, titik patokan, dan tindakan yang diperlukan.";
+
+  const submitLabelText =
+    action === "CREATE"
+      ? "Kirim laporan →"
+      : action === "DELETE"
+        ? "Konfirmasi penutupan"
+        : isTechnician
+          ? "Kirim untuk Verifikasi"
+          : isVerifyApprove
+            ? "Setujui Perbaikan"
+            : isVerifyReturn
+              ? "Kembalikan ke Teknisi"
+              : "Simpan perubahan";
 
   return (
     <form onSubmit={submit} className="relative p-4 sm:p-6 md:p-[26px]">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <span className={eyebrow}>
-            {isTechnician
-              ? "TINDAKAN TEKNISI"
-              : action === "CREATE"
-                ? "PELAPORAN BARU"
-                : "TINDAKAN OPERATOR"}
-          </span>
+          <span className={eyebrow}>{dialogEyebrow}</span>
           <h2 className="m-0 text-[21px] leading-snug font-semibold md:text-[23px]">
-            {action === "CREATE"
-              ? "Buat laporan baru"
-              : action === "DELETE"
-                ? "Tutup laporan"
-                : isTechnician
-                  ? report?.status === "OPEN"
-                    ? "Mulai Kerjakan"
-                    : "Selesai Diperbaiki"
-                  : "Perbarui penanganan"}
+            {dialogTitle}
           </h2>
         </div>
         {!frozen && (
@@ -390,24 +451,13 @@ export function UpdateStatusDialog({
         )}
       </div>
       <p className="mb-5 text-base leading-relaxed text-[var(--rd-muted)]">
-        {customSubtitle ||
-          (action === "DELETE"
-            ? "Penutupan menyembunyikan titik dari peta, bukan menghapus bukti atau menyatakan masalah selesai."
-            : action === "CREATE"
-              ? "Informasi yang jelas membantu tim menindaklanjuti kondisi perimeter."
-              : isTechnician
-                ? report?.status === "OPEN"
-                  ? "Mulai pengerjaan perbaikan. Catat narasi pengerjaan dan rencana tindakan awal untuk menangani kondisi perimeter."
-                  : report?.status === "IN_PROGRESS"
-                    ? "Konfirmasi penyelesaian perbaikan. Lengkapi dokumentasi foto hasil perbaikan dan tindakan teknis yang telah diambil."
-                    : "Perbaikan kerusakan perimeter ini telah selesai dilaksanakan."
-                : "Informasi yang jelas membantu tim menindaklanjuti kondisi perimeter.")}
+        {dialogSubtitle}
       </p>
       <fieldset
         disabled={frozen}
         className="m-0 min-w-0 border-0 p-0 disabled:opacity-70"
       >
-        {action === "STATUS" && report && !isTechnician && (
+        {action === "STATUS" && report && !resolvedFixedStatus && (
           <label className={fieldLabel}>
             Status berikutnya
             <select
@@ -450,9 +500,7 @@ export function UpdateStatusDialog({
           </label>
         )}
         <label className={fieldLabel}>
-          {action === "DELETE"
-            ? "Alasan penutupan"
-            : "Narasi laporan / tindakan"}
+          {narrativeLabelText}
           <textarea
             rows={5}
             className={`${fieldControl} leading-[1.65]`}
@@ -461,7 +509,7 @@ export function UpdateStatusDialog({
               setConfirmDiscard(false);
               update(key, { narrative: e.target.value });
             }}
-            placeholder="Jelaskan kondisi, titik patokan, dan tindakan yang diperlukan."
+            placeholder={narrativePlaceholderText}
             aria-describedby="narrative-count"
           />
         </label>
@@ -669,22 +717,16 @@ export function UpdateStatusDialog({
         )}
         <button
           disabled={busy || confirmAbandon}
-          className={action === "DELETE" ? btnDanger : btnPrimary}
+          className={
+            action === "DELETE" || isVerifyReturn ? btnDanger : btnPrimary
+          }
           type="submit"
         >
           {busy
             ? "Mengirim…"
             : attempt
               ? "Coba kirim kembali"
-              : action === "CREATE"
-                ? "Kirim laporan →"
-                : action === "DELETE"
-                  ? "Konfirmasi penutupan"
-                  : isTechnician
-                    ? report?.status === "OPEN"
-                      ? "Mulai Kerjakan"
-                      : "Selesai Diperbaiki"
-                    : "Simpan perubahan"}
+              : submitLabelText}
         </button>
       </div>
     </form>
