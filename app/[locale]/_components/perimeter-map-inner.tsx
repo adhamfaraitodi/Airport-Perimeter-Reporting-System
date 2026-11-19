@@ -12,7 +12,7 @@ import {
   MapPin,
   LocateFixed,
 } from "lucide-react";
-import perimeter from "../_data/new_perimeter.json";
+import perimeter from "../_data/latest_perimeter.json";
 import { labels } from "../_lib/draft-store";
 import type { ReportRecord } from "../_lib/client-api";
 import {

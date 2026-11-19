@@ -389,7 +389,7 @@ export async function downloadReportPdf(report: ReportRecord): Promise<void> {
 
       const footerY = doc.internal.pageSize.getHeight() - 7;
       doc.text(
-        "Dokumen resmi diterbitkan otomatis oleh Airport Perimeter Reporting System (APRS).",
+        "Dokumen resmi diterbitkan otomatis oleh Airport Perimeter Monitoring System (APEMS).",
         margin,
         footerY
       );
@@ -633,7 +633,7 @@ export async function downloadAllReportsPdf(
 
       const footerY = pageHeight - 7;
       doc.text(
-        "Dokumen rekapitulasi resmi diterbitkan otomatis oleh Airport Perimeter Reporting System (APRS).",
+        "Dokumen rekapitulasi resmi diterbitkan otomatis oleh Airport Perimeter Monitoring System (APEMS).",
         margin,
         footerY
       );

@@ -181,7 +181,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
             />
             <img
               className="block h-auto w-[80px] min-[400px]:w-[100px] object-contain"
-              src={dark ? "/yia-logo-dark.webp" : "/yia-logo-light.webp"}
+              src={dark ? "/yogyakarta-international-airport-logo-white-transparent.webp" : "/yogyakarta-international-airport-logo-transparent.webp"}
               alt="YIA Logo"
               width={dark ? 4328 : 4884}
               height={dark ? 1803 : 2481}
@@ -189,7 +189,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
           </div>
 
           <div className="flex shrink-0 items-center gap-1">
-            
+
             {/* Language Switcher */}
             <button
               type="button"
@@ -229,7 +229,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
 
         <div className="flex flex-col items-center justify-center gap-3 px-5 py-4 text-center min-[600px]:gap-4 min-[900px]:gap-7 min-[900px]:px-10 min-[900px]:py-6">
           <img
-            className="block h-auto w-[78px] object-contain min-[600px]:w-[145px] min-[900px]:w-[210px]"
+            className="block h-auto w-[78px] object-contain min-[600px]:w-[145px] min-[900px]:w-[170px]"
             src="/avsec-logo.webp"
             alt="Avsec Logo"
             width={1952}
@@ -245,7 +245,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
           className="hidden self-end px-7 pb-9 text-center text-[10px] tracking-[2px] opacity-65 min-[900px]:block"
           aria-hidden="true"
         >
-          <span>YOGYAKARTA INTERNATIONAL AIRPORT</span>
+          <span>Integrated Security Perimeter Monitoring System</span>
         </div>
       </section>
 
@@ -275,8 +275,8 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
                 {locale === "en" ? "Welcome" : "Selamat datang"}{" "}
                 <span className="sm:whitespace-nowrap">
                   {locale === "en"
-                    ? "to Airport Perimeter Reporting System"
-                    : "di Airport Perimeter Reporting System"}
+                    ? "to Airport Perimeter Monitoring System"
+                    : "di Airport Perimeter Monitoring System"}
                 </span>
                 <br />
                 {locale === "en"
@@ -287,7 +287,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
             <form onSubmit={submit} noValidate className="m-0">
               <div className="mb-[12px] min-[900px]:mb-[19px]">
                 <label className={labelClasses} htmlFor="login-nip">
-                  NIP
+                  ID pegawai
                 </label>
                 <input
                   className={inputClasses}
@@ -298,12 +298,12 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
                   autoComplete="username"
                   autoCapitalize="none"
                   spellCheck={false}
-                  placeholder={locale === "en" ? "Enter NIP" : "Masukkan NIP"}
+                  placeholder={locale === "en" ? "Enter ID employee" : "Masukkan ID pegawai"}
                   value={nip}
                   aria-invalid={!!fieldErrors.nip}
                   required={!demoEnabled}
                   pattern="[0-9]+"
-                  title="Masukkan NIP menggunakan angka, termasuk nol di depan."
+                  title="Masukkan ID pegawai menggunakan angka."
                   onChange={(event) => {
                     handleNipChange(event.target.value);
                   }}

@@ -1,6 +1,6 @@
 export const id = {
   common: {
-    appName: "Airport Perimeter Reporting System",
+    appName: "Airport Perimeter Monitoring System",
     airportName: "Bandara Internasional Yogyakarta (YIA)",
     save: "Simpan",
     cancel: "Batal",
@@ -191,7 +191,7 @@ export const id = {
   },
   auth: {
     loginTitle: "Sign in",
-    loginSubtitle: "di Airport Perimeter Reporting System",
+    loginSubtitle: "di Airport Perimeter Monitoring System",
     nipPlaceholder: "Masukkan NIP",
     passwordPlaceholder: "Masukkan password",
     rememberMe: "Tetap masuk",

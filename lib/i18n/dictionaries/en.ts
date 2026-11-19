@@ -2,7 +2,7 @@ import type { id } from "./id";
 
 export const en: typeof id = {
   common: {
-    appName: "Airport Perimeter Reporting System",
+    appName: "Airport Perimeter Monitoring System",
     airportName: "Yogyakarta International Airport (YIA)",
     save: "Save",
     cancel: "Cancel",
@@ -193,7 +193,7 @@ export const en: typeof id = {
   },
   auth: {
     loginTitle: "Sign in",
-    loginSubtitle: "to Airport Perimeter Reporting System",
+    loginSubtitle: "to Airport Perimeter Monitoring System",
     nipPlaceholder: "Enter Employee ID",
     passwordPlaceholder: "Enter password",
     rememberMe: "Remember me",

@@ -149,7 +149,7 @@ html.dark .login-page {
   background-image: url("/sup-hollow.webp");
   background-repeat: repeat;
   background-position: right bottom;
-  background-size: 96px 96px;
+  background-size: 72px 72px;
   opacity: .4;
   -webkit-mask-image: radial-gradient(
     125% 110% at 92% 86%,
