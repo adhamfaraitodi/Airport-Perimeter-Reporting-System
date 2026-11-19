@@ -300,7 +300,7 @@ export function AppHeader({
             <span className="max-w-[140px] text-[11px] leading-tight text-[var(--rd-text)] sm:max-w-56 sm:text-base">
               Airport Perimeter
               <br />
-              Reporting System
+              Monitoring System
             </span>
           </Link>
 
