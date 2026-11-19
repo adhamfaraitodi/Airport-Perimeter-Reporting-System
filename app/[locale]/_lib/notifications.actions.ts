@@ -1,7 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
-import { and, desc, eq, isNull, or } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { auth, type UserRole } from "@/lib/auth";
 import {
@@ -77,7 +77,9 @@ async function resolveCurrentActor(): Promise<{
 
       const rawRole = userRecord.role as string | undefined;
       const role: UserRole =
-        rawRole === "OPERATOR" || rawRole === "TECHNICIAN" ? rawRole : "REPORTER";
+        rawRole === "OPERATOR" || rawRole === "CHIEF" || rawRole === "TECHNICIAN"
+          ? rawRole
+          : "REPORTER";
       return { userId: session.user.id, role };
     }
   } catch {
@@ -87,9 +89,15 @@ async function resolveCurrentActor(): Promise<{
   return null;
 }
 
+function roleNotificationCondition(actorRole: UserRole) {
+  return actorRole === "CHIEF"
+    ? inArray(schema.notification.targetRole, ["OPERATOR", "CHIEF"])
+    : eq(schema.notification.targetRole, actorRole);
+}
+
 /**
  * Fetch notifications targeted to the current user with full i18n support:
- * - Broadcasts for user's role (e.g. OPERATOR or TECHNICIAN)
+ * - Broadcasts for user's role (e.g. OPERATOR, CHIEF, or TECHNICIAN)
  * - Broadcasts to "ALL"
  * - Specific personal notifications sent to user's ID (e.g. REPORTER of their own report)
  *
@@ -136,7 +144,7 @@ export async function getNotificationsAction(
       .where(
         or(
           eq(schema.notification.targetUserId, actor.userId),
-          eq(schema.notification.targetRole, actor.role),
+          roleNotificationCondition(actor.role),
           eq(schema.notification.targetRole, "ALL")
         )
       )
@@ -249,7 +257,7 @@ export async function markAllNotificationsReadAction(): Promise<{
         and(
           or(
             eq(schema.notification.targetUserId, actor.userId),
-            eq(schema.notification.targetRole, actor.role),
+            roleNotificationCondition(actor.role),
             eq(schema.notification.targetRole, "ALL")
           ),
           isNull(schema.notificationRead.readAt)
@@ -324,7 +332,7 @@ export async function createNotificationEvent(payload: {
  * 1. CREATE:
  *    - Broadcast to OPERATOR: "REPORT_NEW_OPERATOR"
  *    - Broadcast to TECHNICIAN: "REPORT_NEW_TECHNICIAN"
- * 2. STATUS (IN_PROGRESS or RESOLVED):
+ * 2. STATUS (OPEN, IN_PROGRESS, or RESOLVED):
  *    - Personal to REPORTER: "STATUS_UPDATE_REPORTER" (specific to report owner)
  *    - Broadcast to OPERATOR: "STATUS_UPDATE_OPERATOR"
  *    - Broadcast to TECHNICIAN: "STATUS_UPDATE_TECHNICIAN"
@@ -392,9 +400,23 @@ export async function dispatchReportNotificationAction(params: {
         targetRole: "TECHNICIAN",
       });
     } else if (params.action === "STATUS") {
-      if (actor.role !== "OPERATOR" && actor.role !== "TECHNICIAN") {
+      if (
+        actor.role !== "OPERATOR" &&
+        actor.role !== "CHIEF" &&
+        actor.role !== "TECHNICIAN"
+      ) {
         return;
       }
+
+      const statusPayload = {
+        part,
+        side,
+        grid,
+        status: params.status || "IN_PROGRESS",
+        previousStatus: params.previousStatus,
+        actorName: params.actorName,
+        note: params.narrative,
+      };
 
       // 1. Personal Notification specifically for the reporter of this report
       if (reporterUserId) {
@@ -403,13 +425,7 @@ export async function dispatchReportNotificationAction(params: {
           category: "STATUS_UPDATE",
           status: params.status || "IN_PROGRESS",
           templateKey: "STATUS_UPDATE_REPORTER",
-          params: {
-            part,
-            side,
-            grid,
-            status: params.status || "IN_PROGRESS",
-            actorName: params.actorName,
-          },
+          params: statusPayload,
           targetUserId: reporterUserId,
         });
       }
@@ -420,13 +436,7 @@ export async function dispatchReportNotificationAction(params: {
         category: "STATUS_UPDATE",
         status: params.status || "IN_PROGRESS",
         templateKey: "STATUS_UPDATE_OPERATOR",
-        params: {
-          part,
-          side,
-          grid,
-          status: params.status || "IN_PROGRESS",
-          actorName: params.actorName,
-        },
+        params: statusPayload,
         targetRole: "OPERATOR",
       });
 
@@ -436,17 +446,11 @@ export async function dispatchReportNotificationAction(params: {
         category: "STATUS_UPDATE",
         status: params.status || "IN_PROGRESS",
         templateKey: "STATUS_UPDATE_TECHNICIAN",
-        params: {
-          part,
-          side,
-          grid,
-          status: params.status || "IN_PROGRESS",
-          actorName: params.actorName,
-        },
+        params: statusPayload,
         targetRole: "TECHNICIAN",
       });
     } else if (params.action === "DELETE") {
-      if (actor.role !== "OPERATOR") {
+      if (actor.role !== "OPERATOR" && actor.role !== "CHIEF") {
         return;
       }
 

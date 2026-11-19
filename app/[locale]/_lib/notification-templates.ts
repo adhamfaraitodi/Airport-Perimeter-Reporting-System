@@ -19,6 +19,7 @@ export interface NotificationParams {
   side?: string;
   grid?: string;
   status?: string;
+  previousStatus?: string;
   actorName?: string;
   note?: string;
   title?: string;
@@ -58,36 +59,84 @@ export const NOTIFICATION_TEMPLATES: Record<
         }.`,
     },
     STATUS_UPDATE_REPORTER: {
-      title: (p) =>
-        p.status === "RESOLVED"
-          ? "Laporan Anda Selesai Ditangani"
-          : "Laporan Anda Sedang Ditangani",
+      title: (p) => {
+        if (p.status === "OPEN" && p.previousStatus === "IN_PROGRESS") {
+          return "Perbaikan Sedang Ditinjau Ulang";
+        }
+        if (p.status === "RESOLVED") {
+          return "Laporan Anda Selesai & Diverifikasi";
+        }
+        return "Laporan Anda Ditangani";
+      },
       description: (p) => {
-        const isResolved = p.status === "RESOLVED";
         const actor = p.actorName ? ` oleh ${p.actorName}` : "";
+        if (p.status === "OPEN" && p.previousStatus === "IN_PROGRESS") {
+          const noteSuffix = p.note ? ` Catatan: ${p.note}` : "";
+          return `Perbaikan ${p.part || "perimeter"} di Sisi ${
+            p.side || "-"
+          }${p.grid ? ` (Grid ${p.grid})` : ""} dikembalikan ke teknisi${actor} untuk perbaikan ulang.${noteSuffix}`;
+        }
+        if (p.status === "RESOLVED") {
+          return `Perbaikan kerusakan ${p.part || "perimeter"} di Sisi ${
+            p.side || "-"
+          }${p.grid ? ` (Grid ${p.grid})` : ""} telah diverifikasi selesai${actor}.`;
+        }
         return `Perbaikan kerusakan ${p.part || "perimeter"} di Sisi ${
           p.side || "-"
-        } telah ${isResolved ? "selesai" : "mulai ditangani"}${actor}.`;
+        }${p.grid ? ` (Grid ${p.grid})` : ""} telah selesai ditangani${actor} dan menunggu verifikasi operator.`;
       },
     },
     STATUS_UPDATE_OPERATOR: {
       title: (p) => {
+        const part = p.part || "Perimeter";
+        if (p.status === "OPEN" && p.previousStatus === "IN_PROGRESS") {
+          return `Laporan Dikembalikan · ${part}`;
+        }
+        if (p.status === "RESOLVED") {
+          return `Perbaikan Disetujui · ${part}`;
+        }
+        if (p.status === "IN_PROGRESS") {
+          return `Menunggu Verifikasi · ${part}`;
+        }
         const s = statusLabels[p.status || ""]?.id || p.status || "Status";
         return `Status Diperbarui · ${s}`;
       },
       description: (p) => {
         const actor = p.actorName ? ` oleh ${p.actorName}` : "";
-        return `Progres perbaikan ${p.part || "perimeter"} di Sisi ${
-          p.side || "-"
-        }${p.grid ? ` (Grid ${p.grid})` : ""}${actor}.`;
+        const location = `Sisi ${p.side || "-"}${p.grid ? ` (Grid ${p.grid})` : ""}`;
+        if (p.status === "OPEN" && p.previousStatus === "IN_PROGRESS") {
+          const noteSuffix = p.note ? ` Catatan: ${p.note}` : "";
+          return `Perbaikan ${p.part || "perimeter"} di ${location} dikembalikan ke teknisi${actor}.${noteSuffix}`;
+        }
+        if (p.status === "RESOLVED") {
+          return `Perbaikan ${p.part || "perimeter"} di ${location} telah diverifikasi dan disetujui${actor}.`;
+        }
+        return `Teknisi telah menyelesaikan penanganan ${p.part || "perimeter"} di ${location}${actor}. Menunggu verifikasi lapangan.`;
       },
     },
     STATUS_UPDATE_TECHNICIAN: {
-      title: (p) => `Sedang Dikerjakan · ${p.part || "Perimeter"}`,
-      description: (p) =>
-        `Perbaikan di Sisi ${p.side || "-"}${
-          p.grid ? ` (Grid ${p.grid})` : ""
-        } menunggu verifikasi dan foto penyelesaian.`,
+      title: (p) => {
+        const part = p.part || "Perimeter";
+        if (p.status === "OPEN" && p.previousStatus === "IN_PROGRESS") {
+          return `Perbaikan Dikembalikan · ${part}`;
+        }
+        if (p.status === "RESOLVED") {
+          return `Perbaikan Disetujui · ${part}`;
+        }
+        return `Menunggu Verifikasi · ${part}`;
+      },
+      description: (p) => {
+        const actor = p.actorName ? ` oleh ${p.actorName}` : "";
+        const location = `Sisi ${p.side || "-"}${p.grid ? ` (Grid ${p.grid})` : ""}`;
+        if (p.status === "OPEN" && p.previousStatus === "IN_PROGRESS") {
+          const noteSuffix = p.note ? ` Catatan: ${p.note}` : "";
+          return `Perbaikan di ${location} dikembalikan${actor} untuk penanganan ulang.${noteSuffix}`;
+        }
+        if (p.status === "RESOLVED") {
+          return `Perbaikan di ${location} telah diverifikasi dan disetujui${actor}.`;
+        }
+        return `Perbaikan di ${location} telah dikirim${actor} dan menunggu verifikasi operator.`;
+      },
     },
     REPORT_CLOSED_REPORTER: {
       title: () => "Laporan Ditutup oleh Operator",
@@ -125,36 +174,84 @@ export const NOTIFICATION_TEMPLATES: Record<
         }.`,
     },
     STATUS_UPDATE_REPORTER: {
-      title: (p) =>
-        p.status === "RESOLVED"
-          ? "Your Report Has Been Verified & Resolved"
-          : "Your Report Is Being Handled",
+      title: (p) => {
+        if (p.status === "OPEN" && p.previousStatus === "IN_PROGRESS") {
+          return "Repair Under Re-evaluation";
+        }
+        if (p.status === "RESOLVED") {
+          return "Your Report Has Been Verified & Resolved";
+        }
+        return "Your Report Is Being Handled";
+      },
       description: (p) => {
-        const isResolved = p.status === "RESOLVED";
         const actor = p.actorName ? ` by ${p.actorName}` : "";
+        if (p.status === "OPEN" && p.previousStatus === "IN_PROGRESS") {
+          const noteSuffix = p.note ? ` Note: ${p.note}` : "";
+          return `Repair work for ${p.part || "perimeter"} on ${
+            p.side || "-"
+          } Side${p.grid ? ` (Grid ${p.grid})` : ""} was returned to the technician${actor} for rework.${noteSuffix}`;
+        }
+        if (p.status === "RESOLVED") {
+          return `Repair work for ${p.part || "perimeter"} on ${
+            p.side || "-"
+          } Side${p.grid ? ` (Grid ${p.grid})` : ""} has been verified and resolved${actor}.`;
+        }
         return `Repair work for ${p.part || "perimeter"} on ${
           p.side || "-"
-        } Side has been ${isResolved ? "completed" : "started"}${actor}.`;
+        } Side${p.grid ? ` (Grid ${p.grid})` : ""} has been handled${actor} and is awaiting operator verification.`;
       },
     },
     STATUS_UPDATE_OPERATOR: {
       title: (p) => {
+        const part = p.part || "Perimeter";
+        if (p.status === "OPEN" && p.previousStatus === "IN_PROGRESS") {
+          return `Report Returned · ${part}`;
+        }
+        if (p.status === "RESOLVED") {
+          return `Repair Approved · ${part}`;
+        }
+        if (p.status === "IN_PROGRESS") {
+          return `Awaiting Verification · ${part}`;
+        }
         const s = statusLabels[p.status || ""]?.en || p.status || "Status";
         return `Status Updated · ${s}`;
       },
       description: (p) => {
         const actor = p.actorName ? ` by ${p.actorName}` : "";
-        return `Repair progress for ${p.part || "perimeter"} on ${
-          p.side || "-"
-        } Side${p.grid ? ` (Grid ${p.grid})` : ""}${actor}.`;
+        const location = `${p.side || "-"} Side${p.grid ? ` (Grid ${p.grid})` : ""}`;
+        if (p.status === "OPEN" && p.previousStatus === "IN_PROGRESS") {
+          const noteSuffix = p.note ? ` Note: ${p.note}` : "";
+          return `Repair for ${p.part || "perimeter"} on ${location} was returned to the technician${actor}.${noteSuffix}`;
+        }
+        if (p.status === "RESOLVED") {
+          return `Repair for ${p.part || "perimeter"} on ${location} has been verified and approved${actor}.`;
+        }
+        return `Technician finished handling ${p.part || "perimeter"} on ${location}${actor}. Awaiting field verification.`;
       },
     },
     STATUS_UPDATE_TECHNICIAN: {
-      title: (p) => `Work in Progress · ${p.part || "Perimeter"}`,
-      description: (p) =>
-        `Repair work on ${p.side || "-"} Side${
-          p.grid ? ` (Grid ${p.grid})` : ""
-        } awaiting completion photo proof.`,
+      title: (p) => {
+        const part = p.part || "Perimeter";
+        if (p.status === "OPEN" && p.previousStatus === "IN_PROGRESS") {
+          return `Repair Returned · ${part}`;
+        }
+        if (p.status === "RESOLVED") {
+          return `Repair Approved · ${part}`;
+        }
+        return `Awaiting Verification · ${part}`;
+      },
+      description: (p) => {
+        const actor = p.actorName ? ` by ${p.actorName}` : "";
+        const location = `${p.side || "-"} Side${p.grid ? ` (Grid ${p.grid})` : ""}`;
+        if (p.status === "OPEN" && p.previousStatus === "IN_PROGRESS") {
+          const noteSuffix = p.note ? ` Note: ${p.note}` : "";
+          return `Repair on ${location} was returned${actor} for rework.${noteSuffix}`;
+        }
+        if (p.status === "RESOLVED") {
+          return `Repair on ${location} has been verified and approved${actor}.`;
+        }
+        return `Repair on ${location} has been submitted${actor} and is awaiting operator verification.`;
+      },
     },
     REPORT_CLOSED_REPORTER: {
       title: () => "Report Closed by Operator",
