@@ -12,6 +12,8 @@ import {
   MapPin,
   LocateFixed,
 } from "lucide-react";
+import { calculatePerimeterReadiness } from "@/lib/perimeter-readiness";
+import { getPerimeterPolylinesForGrids } from "@/lib/perimeter-segments";
 import perimeter from "../_data/latest_perimeter.json";
 import { labels } from "../_lib/draft-store";
 import type { ReportRecord } from "../_lib/client-api";
@@ -28,6 +30,7 @@ import { mapFillClass, mapFrameClass } from "./map-classes";
 
 export interface PerimeterMapInnerProps {
   reports?: ReportRecord[];
+  damagedGridCodes?: string[];
   selectedId?: string | null;
   onSelect?: (id: string) => void;
   point?: LatLngPoint | null;
@@ -93,6 +96,7 @@ const gridHeaderLabelIcon = (text: string) =>
 
 export default function PerimeterMapInner({
   reports = [],
+  damagedGridCodes,
   selectedId,
   onSelect,
   point,
@@ -104,6 +108,7 @@ export default function PerimeterMapInner({
   const host = useRef<HTMLDivElement | null>(null);
   const map = useRef<L.Map | null>(null);
   const layer = useRef<L.LayerGroup | null>(null);
+  const damageOverlayLayer = useRef<L.LayerGroup | null>(null);
   const gridLayer = useRef<L.LayerGroup | null>(null);
   const callbacks = useRef({ onPoint, onSelect });
   const [tileError, setTileError] = useState(false);
@@ -153,6 +158,9 @@ export default function PerimeterMapInner({
         fillOpacity: 0.08,
       },
     }).addTo(instance);
+
+    // 1b. Damaged perimeter segments translucent red overlay layer
+    damageOverlayLayer.current = L.layerGroup().addTo(instance);
 
     // 2. Toggleable Airport Grid LayerGroup (off by default)
     const gridGroup = L.layerGroup();
@@ -228,6 +236,7 @@ export default function PerimeterMapInner({
       observer.disconnect();
       instance.remove();
       map.current = null;
+      damageOverlayLayer.current = null;
       gridLayer.current = null;
     };
   }, [editable]);
@@ -242,6 +251,37 @@ export default function PerimeterMapInner({
       gridLayer.current.remove();
     }
   }, [showGrid]);
+
+  useEffect(() => {
+    if (!map.current || !damageOverlayLayer.current) return;
+    damageOverlayLayer.current.clearLayers();
+
+    const activeDamagedGrids =
+      damagedGridCodes ??
+      (reports.length > 0
+        ? calculatePerimeterReadiness(reports).damagedGridCodes
+        : []);
+
+    for (const seg of getPerimeterPolylinesForGrids(activeDamagedGrids)) {
+      L.polyline(seg.latLngs, {
+        color: "#ef4444",
+        weight: 10,
+        opacity: 0.38,
+        lineCap: "round",
+        lineJoin: "round",
+        interactive: false,
+      }).addTo(damageOverlayLayer.current);
+
+      L.polyline(seg.latLngs, {
+        color: "#dc2626",
+        weight: 4,
+        opacity: 0.72,
+        lineCap: "round",
+        lineJoin: "round",
+        interactive: false,
+      }).addTo(damageOverlayLayer.current);
+    }
+  }, [damagedGridCodes, reports]);
 
   useEffect(() => {
     if (!map.current || !layer.current) return;

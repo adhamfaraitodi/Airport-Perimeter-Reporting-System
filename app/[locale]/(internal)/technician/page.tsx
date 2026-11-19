@@ -14,6 +14,7 @@ import { useTheme } from "../../_lib/use-theme";
 import { alertBox, focusRing } from "../../_lib/ui-classes";
 import { AppHeader } from "../../_components/app-header";
 import { toast } from "@/components/ui/sonner";
+import { calculatePerimeterReadiness } from "@/lib/perimeter-readiness";
 import { PerimeterMap } from "../operator/_components/perimeter-map";
 import { ReportDetailSheet } from "../operator/_components/report-detail-sheet";
 import { UpdateStatusDialog } from "../operator/_components/update-status-dialog";
@@ -166,6 +167,11 @@ export default function TechnicianDashboardPage() {
     return searchableText.includes(search.toLocaleLowerCase("id"));
   });
 
+  const damagedGridCodes = useMemo(
+    () => calculatePerimeterReadiness(reports).damagedGridCodes,
+    [reports]
+  );
+
   const selected =
     reports.find((report) => report.id === selectedId) || null;
 
@@ -305,6 +311,7 @@ export default function TechnicianDashboardPage() {
         <div className="flex h-auto min-h-0 flex-col md:grid md:h-[calc(100dvh-330px)] md:min-h-[550px] md:grid-cols-[minmax(0,1fr)_420px] md:gap-3 min-[1100px]:grid-cols-[minmax(0,1fr)_580px] min-[1100px]:gap-5">
           <PerimeterMap
             reports={visible}
+            damagedGridCodes={damagedGridCodes}
             selectedId={selectedId}
             onSelect={(id) => {
               if (!action && !locked) setSelectedId(id);

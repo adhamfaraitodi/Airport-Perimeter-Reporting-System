@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx lib/evidence-image.test.ts && tsx lib/date-filter.test.ts && tsx lib/proxy/auth-proxy.test.ts",
+    "test": "tsx lib/evidence-image.test.ts && tsx lib/date-filter.test.ts && tsx lib/proxy/auth-proxy.test.ts && tsx lib/report-workflow.test.ts && tsx \"app/[locale]/(internal)/technician/_lib/technician.service.test.ts\" && tsx lib/perimeter-readiness.test.ts && tsx lib/perimeter-segments.test.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",

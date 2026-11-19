@@ -197,6 +197,7 @@ export default function DashboardPage() {
         <div className="flex h-auto min-h-0 flex-col md:grid md:h-[calc(100dvh-350px)] md:min-h-[520px] md:grid-cols-[minmax(0,1fr)_400px] md:gap-3 min-[1100px]:grid-cols-[minmax(0,1fr)_580px] min-[1100px]:gap-5">
           <PerimeterMap
             reports={visible}
+            damagedGridCodes={readiness.damagedGridCodes}
             selectedId={selectedId}
             onSelect={(id) => {
               if (!pendingAction && !locked) setSelectedId(id);
