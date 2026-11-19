@@ -1,5 +1,6 @@
-import { and, desc, eq, gte, isNull, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
+import type { UserRole } from "@/lib/auth";
 import type {
   FindingItem,
   LifecycleStatus,
@@ -10,7 +11,7 @@ import type { TechnicianTaskSummary } from "./technician.schema";
 /**
  * High-performance database loader for the Technician dashboard.
  * Queries aggregated counter badges and active reports list leveraging PostgreSQL indexes.
- * Restricted to the last 3 months.
+ * Retains active OPEN/IN_PROGRESS reports indefinitely and RESOLVED/CLOSED reports from the last 3 months.
  */
 export async function getTechnicianReports(): Promise<{
   summary: TechnicianTaskSummary;
@@ -19,17 +20,17 @@ export async function getTechnicianReports(): Promise<{
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setDate(threeMonthsAgo.getDate() - 90);
 
-  // 1. Single round-trip aggregation for badge counters using SQL FILTER (last 3 months)
+  // 1. Single round-trip aggregation for badge counters using SQL FILTER
   const [summaryRow] = await db
     .select({
-      totalActive: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NULL AND ${schema.reports.status} != 'CLOSED' AND ${schema.reports.createdAt} >= ${threeMonthsAgo})::int`,
-      open: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NULL AND ${schema.reports.status} = 'OPEN' AND ${schema.reports.createdAt} >= ${threeMonthsAgo})::int`,
-      inProgress: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NULL AND ${schema.reports.status} = 'IN_PROGRESS' AND ${schema.reports.createdAt} >= ${threeMonthsAgo})::int`,
+      totalActive: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NULL AND (${schema.reports.status} IN ('OPEN', 'IN_PROGRESS') OR (${schema.reports.status} = 'RESOLVED' AND ${schema.reports.createdAt} >= ${threeMonthsAgo})))::int`,
+      open: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NULL AND ${schema.reports.status} = 'OPEN')::int`,
+      inProgress: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NULL AND ${schema.reports.status} = 'IN_PROGRESS')::int`,
       resolved: sql<number>`count(*) FILTER (WHERE ${schema.reports.deletedAt} IS NULL AND ${schema.reports.status} = 'RESOLVED' AND ${schema.reports.createdAt} >= ${threeMonthsAgo})::int`,
     })
     .from(schema.reports);
 
-  // 2. Query reports from last 3 months (including closed for complete history)
+  // 2. Query reports from last 3 months plus active OPEN/IN_PROGRESS regardless of age
   const reportRows = await db
     .select({
       id: schema.reports.id,
@@ -51,7 +52,15 @@ export async function getTechnicianReports(): Promise<{
     })
     .from(schema.reports)
     .leftJoin(schema.user, eq(schema.reports.reporterId, schema.user.id))
-    .where(gte(schema.reports.createdAt, threeMonthsAgo))
+    .where(
+      or(
+        gte(schema.reports.createdAt, threeMonthsAgo),
+        and(
+          isNull(schema.reports.deletedAt),
+          inArray(schema.reports.status, ["OPEN", "IN_PROGRESS"])
+        )
+      )
+    )
     .orderBy(desc(schema.reports.createdAt));
 
   const summary: TechnicianTaskSummary = {
@@ -79,6 +88,7 @@ export async function getTechnicianReports(): Promise<{
         reportId: schema.reportStatusHistory.reportId,
         actorId: schema.reportStatusHistory.actorId,
         actorName: schema.user.name,
+        actorRole: schema.user.role,
         previousStatus: schema.reportStatusHistory.previousStatus,
         newStatus: schema.reportStatusHistory.newStatus,
         narrative: schema.reportStatusHistory.narrative,
@@ -111,6 +121,7 @@ export async function getTechnicianReports(): Promise<{
         createdAt: h.createdAt.toISOString(),
         actorId: h.actorId,
         actorName: h.actorName || "Petugas",
+        actorRole: (h.actorRole as UserRole | null) || undefined,
         images: histPhotos.map((p) => ({
           id: p.id,
           url: p.filePath,

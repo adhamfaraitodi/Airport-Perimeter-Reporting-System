@@ -8,10 +8,16 @@ import {
   ClipboardPen,
   ClipboardCheck,
   ClipboardX,
+  ShieldCheck,
   X,
   ZoomIn,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  formatApprovalLabel,
+  getApprovalInfo,
+  isReturnedHistoryItem,
+} from "@/lib/report-workflow";
 import MapView from "../../../../_components/perimeter-map-view";
 import { api, type ImageRef, type ReportRecord } from "../../../../_lib/client-api";
 import { dateText, message } from "../../../../_lib/draft-store";
@@ -182,6 +188,7 @@ export function ReportDetail({ report, onBack }: ReportDetailProps) {
   const findings = Array.isArray(report.findings) ? report.findings : [];
   const status = report.deletedAt ? "CLOSED" : report.status;
   const Icon = (states[status] || states.OPEN).icon;
+  const approvalInfo = getApprovalInfo(report);
   const history = [...(report.history || [])].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
@@ -214,6 +221,12 @@ export function ReportDetail({ report, onBack }: ReportDetailProps) {
                 #{String(report.id).slice(-6).toUpperCase()}
               </span>
               <Status status={status} />
+              {approvalInfo && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-solid border-[var(--rd-lime)]/35 bg-[var(--rd-lime)]/10 px-2.5 py-0.5 text-xs font-semibold text-[var(--rd-lime)]">
+                  <ShieldCheck size={13} aria-hidden="true" />
+                  <span>{formatApprovalLabel(approvalInfo)}</span>
+                </span>
+              )}
             </div>
             <h2 className="m-0 text-base font-normal tracking-normal sm:text-lg">
               {findings.map((item) => item.partName).join(", ") ||
@@ -227,7 +240,8 @@ export function ReportDetail({ report, onBack }: ReportDetailProps) {
               </p>
             )}
             <p className={`${small} m-0 mt-1`}>
-              Dilaporkan {timestamp(report.createdAt)} · Diperbarui{" "}
+              Dilaporkan oleh {report.reporterName || "Pelapor"} ·{" "}
+              {timestamp(report.createdAt)} · Diperbarui{" "}
               {timestamp((report as any).updatedAt || report.createdAt)}
             </p>
           </div>
@@ -351,34 +365,55 @@ export function ReportDetail({ report, onBack }: ReportDetailProps) {
               Riwayat pembaruan
             </h3>
             <ol className="m-0 list-none space-y-4 p-0">
-              {history.map((item) => (
-                <li
-                  key={item.id}
-                  className="rounded-lg border border-[var(--rd-border)] p-3"
-                >
-                  <Status
-                    status={
-                      item.status === "DELETE" || item.status === "CLOSED"
-                        ? "CLOSED"
-                        : item.status
-                    }
-                  />
-                  <p className={`${small} mt-2 mb-2`}>
-                    {item.actorName || "Petugas"} · {timestamp(item.createdAt)}
-                  </p>
-                  {item.previousStatus && (
-                    <p className={`${small} mb-2`}>
-                      Sebelumnya:{" "}
-                      {states[item.previousStatus]?.label ||
-                        item.previousStatus}
+              {history.map((item) => {
+                const isReturned = isReturnedHistoryItem(item);
+                return (
+                  <li
+                    key={item.id}
+                    className="rounded-lg border border-[var(--rd-border)] p-3"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Status
+                        status={
+                          item.status === "DELETE" || item.status === "CLOSED"
+                            ? "CLOSED"
+                            : item.status
+                        }
+                      />
+                      {isReturned && (
+                        <span className="inline-flex items-center rounded-full border border-[var(--rd-brown)]/40 bg-[var(--rd-brown)]/10 px-2 py-0.5 text-xs font-semibold text-[var(--rd-brown)]">
+                          Dikembalikan ke Teknisi
+                        </span>
+                      )}
+                      {item.status === "RESOLVED" && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-[var(--rd-lime)]/35 bg-[var(--rd-lime)]/10 px-2 py-0.5 text-xs font-semibold text-[var(--rd-lime)]">
+                          <ShieldCheck size={12} aria-hidden="true" />
+                          <span>
+                            {formatApprovalLabel({
+                              actorName: item.actorName || "Operator",
+                              actorRole: item.actorRole,
+                            })}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                    <p className={`${small} mt-2 mb-2`}>
+                      {item.actorName || "Petugas"} · {timestamp(item.createdAt)}
                     </p>
-                  )}
-                  <p className="mt-0 mb-3 text-base leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">
-                    {item.narrative}
-                  </p>
-                  <Photos images={item.images} onOpen={setPhoto} />
-                </li>
-              ))}
+                    {item.previousStatus && (
+                      <p className={`${small} mb-2`}>
+                        Sebelumnya:{" "}
+                        {states[item.previousStatus]?.label ||
+                          item.previousStatus}
+                      </p>
+                    )}
+                    <p className="mt-0 mb-3 text-base leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">
+                      {item.narrative}
+                    </p>
+                    <Photos images={item.images} onOpen={setPhoto} />
+                  </li>
+                );
+              })}
               <li className="border-l-2 border-[var(--rd-link)] pl-3">
                 <p className="m-0 text-base">Laporan dibuat</p>
                 <p className={`${small} mt-1 mb-0`}>

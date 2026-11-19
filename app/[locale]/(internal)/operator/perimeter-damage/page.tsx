@@ -137,7 +137,11 @@ export default function PerimeterDamageMasterPage() {
         }
         if (session.role !== "OPERATOR") {
           window.location.href = `/${locale}/${
-            session.role === "TECHNICIAN" ? "technician" : "reports"
+            session.role === "CHIEF"
+              ? "operator"
+              : session.role === "TECHNICIAN"
+                ? "technician"
+                : "reports"
           }`;
           return;
         }

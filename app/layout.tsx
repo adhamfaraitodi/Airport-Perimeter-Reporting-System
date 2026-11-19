@@ -10,7 +10,7 @@ import "leaflet/dist/leaflet.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Airport Perimeter Reporting System — YIA",
+  title: "Airport Perimeter Monitoring System — YIA",
   description:
     "Sistem pelaporan kondisi pagar perimeter Bandara Internasional Yogyakarta (YIA)",
 };

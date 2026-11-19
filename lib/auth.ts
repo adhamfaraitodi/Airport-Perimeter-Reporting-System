@@ -4,7 +4,7 @@ import { nextCookies } from "better-auth/next-js";
 import { username } from "better-auth/plugins";
 import { db, schema } from "@/db";
 
-export type UserRole = "REPORTER" | "OPERATOR" | "TECHNICIAN";
+export type UserRole = "REPORTER" | "OPERATOR" | "CHIEF" | "TECHNICIAN";
 export type AccountStatus = "ACTIVE" | "INACTIVE";
 export type { UserPosition } from "@/db/schema";
 

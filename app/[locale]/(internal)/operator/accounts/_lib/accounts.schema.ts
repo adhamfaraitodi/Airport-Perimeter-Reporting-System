@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { USER_POSITIONS } from "@/db/schema";
 
-export const userRoleEnum = z.enum(["REPORTER", "OPERATOR", "TECHNICIAN"], {
-  message: "Role harus salah satu dari REPORTER, OPERATOR, atau TECHNICIAN.",
+export const userRoleEnum = z.enum(["REPORTER", "OPERATOR", "CHIEF", "TECHNICIAN"], {
+  message: "Role harus salah satu dari REPORTER, OPERATOR, CHIEF, atau TECHNICIAN.",
 });
 
 export const accountStatusEnum = z.enum(["ACTIVE", "INACTIVE"], {
@@ -17,9 +17,9 @@ export const createAccountSchema = z.object({
   nip: z
   .string()
   .trim()
-  .min(3, "NIP minimal 3 karakter.")
-  .max(30, "NIP maksimal 30 karakter.")
-  .regex(/^[0-9]+$/, "NIP hanya boleh berisi angka tanpa spasi."),
+  .min(3, "ID pegawai minimal 3 karakter.")
+  .max(30, "ID pegawai maksimal 30 karakter.")
+  .regex(/^[0-9]+$/, "ID pegawai hanya boleh berisi angka tanpa spasi."),
   name: z
   .string()
   .trim()
@@ -56,9 +56,9 @@ export const updateAccountSchema = z.object({
   nip: z
   .string()
   .trim()
-  .min(3, "NIP minimal 3 karakter.")
-  .max(30, "NIP maksimal 30 karakter.")
-  .regex(/^[0-9]+$/, "NIP hanya boleh berisi angka tanpa spasi."),
+  .min(3, "ID pegawai minimal 3 karakter.")
+  .max(30, "ID pegawai maksimal 30 karakter.")
+  .regex(/^[0-9]+$/, "ID pegawai hanya boleh berisi angka tanpa spasi."),
   name: z
   .string()
   .trim()

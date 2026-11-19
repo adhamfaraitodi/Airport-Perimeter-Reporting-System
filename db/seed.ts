@@ -111,6 +111,15 @@ async function seed() {
       phone: "081234567802",
       password: seedPassword,
     },
+    {
+      nip: "2233445",
+      name: "Chief Lapangan",
+      role: "CHIEF" as const,
+      position: "Chief",
+      unit: "Aviation Security (AVSEC)",
+      phone: "081234567803",
+      password: seedPassword,
+    },
   ];
 
   console.log("🌱 [Seed] Memulai seeding database...");

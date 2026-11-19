@@ -56,6 +56,17 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
     if (!help && dialog.current.open) dialog.current.close();
   }, [help]);
 
+  useEffect(() => {
+    function handlePageShow(event: PageTransitionEvent) {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    }
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
+
   function handleToggleLanguage() {
     const nextLocale: SupportedLocale = locale === "id" ? "en" : "id";
     const currentPath = window.location.pathname;
@@ -123,10 +134,10 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
 
       if (result.success) {
         if (result.redirectTo) {
-          window.location.href = result.redirectTo;
+          window.location.replace(result.redirectTo);
           return;
         }
-        router.push(callbackUrl || `/${locale}/reports`);
+        router.replace(callbackUrl || `/${locale}/reports`);
         router.refresh();
         return;
       }
@@ -144,7 +155,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
         result.errorMessage ||
           (locale === "en"
             ? "The Employee ID or password you entered is incorrect."
-            : "NIP atau password yang Anda masukkan salah.")
+            : "ID pegawai atau password yang Anda masukkan salah.")
       );
     } catch {
       setNotice(
@@ -159,77 +170,105 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
 
   return (
     <main
-      className="login-page m-0 min-h-dvh w-full max-w-none bg-[var(--login-bg)] p-0 font-['Carlito',sans-serif] text-[14px] leading-normal text-[var(--login-text)] [color-scheme:light] data-[theme=dark]:[color-scheme:dark] min-[900px]:grid min-[900px]:grid-cols-[minmax(340px,46%)_1fr]"
+      className="login-page m-0 flex min-h-dvh w-full max-w-none flex-col bg-[var(--login-bg)] p-0 font-['Carlito',sans-serif] text-[14px] leading-normal text-[var(--login-text)] [color-scheme:light] data-[theme=dark]:[color-scheme:dark] min-[900px]:grid min-[900px]:grid-cols-[minmax(340px,46%)_1fr]"
       data-theme={theme}
     >
       <section
-        className="relative h-[269px] bg-[var(--login-brand-bg)] text-[var(--login-panel-text)] min-[900px]:h-auto min-[900px]:min-h-dvh"
+        className="relative isolate grid min-h-[325px] grid-rows-[auto_1fr] overflow-hidden bg-[var(--login-brand-bg)] text-[var(--login-panel-text)] min-[900px]:min-h-dvh min-[900px]:grid-rows-[1fr_auto_1fr]"
         aria-label="InJourney Airports"
       >
-        <div className="absolute top-[34px] right-[26px] z-10 flex items-center gap-2 min-[900px]:top-[30px] min-[900px]:right-[30px]">
-          {/* Language Switcher */}
-          <button
-            type="button"
-            className={`${buttonClasses} inline-flex h-[44px] items-center gap-1.5 rounded-full border-0 bg-transparent px-2.5 text-sm font-semibold text-[var(--login-panel-text)] hover:bg-[var(--login-theme-hover)] sm:px-3`}
-            onClick={handleToggleLanguage}
-            aria-label={
-              locale === "id"
-                ? "Beralih ke Bahasa Inggris"
-                : "Switch to Indonesian"
-            }
-            title={
-              locale === "id"
-                ? "Beralih ke Bahasa Inggris"
-                : "Switch to Indonesian"
-            }
-          >
-            <Languages size={18} strokeWidth={1.8} aria-hidden="true" />
-            <span className="tracking-wider">{locale.toUpperCase()}</span>
-          </button>
+        <div
+          className="login-brand-pattern pointer-events-none absolute inset-0 -z-10"
+          aria-hidden="true"
+        />
+        <div className="flex items-center justify-between gap-2 self-start px-7 py-3 min-[600px]:px-7 min-[900px]:px-7 min-[900px]:py-5">
+          <div className="flex items-center gap-2">
+            <img
+              className="block h-auto w-[56px] min-[400px]:w-[70px] object-contain"
+              src={dark ? "/injourney-logo-white.webp" : "/injourney-logo.webp"}
+              alt="InJourney Airports"
+              width={dark ? 700 : 1086}
+              height={dark ? 215 : 362}
+            />
+            <img
+              className="block h-auto w-[80px] min-[400px]:w-[100px] object-contain"
+              src={dark ? "/yogyakarta-international-airport-logo-white-transparent.webp" : "/yogyakarta-international-airport-logo-transparent.webp"}
+              alt="YIA Logo"
+              width={dark ? 4328 : 4884}
+              height={dark ? 1803 : 2481}
+            />
+          </div>
 
-          {/* Theme Toggle Button */}
-          <button
-            type="button"
-            className={`${buttonClasses} grid h-[44px] min-h-[44px] w-[44px] place-items-center rounded-full border-0 bg-transparent p-0 text-[var(--login-panel-text)] hover:bg-[var(--login-theme-hover)]`}
-            onClick={toggleTheme}
-            aria-label={dark ? "Aktifkan light mode" : "Aktifkan dark mode"}
-            title={dark ? "Light mode" : "Dark mode"}
-          >
-            {dark ? (
-              <Sun size={27} strokeWidth={1.7} />
-            ) : (
-              <MoonStar size={29} strokeWidth={1.7} />
-            )}
-          </button>
+          <div className="flex shrink-0 items-center gap-1">
+
+            {/* Language Switcher */}
+            <button
+              type="button"
+              className={`${buttonClasses} inline-flex h-[44px] items-center gap-1.5 rounded-full border-0 bg-transparent px-2.5 text-sm font-semibold text-[var(--login-panel-text)] hover:bg-[var(--login-theme-hover)] min-[400px]:px-3`}
+              onClick={handleToggleLanguage}
+              aria-label={
+                locale === "id"
+                  ? "Beralih ke Bahasa Inggris"
+                  : "Switch to Indonesian"
+              }
+              title={
+                locale === "id"
+                  ? "Beralih ke Bahasa Inggris"
+                  : "Switch to Indonesian"
+              }
+            >
+              <Languages size={18} strokeWidth={1.8} aria-hidden="true" />
+              <span className="tracking-wider">{locale.toUpperCase()}</span>
+            </button>
+
+            {/* Theme Toggle Button */}
+            <button
+              type="button"
+              className={`${buttonClasses} grid size-[44px] min-h-[44px] place-items-center rounded-full border-0 bg-transparent p-0 text-[var(--login-panel-text)] hover:bg-[var(--login-theme-hover)]`}
+              onClick={toggleTheme}
+              aria-label={dark ? "Aktifkan light mode" : "Aktifkan dark mode"}
+              title={dark ? "Light mode" : "Dark mode"}
+            >
+              {dark ? (
+                <Sun size={27} strokeWidth={1.7} aria-hidden="true" />
+              ) : (
+                <MoonStar size={29} strokeWidth={1.7} aria-hidden="true" />
+              )}
+            </button>
+          </div>
         </div>
 
-        <div className="flex h-full flex-col items-center justify-end gap-[35px] px-[20px] pt-0 pb-[40px] min-[900px]:justify-center min-[900px]:gap-[40px] min-[900px]:px-[40px] min-[900px]:py-[70px]">
+        <div className="flex flex-col items-center justify-center gap-3 px-5 py-4 text-center min-[600px]:gap-4 min-[900px]:gap-7 min-[900px]:px-10 min-[900px]:py-6">
           <img
-            className="block h-auto w-[120px] object-contain min-[600px]:w-[145px] min-[900px]:w-[210px]"
-            src={dark ? "/injourney-logo-white.webp" : "/injourney-logo.webp"}
-            alt="InJourney Airports"
+            className="block h-auto w-[78px] object-contain min-[600px]:w-[145px] min-[900px]:w-[150px]"
+            src="/avsec-logo.webp"
+            alt="Avsec Logo"
+            width={1952}
+            height={2160}
+            fetchPriority="high"
           />
           <p className="m-0 text-center text-[16px] leading-[1.45] max-[360px]:text-[15px] min-[600px]:text-[19px] min-[900px]:max-w-[350px] min-[900px]:text-[25px] min-[900px]:leading-[1.5] min-[900px]:text-balance">
             {" "}
             <span className="sm:whitespace-nowrap">
-              Airport Perimeter Reporting System
+              Airport Perimeter Monitoring System
             </span>
           </p>
         </div>
+
         <div
-          className="absolute right-[30px] bottom-[35px] left-[30px] hidden flex-col gap-[8px] text-center text-[10px] tracking-[2px] opacity-65 min-[900px]:flex"
+          className="hidden self-end px-7 pb-9 text-center text-[10px] tracking-[2px] opacity-65 min-[900px]:block"
           aria-hidden="true"
         >
-          <span>YOGYAKARTA INTERNATIONAL AIRPORT</span>
+          <span>Integrated Security Perimeter Monitoring System</span>
         </div>
       </section>
 
       <section
-        className="px-[24px] pt-[48px] pb-[44px] max-[360px]:px-[18px] max-[360px]:py-[32px] min-[900px]:flex min-[900px]:items-center min-[900px]:px-[48px] min-[900px]:py-[64px]"
+        className="relative z-10 flex flex-1 items-center justify-center bg-[var(--login-bg)] p-6 [box-shadow:var(--login-section-shadow)] min-[900px]:p-12"
         aria-labelledby="login-title"
       >
-        <div className="mx-auto w-full max-w-[304px] min-[600px]:max-w-[380px] min-[900px]:max-w-[400px]">
-          <div className="relative overflow-hidden rounded-[13px] border border-solid border-[var(--login-border)] bg-[var(--login-surface)] px-[24px] pt-[31px] pb-[24px] max-[360px]:px-[18px] min-[600px]:p-[34px] min-[900px]:rounded-[16px] min-[900px]:px-[34px] min-[900px]:pt-[38px] min-[900px]:pb-[30px]">
+        <div className="w-full max-w-[304px] min-[600px]:max-w-[380px] min-[900px]:max-w-[400px]">
+          <div className="relative overflow-hidden rounded-xl border border-solid border-[var(--login-border)] bg-[var(--login-surface)] p-6 [box-shadow:var(--login-card-shadow)] min-[600px]:p-8 min-[900px]:rounded-2xl">
             <div
               className="absolute inset-x-0 top-0 flex h-[3px]"
               aria-hidden="true"
@@ -250,8 +289,8 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
                 {locale === "en" ? "Welcome" : "Selamat datang"}{" "}
                 <span className="sm:whitespace-nowrap">
                   {locale === "en"
-                    ? "to Airport Perimeter Reporting System"
-                    : "di Airport Perimeter Reporting System"}
+                    ? "to Airport Perimeter Monitoring System"
+                    : "di Airport Perimeter Monitoring System"}
                 </span>
                 <br />
                 {locale === "en"
@@ -262,7 +301,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
             <form onSubmit={submit} noValidate className="m-0">
               <div className="mb-[12px] min-[900px]:mb-[19px]">
                 <label className={labelClasses} htmlFor="login-nip">
-                  NIP
+                  ID pegawai
                 </label>
                 <input
                   className={inputClasses}
@@ -273,12 +312,12 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
                   autoComplete="username"
                   autoCapitalize="none"
                   spellCheck={false}
-                  placeholder={locale === "en" ? "Enter NIP" : "Masukkan NIP"}
+                  placeholder={locale === "en" ? "Enter ID employee" : "Masukkan ID pegawai"}
                   value={nip}
                   aria-invalid={!!fieldErrors.nip}
                   required={!demoEnabled}
                   pattern="[0-9]+"
-                  title="Masukkan NIP menggunakan angka, termasuk nol di depan."
+                  title="Masukkan ID pegawai menggunakan angka."
                   onChange={(event) => {
                     handleNipChange(event.target.value);
                   }}
@@ -304,7 +343,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
                   />
                   <button
                     type="button"
-                    className={`${buttonClasses} absolute top-[-3px] right-[2px] min-h-[44px] rounded-[9px] border-0 bg-transparent px-[10px] py-0 text-[11px] font-normal text-[var(--login-muted)] min-[900px]:top-[1px] min-[900px]:text-[12px]`}
+                    className={`${buttonClasses} absolute inset-y-0 right-1 flex items-center rounded-[9px] border-0 bg-transparent px-2.5 text-[11px] font-normal text-[var(--login-muted)] min-[900px]:text-[12px]`}
                     aria-label={showPassword ? "Hide password" : "Show password"}
                     aria-controls="login-password"
                     aria-pressed={showPassword}
@@ -394,7 +433,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
             aria-label="Close help"
             onClick={() => setHelp(false)}
           >
-            <X size={20} />
+            <X size={20} aria-hidden="true" />
           </button>
         </div>
         <h2

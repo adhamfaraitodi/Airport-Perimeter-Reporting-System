@@ -1,18 +1,21 @@
-import { canTechnicianTransitionStatus } from "./technician.service";
+process.env.BETTER_AUTH_SECRET ||= "test-secret-for-technician-unit-tests";
+
 import { updateTechnicianStatusSchema } from "./technician.schema";
 
 /**
  * Self-contained unit test suite for Technician business logic and schema validation.
  */
-export function runTechnicianUnitTests() {
-  const transitionAssertions = [
-    // Valid transitions
-    canTechnicianTransitionStatus("OPEN", "IN_PROGRESS") === true,
-    canTechnicianTransitionStatus("OPEN", "RESOLVED") === true,
-    canTechnicianTransitionStatus("IN_PROGRESS", "RESOLVED") === true,
-    canTechnicianTransitionStatus("RESOLVED", "OPEN") === true,
+export async function runTechnicianUnitTests() {
+  const { canTechnicianTransitionStatus } = await import("./technician.service");
 
-    // Invalid transitions (Technician cannot close reports or transition to same status)
+  const transitionAssertions = [
+    // Valid transitions: Technician can only submit OPEN -> IN_PROGRESS
+    canTechnicianTransitionStatus("OPEN", "IN_PROGRESS") === true,
+
+    // Invalid transitions (Technician cannot resolve directly, reopen, close, or transition to same status)
+    canTechnicianTransitionStatus("OPEN", "RESOLVED") === false,
+    canTechnicianTransitionStatus("IN_PROGRESS", "RESOLVED") === false,
+    canTechnicianTransitionStatus("RESOLVED", "OPEN") === false,
     canTechnicianTransitionStatus("OPEN", "OPEN" as any) === false,
     canTechnicianTransitionStatus("CLOSED", "IN_PROGRESS") === false,
     canTechnicianTransitionStatus("CLOSED", "OPEN") === false,
@@ -62,3 +65,16 @@ export function runTechnicianUnitTests() {
     schemaTests: schemaAssertions.length,
   };
 }
+
+runTechnicianUnitTests()
+  .then((result) => {
+    if (result.success !== true) {
+      console.error("Technician unit tests failed:", result);
+      process.exit(1);
+    }
+    console.log("All technician service unit tests passed.");
+  })
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });

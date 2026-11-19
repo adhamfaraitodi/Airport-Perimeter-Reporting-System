@@ -5,9 +5,13 @@ import {
   type UploadedFilePayload,
 } from "../(internal)/operator/_lib/operator-reports.actions";
 import { authClient } from "@/lib/auth-client";
+import {
+  canRoleCloseReport,
+  canRoleTransitionReportStatus,
+} from "@/lib/report-workflow";
 import { getDamageCatalogAction, type CatalogPartDto } from "../(internal)/operator/perimeter-damage/_lib/damage-catalog.actions";
 
-export type UserRole = "REPORTER" | "OPERATOR" | "TECHNICIAN";
+export type UserRole = "REPORTER" | "OPERATOR" | "CHIEF" | "TECHNICIAN";
 export type LifecycleStatus = "OPEN" | "IN_PROGRESS" | "RESOLVED";
 
 export interface SessionUser {
@@ -48,6 +52,7 @@ export interface ReportHistoryItem {
   createdAt: string;
   actorId?: string;
   actorName: string;
+  actorRole?: UserRole;
   images: ImageRef[];
 }
 
@@ -116,6 +121,14 @@ const users: Record<UserRole, SessionUser> = {
     role: "OPERATOR",
     position: "Officer",
   },
+  CHIEF: {
+    id: "usr-admin-chief",
+    name: "Chief Lapangan",
+    email: "2233445@perimeter.yia.id",
+    nip: "2233445",
+    role: "CHIEF",
+    position: "Chief",
+  },
   TECHNICIAN: {
     id: "usr-admin-technician",
     name: "Operator Admin",
@@ -144,12 +157,6 @@ function fail(text: string): never {
   throw new Error(text);
 }
 
-const transitions: Record<LifecycleStatus, LifecycleStatus[]> = {
-  OPEN: ["IN_PROGRESS", "RESOLVED"],
-  IN_PROGRESS: ["RESOLVED"],
-  RESOLVED: ["OPEN"],
-};
-
 export async function setMockRole(_next: UserRole): Promise<void> {
   // No-op: Authentication is strictly enforced via PostgreSQL & Better-Auth
 }
@@ -174,7 +181,9 @@ export const api = {
       if (sessionUser && typeof sessionUser.id === "string") {
         const rawRole = sessionUser.role as string | undefined;
         const resolvedRole: UserRole =
-          rawRole === "OPERATOR" || rawRole === "TECHNICIAN"
+          rawRole === "OPERATOR" ||
+          rawRole === "CHIEF" ||
+          rawRole === "TECHNICIAN"
             ? rawRole
             : "REPORTER";
         role = resolvedRole;
@@ -249,11 +258,7 @@ export const api = {
     } catch {
       /* Fallback to memory cache */
     }
-    return clone(
-      [...reports.values()].filter(
-        (r) => role !== "REPORTER" || r.reporterId === users[role].id
-      )
-    );
+    return clone([...reports.values()]);
   },
 
   beginSubmission: async (
@@ -337,9 +342,19 @@ export const api = {
       if (report.status !== payload.expectedStatus) {
         fail("Status telah berubah.");
       }
+      if (payload.action === "DELETE" && !canRoleCloseReport(role, report.status)) {
+        fail(
+          report.status === "RESOLVED"
+            ? "Laporan yang sudah selesai tidak dapat ditutup."
+            : "Hanya Operator atau Chief yang dapat menutup laporan."
+        );
+      }
       if (
         payload.action === "STATUS" &&
-        (!payload.status || !transitions[report.status].includes(payload.status))
+        !(
+          Boolean(payload.status) &&
+          canRoleTransitionReportStatus(role, report.status, payload.status!)
+        )
       ) {
         fail("Transisi status tidak valid.");
       }
@@ -448,7 +463,6 @@ export const api = {
     imageId: string;
   }): Promise<{ url: string }> => {
     for (const r of reports.values()) {
-      if (role === "REPORTER" && r.reporterId !== users[role].id) continue;
       const allImgs = [...r.images, ...r.history.flatMap((h) => h.images)];
       const found = allImgs.find((i) => i.id === imageId);
       if (found) {

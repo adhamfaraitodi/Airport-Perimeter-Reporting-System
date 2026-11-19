@@ -7,11 +7,11 @@ export const loginSchema = z.object({
   nip: z
     .string()
     .trim()
-    .min(3, "NIP minimal 3 digit angka.")
-    .max(30, "NIP maksimal 30 digit angka.")
+    .min(3, "ID pegawai minimal 3 digit angka.")
+    .max(30, "ID pegawai maksimal 30 digit angka.")
     .regex(
       /^[0-9]+$/,
-      "NIP hanya boleh berisi angka (termasuk angka nol di depan)."
+      "ID pegawai hanya boleh berisi angka."
     ),
   password: z
     .string()

@@ -148,7 +148,11 @@ export default function ManageAccountsPage() {
         }
         if (session.role !== "OPERATOR") {
           window.location.href = `/${locale}/${
-            session.role === "TECHNICIAN" ? "technician" : "reports"
+            session.role === "CHIEF"
+              ? "operator"
+              : session.role === "TECHNICIAN"
+                ? "technician"
+                : "reports"
           }`;
           return;
         }
@@ -171,7 +175,9 @@ export default function ManageAccountsPage() {
   }, [locale]);
 
   const totalAccounts = accounts.length;
-  const totalOperators = accounts.filter((a) => a.role === "OPERATOR").length;
+  const totalOperators = accounts.filter(
+    (a) => a.role === "OPERATOR" || a.role === "CHIEF"
+  ).length;
   const totalFieldStaff = accounts.filter(
     (a) => a.role === "REPORTER" || a.role === "TECHNICIAN"
   ).length;
@@ -517,7 +523,7 @@ export default function ManageAccountsPage() {
             </span>
             <div>
               <span className="block text-sm text-[var(--rd-muted)]">
-                Operator Perimeter
+                Operator & Chief
               </span>
               {loading ? (
                 <Skeleton className="mt-1 h-6 w-20 rounded-md" />
@@ -584,6 +590,7 @@ export default function ManageAccountsPage() {
                   [
                     ["ALL", `Semua (${accounts.length})`],
                     ["OPERATOR", `Operator (${accounts.filter((a) => a.role === "OPERATOR").length})`],
+                    ["CHIEF", `Chief (${accounts.filter((a) => a.role === "CHIEF").length})`],
                     ["REPORTER", `Pelapor (${accounts.filter((a) => a.role === "REPORTER").length})`],
                     ["TECHNICIAN", `Teknisi (${accounts.filter((a) => a.role === "TECHNICIAN").length})`],
                   ] as const
@@ -630,7 +637,7 @@ export default function ManageAccountsPage() {
               <input
                 type="search"
                 aria-label="Cari akun pengguna"
-                placeholder="Cari nama, NIP, kontak, atau unit…"
+                placeholder="Cari nama, ID pegawai, kontak, atau unit…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="min-w-0 flex-1 border-0 bg-transparent py-2 text-sm text-[var(--rd-text)] outline-none placeholder:text-[var(--rd-muted)] sm:text-base"
@@ -644,7 +651,7 @@ export default function ManageAccountsPage() {
               <TableRow>
                 <TableHead className="w-14 text-center">No</TableHead>
                 <TableHead>Pengguna</TableHead>
-                <TableHead>NIP & Unit Kerja</TableHead>
+                <TableHead>ID pegawai & Unit Kerja</TableHead>
                 <TableHead className="w-44">Kontak Person</TableHead>
                 <TableHead className="w-48">Peran & Posisi</TableHead>
                 <TableHead className="w-32 text-center">Status</TableHead>
@@ -702,6 +709,8 @@ export default function ManageAccountsPage() {
                     const roleBadgeClass =
                       account.role === "OPERATOR"
                         ? "bg-[var(--rd-link)]/15 text-[var(--rd-link)]"
+                        : account.role === "CHIEF"
+                        ? "bg-[var(--rd-lime)]/15 text-[var(--rd-lime)]"
                         : account.role === "TECHNICIAN"
                         ? "bg-[var(--rd-brown)]/15 text-[var(--rd-brown)]"
                         : "bg-[var(--rd-active)] text-[var(--rd-teal)]";
@@ -732,9 +741,6 @@ export default function ManageAccountsPage() {
                                     Anda
                                   </span>
                                 )}
-                              </span>
-                              <span className="block truncate text-sm text-[var(--rd-muted)]">
-                                {account.email}
                               </span>
                             </div>
                           </div>
@@ -908,7 +914,7 @@ export default function ManageAccountsPage() {
                 </label>
 
                 <label className={fieldLabel}>
-                  NIP (Nomor Induk Pegawai)
+                  ID pegawai
                   <input
                     type="text"
                     inputMode="numeric"
@@ -979,6 +985,7 @@ export default function ManageAccountsPage() {
                   >
                     <option value="REPORTER">Pelapor Lapangan</option>
                     <option value="OPERATOR">Operator Perimeter</option>
+                    <option value="CHIEF">Chief Lapangan</option>
                     <option value="TECHNICIAN">Teknisi</option>
                   </select>
                 </label>
@@ -1140,7 +1147,7 @@ export default function ManageAccountsPage() {
               <strong className="text-[var(--rd-text)]">
                 {passwordModal.account.name}
               </strong>{" "}
-              (NIP: {passwordModal.account.nip}).
+              (ID pegawai: {passwordModal.account.nip}).
             </p>
 
             <form onSubmit={handleSavePasswordModal}>
@@ -1276,7 +1283,7 @@ export default function ManageAccountsPage() {
               <strong className="text-[var(--rd-text)]">
                 {deleteTarget.name}
               </strong>{" "}
-              (NIP: {deleteTarget.nip}) akan dihapus dari daftar akses sistem.
+              (ID pegawai: {deleteTarget.nip}) akan dihapus dari daftar akses sistem.
             </p>
             <div className="flex justify-end gap-2.5">
               <button

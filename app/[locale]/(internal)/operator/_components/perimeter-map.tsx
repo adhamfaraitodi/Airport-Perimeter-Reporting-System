@@ -5,6 +5,7 @@ import type { ReportRecord } from "../../../_lib/client-api";
 
 export interface PerimeterMapProps {
   reports: ReportRecord[];
+  damagedGridCodes?: string[];
   selectedId?: string | null;
   onSelect?: (id: string) => void;
 }
@@ -17,6 +18,7 @@ const legend = [
 
 export function PerimeterMap({
   reports,
+  damagedGridCodes,
   selectedId,
   onSelect,
 }: PerimeterMapProps) {
@@ -25,6 +27,7 @@ export function PerimeterMap({
       <MapView
         fill
         reports={reports}
+        damagedGridCodes={damagedGridCodes}
         selectedId={selectedId}
         onSelect={onSelect}
       />
@@ -33,6 +36,10 @@ export function PerimeterMap({
           <i className="inline-block size-[7px] rounded-full bg-[var(--rd-link)]" />
           Kondisi perimeter
         </strong>
+        <span className="flex items-center gap-1.5">
+          <i className="inline-block h-[4px] w-3 rounded-full bg-red-500/75" />
+          Segmen rusak
+        </span>
         {legend.map(([status, label]) => (
           <span key={status} className="flex items-center gap-1.5">
             <i

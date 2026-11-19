@@ -82,17 +82,13 @@ export default function ReportsPage() {
     });
   }
 
-  const owned = user
-    ? user.role === "OPERATOR"
-      ? reports
-      : reports.filter((r) => r.reporterId === user.id)
-    : [];
-  const selected = owned.find((r) => r.id === selectedId) || null;
+  const visibleReports = user ? reports : [];
+  const selected = visibleReports.find((r) => r.id === selectedId) || null;
 
   return (
     <ReportList
       user={user}
-      reports={owned}
+      reports={visibleReports}
       loading={loading}
       error={error}
       notice={notice}

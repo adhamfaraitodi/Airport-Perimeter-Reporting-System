@@ -41,6 +41,7 @@ export function getHomeRouteForRole(
 ): string {
   switch (role) {
     case "OPERATOR":
+    case "CHIEF":
       return `/${locale}/operator`;
     case "TECHNICIAN":
       return `/${locale}/technician`;
@@ -52,7 +53,16 @@ export function getHomeRouteForRole(
 
 function isValidRole(value: unknown): value is UserRole {
   return (
-    value === "REPORTER" || value === "OPERATOR" || value === "TECHNICIAN"
+    value === "REPORTER" ||
+    value === "OPERATOR" ||
+    value === "CHIEF" ||
+    value === "TECHNICIAN"
+  );
+}
+
+function isOperatorMasterDataSubRoute(subSegments: string[]): boolean {
+  return (
+    subSegments[0] === "accounts" || subSegments[0] === "perimeter-damage"
   );
 }
 
@@ -228,20 +238,36 @@ export async function handleAuthProxy(
     return NextResponse.redirect(new URL(`${target}${search}`, request.url));
   }
 
-  // 2. Public route `/[locale]/login`: if already authenticated, redirect to role home
+  // 2. Public route `/[locale]/login`: if already authenticated, redirect page requests to role home
+  //    (never intercept Next.js Server Action POSTs with 307 redirects, which breaks the action client)
   if (routeSegment === "login") {
-    if (isAuthenticated) {
+    const isServerAction =
+      request.method === "POST" && request.headers.has("next-action");
+
+    if (isAuthenticated && !isServerAction) {
       const callbackUrl = request.nextUrl.searchParams.get("callbackUrl");
+      const isForbiddenChiefCallback =
+        role === "CHIEF" &&
+        Boolean(
+          callbackUrl &&
+            (callbackUrl.startsWith(`/${locale}/operator/accounts`) ||
+              callbackUrl.startsWith(`/${locale}/operator/perimeter-damage`))
+        );
       const destination =
         callbackUrl &&
         callbackUrl.startsWith(`/${locale}/`) &&
-        !callbackUrl.startsWith(`/${locale}/login`)
+        !callbackUrl.startsWith(`/${locale}/login`) &&
+        !isForbiddenChiefCallback
           ? callbackUrl
           : getHomeRouteForRole(locale, role);
       return NextResponse.redirect(new URL(destination, request.url));
     }
+
     const response = NextResponse.next();
-    return hasStaleCookies ? clearAuthCookiesOnResponse(response) : response;
+    response.headers.set("Cache-Control", "no-store");
+    return !isAuthenticated && hasStaleCookies
+      ? clearAuthCookiesOnResponse(response)
+      : response;
   }
 
   // 3. Protected routes: ALWAYS enforce authentication -> kick unauthenticated to login
@@ -258,10 +284,19 @@ export async function handleAuthProxy(
 
   // 4. Role-Based Access Control (RBAC) when user is authenticated with a known role
   if (isAuthenticated && role) {
-    if (routeSegment === "operator" && role !== "OPERATOR") {
-      return NextResponse.redirect(
-        new URL(getHomeRouteForRole(locale, role), request.url)
-      );
+    if (routeSegment === "operator") {
+      if (
+        isOperatorMasterDataSubRoute(context.subSegments) &&
+        role !== "OPERATOR"
+      ) {
+        return NextResponse.redirect(
+          new URL(getHomeRouteForRole(locale, role), request.url)
+        );
+      } else if (role !== "OPERATOR" && role !== "CHIEF") {
+        return NextResponse.redirect(
+          new URL(getHomeRouteForRole(locale, role), request.url)
+        );
+      }
     }
 
     if (routeSegment === "technician" && role !== "TECHNICIAN") {

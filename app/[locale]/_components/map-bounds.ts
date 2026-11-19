@@ -1,4 +1,4 @@
-import perimeter from "../_data/new_perimeter.json";
+import perimeter from "../_data/latest_perimeter.json";
 
 export interface LatLngPoint {
   latitude: number;

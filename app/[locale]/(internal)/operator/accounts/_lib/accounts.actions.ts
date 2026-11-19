@@ -120,7 +120,7 @@ export async function createAccountAction(
       .limit(1);
 
     if (existing.length > 0) {
-      return { success: false, errorMessage: `NIP ${nip} sudah terdaftar pada akun lain.` };
+      return { success: false, errorMessage: `ID pegawai ${nip} sudah terdaftar pada akun lain.` };
     }
 
     const email = nipToEmail(nip);
@@ -215,7 +215,7 @@ export async function updateAccountAction(
       .limit(1);
 
     if (existingNip.length > 0 && existingNip[0].id !== id) {
-      return { success: false, errorMessage: `NIP ${nip} sudah terdaftar pada akun lain.` };
+      return { success: false, errorMessage: `ID pegawai ${nip} sudah terdaftar pada akun lain.` };
     }
 
     const email = nipToEmail(nip);

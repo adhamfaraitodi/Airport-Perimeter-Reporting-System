@@ -14,6 +14,7 @@ import { useTheme } from "../../../_lib/use-theme";
 import { AppHeader } from "../../../_components/app-header";
 import { ReportFooter } from "../_components/report-footer";
 import { ReportDetail } from "./_components/report-detail";
+import { useTranslation } from "@/lib/i18n";
 
 export default function ReportDetailPage() {
   const params = useParams<{ locale?: string; reportId: string }>();
@@ -21,6 +22,7 @@ export default function ReportDetailPage() {
   const locale = params?.locale || "id";
   const reportId = params?.reportId;
   const { theme, dark, toggleTheme } = useTheme();
+  const { t } = useTranslation();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [report, setReport] = useState<ReportRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,7 @@ export default function ReportDetailPage() {
             href={`/${locale}/reports`}
             className="text-[var(--rd-muted)] transition-colors hover:text-[var(--rd-link)]"
           >
-            Laporan Saya
+            {t.reports.title}
           </Link>
           <span className="text-[var(--rd-muted)]/50 select-none">/</span>
           <span className="font-medium text-[var(--rd-link)]">

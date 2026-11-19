@@ -501,7 +501,7 @@ export default function ProfilePage() {
                   aria-hidden="true"
                 />
                 <span className="truncate font-mono" title={`NIP ${displayNip}`}>
-                  NIP {displayNip}
+                  ID pegawai {displayNip}
                 </span>
               </li>
               <li className="flex items-center gap-3 text-[var(--rd-text)]">
@@ -727,7 +727,7 @@ export default function ProfilePage() {
                         htmlFor="profile-nip"
                         className="mb-1.5 block text-sm font-semibold text-[var(--rd-text)]"
                       >
-                        NIP (Nomor Induk Pegawai)
+                        ID pegawai
                       </label>
                       {loading ? (
                         <Skeleton className="h-10 w-full rounded-[10px]" />
