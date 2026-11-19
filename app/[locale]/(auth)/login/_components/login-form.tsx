@@ -181,7 +181,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
           className="login-brand-pattern pointer-events-none absolute inset-0 -z-10"
           aria-hidden="true"
         />
-        <div className="flex items-center justify-between gap-2 self-start px-4 py-3 min-[600px]:px-5 min-[900px]:px-7 min-[900px]:py-5">
+        <div className="flex items-center justify-between gap-2 self-start px-7 py-3 min-[600px]:px-7 min-[900px]:px-7 min-[900px]:py-5">
           <div className="flex items-center gap-2">
             <img
               className="block h-auto w-[56px] min-[400px]:w-[70px] object-contain"
@@ -230,9 +230,9 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
               title={dark ? "Light mode" : "Dark mode"}
             >
               {dark ? (
-                <Sun size={24} strokeWidth={1.7} aria-hidden="true" />
+                <Sun size={27} strokeWidth={1.7} aria-hidden="true" />
               ) : (
-                <MoonStar size={24} strokeWidth={1.7} aria-hidden="true" />
+                <MoonStar size={29} strokeWidth={1.7} aria-hidden="true" />
               )}
             </button>
           </div>
@@ -240,15 +240,18 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
 
         <div className="flex flex-col items-center justify-center gap-3 px-5 py-4 text-center min-[600px]:gap-4 min-[900px]:gap-7 min-[900px]:px-10 min-[900px]:py-6">
           <img
-            className="block h-auto w-[78px] object-contain min-[600px]:w-[145px] min-[900px]:w-[170px]"
+            className="block h-auto w-[78px] object-contain min-[600px]:w-[145px] min-[900px]:w-[150px]"
             src="/avsec-logo.webp"
             alt="Avsec Logo"
             width={1952}
             height={2160}
             fetchPriority="high"
           />
-          <p className="m-0 max-w-[280px] text-center text-[16px] leading-[1.4] font-medium text-balance max-[360px]:text-[15px] min-[600px]:max-w-[360px] min-[600px]:text-[19px] min-[900px]:max-w-[350px] min-[900px]:text-[25px] min-[900px]:leading-[1.45]">
-            Airport Perimeter Monitoring System
+          <p className="m-0 text-center text-[16px] leading-[1.45] max-[360px]:text-[15px] min-[600px]:text-[19px] min-[900px]:max-w-[350px] min-[900px]:text-[25px] min-[900px]:leading-[1.5] min-[900px]:text-balance">
+            {" "}
+            <span className="sm:whitespace-nowrap">
+              Airport Perimeter Monitoring System
+            </span>
           </p>
         </div>
 
