@@ -93,25 +93,18 @@ export function ReportList({
   const { theme, dark, toggleTheme } = useTheme();
   const { t } = useTranslation();
 
-  const owned = user
-    ? reports.filter(
-        (report) =>
-          user.role === "OPERATOR" ||
-          report.reporterId === user.id ||
-          report.reporterId === "demo-reporter"
-      )
-    : [];
+  const visibleReports = user ? reports : [];
 
   const stats: Array<[string, number, string, string]> = [
     [
       "ALL",
-      owned.length,
+      visibleReports.length,
       t.status.totalReports,
-      locale === "en" ? "All submitted reports" : "Seluruh laporan yang telah dikirim",
+      locale === "en" ? "All recorded perimeter reports" : "Seluruh laporan perimeter yang tercatat",
     ],
     [
       "OPEN",
-      owned.filter(
+      visibleReports.filter(
         (r) => !r.deletedAt && ["OPEN", "IN_PROGRESS"].includes(r.status)
       ).length,
       t.status.followUpRequired,
@@ -119,9 +112,9 @@ export function ReportList({
     ],
     [
       "RESOLVED",
-      owned.filter((r) => !r.deletedAt && r.status === "RESOLVED").length,
+      visibleReports.filter((r) => !r.deletedAt && r.status === "RESOLVED").length,
       t.status.RESOLVED,
-      locale === "en" ? "Repaired by technicians" : "Telah diperbaiki oleh teknisi",
+      locale === "en" ? "Verified as resolved" : "Telah diverifikasi selesai",
     ],
   ];
 
@@ -267,7 +260,7 @@ export function ReportList({
                     {t.operator.summaryTitle}
                   </h2>
                   <p className="m-0 mt-0.5 text-sm text-[var(--rd-muted)]">
-                    {locale === "en" ? "Summary of your current reports status" : "Rekapitulasi status laporan Anda saat ini"}
+                    {locale === "en" ? "Summary of all current perimeter reports" : "Rekapitulasi seluruh laporan perimeter saat ini"}
                   </p>
                 </div>
                 {stats.map(([status, count, label, desc]) => (
@@ -377,7 +370,7 @@ export function ReportList({
               className="flex min-w-0 flex-col rounded-2xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] p-3.5 sm:p-6"
             >
               <ReportHistoryPanel
-                reports={owned}
+                reports={visibleReports}
                 loading={loading}
                 selectedId={selectedReportId}
                 onSelect={(report) => onSelect(report.id)}

@@ -102,9 +102,13 @@ export function AppHeader({
       ? accounts.find((acc) => acc.id === user.id)
       : undefined;
 
-  const isOperator =
+  const isOperatorDashboardRole =
     user?.role === "OPERATOR" ||
-    Boolean(roleLabel?.toLowerCase().includes("operator"));
+    user?.role === "CHIEF" ||
+    Boolean(roleLabel?.toLowerCase().includes("operator")) ||
+    Boolean(roleLabel?.toLowerCase().includes("chief"));
+
+  const canAccessMasterData = user?.role === "OPERATOR";
 
   const isTechnician =
     user?.role === "TECHNICIAN" ||
@@ -187,11 +191,13 @@ export function AppHeader({
     (user?.role && t.header.roles[user.role]) ||
     (roleLabel && (roleLabel.toLowerCase().includes("operator")
       ? t.header.roles.OPERATOR
-      : roleLabel.toLowerCase().includes("teknisi")
-        ? t.header.roles.TECHNICIAN
-        : roleLabel.toLowerCase().includes("reporter") || roleLabel.toLowerCase().includes("pelapor")
-          ? t.header.roles.REPORTER
-          : roleLabel)) ||
+      : roleLabel.toLowerCase().includes("chief")
+        ? t.header.roles.CHIEF
+        : roleLabel.toLowerCase().includes("teknisi")
+          ? t.header.roles.TECHNICIAN
+          : roleLabel.toLowerCase().includes("reporter") || roleLabel.toLowerCase().includes("pelapor")
+            ? t.header.roles.REPORTER
+            : roleLabel)) ||
     roleLabel ||
     t.header.roles.REPORTER;
 
@@ -232,7 +238,7 @@ export function AppHeader({
   }
 
   function getHomeRoute() {
-    if (isOperator) return `/${locale}/operator`;
+    if (isOperatorDashboardRole) return `/${locale}/operator`;
     if (isTechnician) return `/${locale}/technician`;
     return `/${locale}/reports`;
   }
@@ -305,7 +311,7 @@ export function AppHeader({
           </Link>
 
           {/* Desktop Navigation for Operator */}
-          {isOperator && (
+          {isOperatorDashboardRole && (
             <nav className="hidden items-center gap-1.5 md:flex">
               <Link
                 href={`/${locale}/operator`}
@@ -322,91 +328,93 @@ export function AppHeader({
               </Link>
 
               {/* Desktop Data Master Dropdown */}
-              <div className="relative" ref={dataMasterRef}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDataMasterOpen((prev) => !prev);
-                    setNotifOpen(false);
-                    setProfileOpen(false);
-                  }}
-                  aria-expanded={dataMasterOpen}
-                  aria-haspopup="menu"
-                  className={`inline-flex h-9 items-center gap-2 rounded-2xl px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
-                    dataMasterOpen || isDataMasterActive
-                      ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
-                      : "text-[var(--rd-text)] hover:bg-[var(--rd-active)] hover:text-[var(--rd-link)]"
-                  }`}
-                >
-                  <Database size={20} strokeWidth={1.8} aria-hidden="true" />
-                  <span className="block text-[13px] font-medium">
-                    {t.header.dataMaster}
-                  </span>
-                  <ChevronDown
-                    size={14}
-                    className={`transition-transform duration-200 ${
-                      dataMasterOpen ? "rotate-180" : ""
+              {canAccessMasterData && (
+                <div className="relative" ref={dataMasterRef}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDataMasterOpen((prev) => !prev);
+                      setNotifOpen(false);
+                      setProfileOpen(false);
+                    }}
+                    aria-expanded={dataMasterOpen}
+                    aria-haspopup="menu"
+                    className={`inline-flex h-9 items-center gap-2 rounded-2xl px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
+                      dataMasterOpen || isDataMasterActive
+                        ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
+                        : "text-[var(--rd-text)] hover:bg-[var(--rd-active)] hover:text-[var(--rd-link)]"
                     }`}
-                    aria-hidden="true"
-                  />
-                </button>
-
-                {dataMasterOpen && (
-                  <div
-                    role="menu"
-                    className="absolute left-0 top-full z-[600] mt-1.5 w-52 rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-surface)] p-1.5 text-[var(--rd-text)] shadow-xl animate-in fade-in zoom-in-95 duration-100"
                   >
-                    <Link
-                      href={`/${locale}/operator/perimeter-damage`}
-                      role="menuitem"
-                      onClick={() => setDataMasterOpen(false)}
-                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
-                        isPerimeterDamageActive
-                          ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
-                          : "hover:bg-[var(--rd-hover)] hover:text-[var(--rd-link)]"
+                    <Database size={20} strokeWidth={1.8} aria-hidden="true" />
+                    <span className="block text-[13px] font-medium">
+                      {t.header.dataMaster}
+                    </span>
+                    <ChevronDown
+                      size={14}
+                      className={`transition-transform duration-200 ${
+                        dataMasterOpen ? "rotate-180" : ""
                       }`}
+                      aria-hidden="true"
+                    />
+                  </button>
+
+                  {dataMasterOpen && (
+                    <div
+                      role="menu"
+                      className="absolute left-0 top-full z-[600] mt-1.5 w-52 rounded-2xl border border-[var(--rd-border)] bg-[var(--rd-surface)] p-1.5 text-[var(--rd-text)] shadow-xl animate-in fade-in zoom-in-95 duration-100"
                     >
-                      <Fence
-                        size={18}
-                        strokeWidth={1.8}
-                        className={`shrink-0 ${
+                      <Link
+                        href={`/${locale}/operator/perimeter-damage`}
+                        role="menuitem"
+                        onClick={() => setDataMasterOpen(false)}
+                        className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
                           isPerimeterDamageActive
-                            ? "text-[var(--rd-link)]"
-                            : "text-[var(--rd-muted)]"
+                            ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
+                            : "hover:bg-[var(--rd-hover)] hover:text-[var(--rd-link)]"
                         }`}
-                        aria-hidden="true"
-                      />
-                      <span className="block text-[13px] font-medium">
-                        {t.header.perimeterDamage}
-                      </span>
-                    </Link>
-                    <Link
-                      href={`/${locale}/operator/accounts`}
-                      role="menuitem"
-                      onClick={() => setDataMasterOpen(false)}
-                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
-                        isAccountsActive
-                          ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
-                          : "hover:bg-[var(--rd-hover)] hover:text-[var(--rd-link)]"
-                      }`}
-                    >
-                      <Users
-                        size={18}
-                        strokeWidth={1.8}
-                        className={`shrink-0 ${
+                      >
+                        <Fence
+                          size={18}
+                          strokeWidth={1.8}
+                          className={`shrink-0 ${
+                            isPerimeterDamageActive
+                              ? "text-[var(--rd-link)]"
+                              : "text-[var(--rd-muted)]"
+                          }`}
+                          aria-hidden="true"
+                        />
+                        <span className="block text-[13px] font-medium">
+                          {t.header.perimeterDamage}
+                        </span>
+                      </Link>
+                      <Link
+                        href={`/${locale}/operator/accounts`}
+                        role="menuitem"
+                        onClick={() => setDataMasterOpen(false)}
+                        className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
                           isAccountsActive
-                            ? "text-[var(--rd-link)]"
-                            : "text-[var(--rd-muted)]"
+                            ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
+                            : "hover:bg-[var(--rd-hover)] hover:text-[var(--rd-link)]"
                         }`}
-                        aria-hidden="true"
-                      />
-                      <span className="block text-[13px] font-medium">
-                        {t.header.accounts}
-                      </span>
-                    </Link>
-                  </div>
-                )}
-              </div>
+                      >
+                        <Users
+                          size={18}
+                          strokeWidth={1.8}
+                          className={`shrink-0 ${
+                            isAccountsActive
+                              ? "text-[var(--rd-link)]"
+                              : "text-[var(--rd-muted)]"
+                          }`}
+                          aria-hidden="true"
+                        />
+                        <span className="block text-[13px] font-medium">
+                          {t.header.accounts}
+                        </span>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
             </nav>
           )}
         </div>
@@ -614,7 +622,7 @@ export function AppHeader({
                   }}
                   className="block w-full rounded-xl py-2 text-center text-sm font-semibold text-[var(--rd-link)] transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
                 >
-                  {isOperator
+                  {isOperatorDashboardRole
                     ? t.header.viewAllOperatorReports
                     : isTechnician
                       ? t.header.viewAllTechnicianTasks
@@ -692,7 +700,7 @@ export function AppHeader({
                 </div>
 
                 {/* Operator Navigation on Mobile (< md) */}
-                {isOperator && (
+                {isOperatorDashboardRole && (
                   <div className="mb-1 border-b border-[var(--rd-border)] pb-1 md:hidden">
                     <Link
                       href={`/${locale}/operator`}
@@ -719,89 +727,93 @@ export function AppHeader({
                       </span>
                     </Link>
 
-                    <button
-                      type="button"
-                      onClick={() => setMobileDataMasterOpen((prev) => !prev)}
-                      aria-expanded={mobileDataMasterOpen}
-                      className="flex w-full items-center justify-between gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
-                    >
-                      <span className="flex items-center gap-2.5">
-                        <Database
-                          size={18}
-                          strokeWidth={1.8}
-                          className="shrink-0 text-[var(--rd-muted)]"
-                          aria-hidden="true"
-                        />
-                        <span className="block text-[13px] font-medium text-[var(--rd-text)]">
-                          {t.header.dataMaster}
-                        </span>
-                      </span>
-                      <ChevronDown
-                        size={15}
-                        className={`text-[var(--rd-muted)] transition-transform duration-200 ${
-                          mobileDataMasterOpen ? "rotate-180" : ""
-                        }`}
-                        aria-hidden="true"
-                      />
-                    </button>
+                    {canAccessMasterData && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setMobileDataMasterOpen((prev) => !prev)}
+                          aria-expanded={mobileDataMasterOpen}
+                          className="flex w-full items-center justify-between gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-[var(--rd-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)]"
+                        >
+                          <span className="flex items-center gap-2.5">
+                            <Database
+                              size={18}
+                              strokeWidth={1.8}
+                              className="shrink-0 text-[var(--rd-muted)]"
+                              aria-hidden="true"
+                            />
+                            <span className="block text-[13px] font-medium text-[var(--rd-text)]">
+                              {t.header.dataMaster}
+                            </span>
+                          </span>
+                          <ChevronDown
+                            size={15}
+                            className={`text-[var(--rd-muted)] transition-transform duration-200 ${
+                              mobileDataMasterOpen ? "rotate-180" : ""
+                            }`}
+                            aria-hidden="true"
+                          />
+                        </button>
 
-                    {mobileDataMasterOpen && (
-                      <div className="mt-0.5 ml-4 space-y-0.5 border-l border-[var(--rd-border)] pl-2.5">
-                        <Link
-                          href={`/${locale}/operator/perimeter-damage`}
-                          role="menuitem"
-                          onClick={() => {
-                            setMobileDataMasterOpen(false);
-                            setProfileOpen(false);
-                          }}
-                          className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
-                            isPerimeterDamageActive
-                              ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
-                              : "hover:bg-[var(--rd-hover)]"
-                          }`}
-                        >
-                          <Fence
-                            size={16}
-                            strokeWidth={1.8}
-                            className={`shrink-0 ${
-                              isPerimeterDamageActive
-                                ? "text-[var(--rd-link)]"
-                                : "text-[var(--rd-muted)]"
-                            }`}
-                            aria-hidden="true"
-                          />
-                          <span className="block text-sm font-medium">
-                            {t.header.perimeterDamage}
-                          </span>
-                        </Link>
-                        <Link
-                          href={`/${locale}/operator/accounts`}
-                          role="menuitem"
-                          onClick={() => {
-                            setMobileDataMasterOpen(false);
-                            setProfileOpen(false);
-                          }}
-                          className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
-                            isAccountsActive
-                              ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
-                              : "hover:bg-[var(--rd-hover)]"
-                          }`}
-                        >
-                          <Users
-                            size={16}
-                            strokeWidth={1.8}
-                            className={`shrink-0 ${
-                              isAccountsActive
-                                ? "text-[var(--rd-link)]"
-                                : "text-[var(--rd-muted)]"
-                            }`}
-                            aria-hidden="true"
-                          />
-                          <span className="block text-sm font-medium">
-                            {t.header.accounts}
-                          </span>
-                        </Link>
-                      </div>
+                        {mobileDataMasterOpen && (
+                          <div className="mt-0.5 ml-4 space-y-0.5 border-l border-[var(--rd-border)] pl-2.5">
+                            <Link
+                              href={`/${locale}/operator/perimeter-damage`}
+                              role="menuitem"
+                              onClick={() => {
+                                setMobileDataMasterOpen(false);
+                                setProfileOpen(false);
+                              }}
+                              className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
+                                isPerimeterDamageActive
+                                  ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
+                                  : "hover:bg-[var(--rd-hover)]"
+                              }`}
+                            >
+                              <Fence
+                                size={16}
+                                strokeWidth={1.8}
+                                className={`shrink-0 ${
+                                  isPerimeterDamageActive
+                                    ? "text-[var(--rd-link)]"
+                                    : "text-[var(--rd-muted)]"
+                                }`}
+                                aria-hidden="true"
+                              />
+                              <span className="block text-sm font-medium">
+                                {t.header.perimeterDamage}
+                              </span>
+                            </Link>
+                            <Link
+                              href={`/${locale}/operator/accounts`}
+                              role="menuitem"
+                              onClick={() => {
+                                setMobileDataMasterOpen(false);
+                                setProfileOpen(false);
+                              }}
+                              className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rd-link)] ${
+                                isAccountsActive
+                                  ? "bg-[var(--rd-active)] text-[var(--rd-link)]"
+                                  : "hover:bg-[var(--rd-hover)]"
+                              }`}
+                            >
+                              <Users
+                                size={16}
+                                strokeWidth={1.8}
+                                className={`shrink-0 ${
+                                  isAccountsActive
+                                    ? "text-[var(--rd-link)]"
+                                    : "text-[var(--rd-muted)]"
+                                }`}
+                                aria-hidden="true"
+                              />
+                              <span className="block text-sm font-medium">
+                                {t.header.accounts}
+                              </span>
+                            </Link>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}

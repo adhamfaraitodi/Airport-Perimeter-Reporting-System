@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { USER_POSITIONS } from "@/db/schema";
 
-export const userRoleEnum = z.enum(["REPORTER", "OPERATOR", "TECHNICIAN"], {
-  message: "Role harus salah satu dari REPORTER, OPERATOR, atau TECHNICIAN.",
+export const userRoleEnum = z.enum(["REPORTER", "OPERATOR", "CHIEF", "TECHNICIAN"], {
+  message: "Role harus salah satu dari REPORTER, OPERATOR, CHIEF, atau TECHNICIAN.",
 });
 
 export const accountStatusEnum = z.enum(["ACTIVE", "INACTIVE"], {
