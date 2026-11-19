@@ -733,9 +733,6 @@ export default function ManageAccountsPage() {
                                   </span>
                                 )}
                               </span>
-                              <span className="block truncate text-sm text-[var(--rd-muted)]">
-                                {account.email}
-                              </span>
                             </div>
                           </div>
                         </TableCell>
