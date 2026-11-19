@@ -130,6 +130,38 @@ html.dark .login-page {
   backdrop-filter: blur(4px);
 }
 
+.login-page .login-brand-pattern {
+  background-image: url("/sup-hollow.webp");
+  background-repeat: repeat;
+  background-position: right bottom;
+  background-size: 96px 96px;
+  opacity: .4;
+  -webkit-mask-image: radial-gradient(
+    125% 110% at 92% 86%,
+    #000 0%,
+    rgba(0, 0, 0, 0.6) 46%,
+    transparent 82%
+  );
+  mask-image: radial-gradient(
+    125% 110% at 92% 86%,
+    #000 0%,
+    rgba(0, 0, 0, 0.6) 46%,
+    transparent 82%
+  );
+}
+
+@media (min-width: 900px) {
+  .login-page .login-brand-pattern {
+    background-size: 136px 136px;
+  }
+}
+
+.login-page[data-theme="dark"] .login-brand-pattern,
+html[data-theme="dark"] .login-page .login-brand-pattern,
+html.dark .login-page .login-brand-pattern {
+  opacity: 0.14;
+}
+
 /* App Tokens — shared by the reporter (/reports) and operator (/dashboard) pages */
 .reporter-dashboard,
 .operator-dashboard {
