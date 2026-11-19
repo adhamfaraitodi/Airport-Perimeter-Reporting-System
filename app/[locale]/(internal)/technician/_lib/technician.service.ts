@@ -1,22 +1,15 @@
 import crypto from "crypto";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
+import type { UserRole } from "@/lib/auth";
 import { processAndSaveEvidencePhoto } from "@/lib/evidence-image";
+import { canRoleTransitionReportStatus } from "@/lib/report-workflow";
 import type { FindingItem, LifecycleStatus, ReportRecord } from "../../../_lib/client-api";
 import { dispatchReportNotificationAction } from "../../../_lib/notifications.actions";
 import {
   type TechnicianStatus,
   type UpdateTechnicianStatusInput,
 } from "./technician.schema";
-
-const ALLOWED_TECHNICIAN_TRANSITIONS: Record<
-  TechnicianStatus,
-  TechnicianStatus[]
-> = {
-  OPEN: ["IN_PROGRESS", "RESOLVED"],
-  IN_PROGRESS: ["RESOLVED"],
-  RESOLVED: ["OPEN"],
-};
 
 /**
  * Validates whether a state transition is permissible for a Technician.
@@ -25,14 +18,7 @@ export function canTechnicianTransitionStatus(
   currentStatus: string,
   nextStatus: TechnicianStatus
 ): boolean {
-  if (currentStatus === "CLOSED") return false;
-  if (currentStatus === nextStatus) return false;
-
-  const validNext =
-    ALLOWED_TECHNICIAN_TRANSITIONS[currentStatus as TechnicianStatus];
-  if (!validNext) return false;
-
-  return validNext.includes(nextStatus);
+  return canRoleTransitionReportStatus("TECHNICIAN", currentStatus, nextStatus);
 }
 
 /**
@@ -153,6 +139,8 @@ export async function executeTechnicianStatusUpdate(
     reportId: report.id,
     action: "STATUS",
     status: input.nextStatus,
+    previousStatus: report.status,
+    narrative: input.narrative.trim(),
     partName,
     side: report.side || undefined,
     segmentCode: report.segmentCode || undefined,
@@ -197,6 +185,7 @@ export async function executeTechnicianStatusUpdate(
         reportId: schema.reportStatusHistory.reportId,
         actorId: schema.reportStatusHistory.actorId,
         actorName: schema.user.name,
+        actorRole: schema.user.role,
         previousStatus: schema.reportStatusHistory.previousStatus,
         newStatus: schema.reportStatusHistory.newStatus,
         narrative: schema.reportStatusHistory.narrative,
@@ -225,6 +214,7 @@ export async function executeTechnicianStatusUpdate(
       createdAt: h.createdAt.toISOString(),
       actorId: h.actorId,
       actorName: h.actorName || "Petugas",
+      actorRole: (h.actorRole as UserRole | null) || undefined,
       images: histPhotos.map((p) => ({
         id: p.id,
         url: p.filePath,

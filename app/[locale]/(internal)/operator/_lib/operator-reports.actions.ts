@@ -2,10 +2,14 @@
 
 import crypto from "crypto";
 import { headers } from "next/headers";
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, or, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { auth, type UserRole } from "@/lib/auth";
 import { processAndSaveEvidencePhoto } from "@/lib/evidence-image";
+import {
+  canRoleCloseReport,
+  canRoleTransitionReportStatus,
+} from "@/lib/report-workflow";
 import type {
   ReportRecord,
   FindingItem,
@@ -44,7 +48,7 @@ async function verifySession() {
 
 /**
  * Fetch all reports with reporter, photos, and status history from PostgreSQL.
- * Filters to the last 3 months and filters directly at the SQL layer when caller is a REPORTER.
+ * Retains active OPEN/IN_PROGRESS reports indefinitely and RESOLVED/CLOSED reports from the last 90 days.
  */
 export async function getReportsAction(): Promise<{
   success: boolean;
@@ -52,19 +56,23 @@ export async function getReportsAction(): Promise<{
   errorMessage?: string;
 }> {
   try {
-    const user = await verifySession();
-    const userRole = (user as Record<string, unknown>).role as UserRole | undefined;
+    await verifySession();
 
-    // Filter reports from the last 3 months
+    // Filter reports from the last 3 months (90 days), plus all active OPEN/IN_PROGRESS reports regardless of age
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setDate(threeMonthsAgo.getDate() - 90);
 
-    const conditions = [gte(schema.reports.createdAt, threeMonthsAgo)];
-    if (userRole === "REPORTER") {
-      conditions.push(eq(schema.reports.reporterId, user.id));
-    }
+    const conditions = [
+      or(
+        gte(schema.reports.createdAt, threeMonthsAgo),
+        and(
+          isNull(schema.reports.deletedAt),
+          inArray(schema.reports.status, ["OPEN", "IN_PROGRESS"])
+        )
+      ),
+    ];
 
-    // Fetch reports with SQL-level role and 3-month filtering
+    // Fetch reports with SQL-level 90-day + active retention filtering
     const baseQuery = db
       .select({
         id: schema.reports.id,
@@ -103,13 +111,14 @@ export async function getReportsAction(): Promise<{
       .from(schema.reportPhotos)
       .where(sql`${schema.reportPhotos.reportId} IN ${reportIds}`);
 
-    // Fetch status history for these reports with actor name
+    // Fetch status history for these reports with actor name and actor role
     const historyRows = await db
       .select({
         id: schema.reportStatusHistory.id,
         reportId: schema.reportStatusHistory.reportId,
         actorId: schema.reportStatusHistory.actorId,
         actorName: schema.user.name,
+        actorRole: schema.user.role,
         previousStatus: schema.reportStatusHistory.previousStatus,
         newStatus: schema.reportStatusHistory.newStatus,
         narrative: schema.reportStatusHistory.narrative,
@@ -141,6 +150,7 @@ export async function getReportsAction(): Promise<{
           createdAt: h.createdAt.toISOString(),
           actorId: h.actorId,
           actorName: h.actorName || "Petugas",
+          actorRole: (h.actorRole as UserRole | null) || undefined,
           images: histPhotos.map((p) => ({
             id: p.id,
             url: p.filePath,
@@ -308,8 +318,8 @@ export async function commitReportSubmissionAction(input: CommitReportSubmission
     }
 
     if (payload.action === "DELETE") {
-      if (userRole !== "OPERATOR") {
-        throw new Error("Hanya Operator yang dapat menutup / menghapus laporan.");
+      if (!canRoleCloseReport(userRole)) {
+        throw new Error("Hanya Operator atau Chief yang dapat menutup laporan.");
       }
 
       const savedPhotos = await saveBatchPhotos(files);
@@ -375,9 +385,15 @@ export async function commitReportSubmissionAction(input: CommitReportSubmission
     }
 
     if (payload.action === "STATUS" && payload.status) {
-      if (userRole !== "OPERATOR" && userRole !== "TECHNICIAN") {
+      if (
+        !canRoleTransitionReportStatus(
+          userRole,
+          report.status,
+          payload.status as LifecycleStatus
+        )
+      ) {
         throw new Error(
-          "Hanya Operator atau Teknisi yang berwenang memperbarui status penanganan laporan."
+          "Perubahan status tidak diizinkan untuk peran Anda pada status laporan saat ini."
         );
       }
 
@@ -427,6 +443,8 @@ export async function commitReportSubmissionAction(input: CommitReportSubmission
         reportId: report.id,
         action: "STATUS",
         status: payload.status,
+        previousStatus,
+        narrative: payload.narrative,
         partName,
         side: report.side || undefined,
         segmentCode: report.segmentCode || undefined,

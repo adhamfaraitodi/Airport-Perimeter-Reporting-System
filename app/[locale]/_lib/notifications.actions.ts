@@ -336,6 +336,7 @@ export async function dispatchReportNotificationAction(params: {
   reportId: string;
   action: "CREATE" | "STATUS" | "DELETE";
   status?: string;
+  previousStatus?: string;
   side?: string;
   segmentCode?: string;
   partName?: string;
