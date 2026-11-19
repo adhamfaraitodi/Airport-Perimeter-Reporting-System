@@ -56,6 +56,17 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
     if (!help && dialog.current.open) dialog.current.close();
   }, [help]);
 
+  useEffect(() => {
+    function handlePageShow(event: PageTransitionEvent) {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    }
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
+
   function handleToggleLanguage() {
     const nextLocale: SupportedLocale = locale === "id" ? "en" : "id";
     const currentPath = window.location.pathname;
@@ -123,10 +134,10 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
 
       if (result.success) {
         if (result.redirectTo) {
-          window.location.href = result.redirectTo;
+          window.location.replace(result.redirectTo);
           return;
         }
-        router.push(callbackUrl || `/${locale}/reports`);
+        router.replace(callbackUrl || `/${locale}/reports`);
         router.refresh();
         return;
       }

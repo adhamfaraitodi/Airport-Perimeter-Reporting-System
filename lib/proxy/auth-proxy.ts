@@ -228,9 +228,13 @@ export async function handleAuthProxy(
     return NextResponse.redirect(new URL(`${target}${search}`, request.url));
   }
 
-  // 2. Public route `/[locale]/login`: if already authenticated, redirect to role home
+  // 2. Public route `/[locale]/login`: if already authenticated, redirect page requests to role home
+  //    (never intercept Next.js Server Action POSTs with 307 redirects, which breaks the action client)
   if (routeSegment === "login") {
-    if (isAuthenticated) {
+    const isServerAction =
+      request.method === "POST" && request.headers.has("next-action");
+
+    if (isAuthenticated && !isServerAction) {
       const callbackUrl = request.nextUrl.searchParams.get("callbackUrl");
       const destination =
         callbackUrl &&
@@ -240,8 +244,12 @@ export async function handleAuthProxy(
           : getHomeRouteForRole(locale, role);
       return NextResponse.redirect(new URL(destination, request.url));
     }
+
     const response = NextResponse.next();
-    return hasStaleCookies ? clearAuthCookiesOnResponse(response) : response;
+    response.headers.set("Cache-Control", "no-store");
+    return !isAuthenticated && hasStaleCookies
+      ? clearAuthCookiesOnResponse(response)
+      : response;
   }
 
   // 3. Protected routes: ALWAYS enforce authentication -> kick unauthenticated to login
