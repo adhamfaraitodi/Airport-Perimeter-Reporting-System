@@ -174,14 +174,14 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
       data-theme={theme}
     >
       <section
-        className="relative isolate grid min-h-[325px] grid-rows-[auto_1fr] overflow-hidden bg-[var(--login-brand-bg)] text-[var(--login-panel-text)] min-[900px]:min-h-dvh min-[900px]:grid-rows-[1fr_auto_1fr]"
+        className="relative isolate grid min-h-[325px] place-items-center overflow-hidden bg-[var(--login-brand-bg)] text-[var(--login-panel-text)] min-[900px]:min-h-dvh"
         aria-label="InJourney Airports"
       >
         <div
           className="login-brand-pattern pointer-events-none absolute inset-0 -z-10"
           aria-hidden="true"
         />
-        <div className="flex items-center justify-between gap-2 self-start px-7 py-3 min-[600px]:px-7 min-[900px]:px-7 min-[900px]:py-5">
+        <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-2 px-7 py-3 min-[900px]:py-5">
           <div className="flex items-center gap-2">
             <img
               className="block h-auto w-[56px] min-[400px]:w-[70px] object-contain"
@@ -194,8 +194,8 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
               className="block h-auto w-[80px] min-[400px]:w-[100px] object-contain"
               src={dark ? "/yogyakarta-international-airport-logo-white-transparent.webp" : "/yogyakarta-international-airport-logo-transparent.webp"}
               alt="YIA Logo"
-              width={dark ? 4328 : 4884}
-              height={dark ? 1803 : 2481}
+              width={dark ? 2048 : 2083}
+              height={dark ? 744 : 755}
             />
           </div>
 
@@ -238,7 +238,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-center gap-3 px-5 py-4 text-center min-[600px]:gap-4 min-[900px]:gap-7 min-[900px]:px-10 min-[900px]:py-6">
+        <div className="flex flex-col items-center justify-center gap-3 px-5 py-[76px] text-center min-[600px]:gap-4 min-[900px]:gap-7 min-[900px]:px-10 min-[900px]:py-24">
           <img
             className="block h-auto w-[78px] object-contain min-[600px]:w-[145px] min-[900px]:w-[150px]"
             src="/avsec-logo.webp"
@@ -256,7 +256,7 @@ export function LoginForm({ allowDemo = true, onDemo }: LoginFormProps) {
         </div>
 
         <div
-          className="hidden self-end px-7 pb-9 text-center text-[10px] tracking-[2px] opacity-65 min-[900px]:block"
+          className="pointer-events-none absolute inset-x-0 bottom-9 hidden px-7 text-center text-[10px] tracking-[2px] opacity-65 min-[900px]:block"
           aria-hidden="true"
         >
           <span>Integrated Security Perimeter Monitoring System</span>
