@@ -1,17 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 import L from "leaflet";
 import "leaflet-rotate";
-import {
-  ClipboardCheck,
-  ClipboardClock,
-  ClipboardPen,
-  Grid2x2,
-  MapPin,
-  LocateFixed,
-} from "lucide-react";
+import { Grid2x2, LocateFixed } from "lucide-react";
 import { calculatePerimeterReadiness } from "@/lib/perimeter-readiness";
 import { getPerimeterPolylinesForGrids } from "@/lib/perimeter-segments";
 import perimeter from "../_data/latest_perimeter.json";
@@ -52,37 +44,23 @@ const navigationBounds = L.latLngBounds(
 );
 
 const pinClass =
-  "rd-status grid size-[30px] -rotate-45 place-items-center rounded-[50%_50%_50%_5px] border-[3px] border-solid border-white bg-[var(--rd-status)] text-[16px] font-bold text-white shadow-[0_2px_8px_rgba(41,74,56,0.38)]";
+  "rd-status block size-[20px] -rotate-45 rounded-[50%_50%_50%_3px] border-[3px] border-solid border-white bg-[var(--rd-status)] shadow-[0_2px_8px_rgba(41,74,56,0.38)]";
 const pinSelectedClass =
   "outline-3 outline-offset-3 outline-solid outline-[var(--rd-text)]";
 
-const pinIcons = {
-  RESOLVED: renderToStaticMarkup(
-    <ClipboardCheck size={14} strokeWidth={2.2} aria-hidden="true" />
-  ),
-  IN_PROGRESS: renderToStaticMarkup(
-    <ClipboardPen size={14} strokeWidth={2.2} aria-hidden="true" />
-  ),
-  LOCATION: renderToStaticMarkup(
-    <MapPin size={14} strokeWidth={2.2} aria-hidden="true" />
-  ),
-  OPEN: renderToStaticMarkup(
-    <ClipboardClock size={14} strokeWidth={2.2} aria-hidden="true" />
-  ),
-} as const;
-
 const icon = (status: string, selected = false) => {
-  const safeStatus = (
-    ["OPEN", "IN_PROGRESS", "RESOLVED"].includes(status) ? status : "LOCATION"
-  ) as keyof typeof pinIcons;
-  const symbol = pinIcons[safeStatus] || pinIcons.OPEN;
+  const safeStatus = ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"].includes(
+    status
+  )
+    ? status
+    : "LOCATION";
   return L.divIcon({
     className: "",
-    html: `<span data-status="${safeStatus}" class="${pinClass} ${
-      selected ? pinSelectedClass : ""
-    }"><span class="flex rotate-45 items-center justify-center leading-none">${symbol}</span></span>`,
-    iconSize: [32, 38],
-    iconAnchor: [16, 35],
+    html: `<span data-status="${safeStatus}" class="${pinClass}${
+      selected ? ` ${pinSelectedClass}` : ""
+    }"></span>`,
+    iconSize: [20, 24],
+    iconAnchor: [10, 23],
   });
 };
 
@@ -362,7 +340,7 @@ export default function PerimeterMapInner({
           })
         }
       >
-        <LocateFixed className="w-5 h-5"/> Perimeter
+        <LocateFixed className="w-5 h-5" aria-hidden="true" /> Perimeter
       </button>
       {(tileError || pointOutsideBounds) && (
         <div

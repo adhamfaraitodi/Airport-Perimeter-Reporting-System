@@ -80,6 +80,7 @@ export function PerimeterReadinessCard({
         </div>
       ) : (
         <div className="flex flex-col gap-3.5 lg:flex-row lg:items-center lg:justify-between">
+          {/* Parameter Kesiapan */}
           {/* Left: Readiness score, threshold bar, and 60-grid denominator breakdown */}
           <div className="flex min-w-0 flex-1 flex-col gap-2">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 sm:justify-start">
