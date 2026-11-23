@@ -10,7 +10,7 @@ export const TECHNICIAN_ALLOWED_STATUSES = [
 export type TechnicianStatus = (typeof TECHNICIAN_ALLOWED_STATUSES)[number];
 
 export const TECHNICIAN_STATUS_LABELS: Record<TechnicianStatus, string> = {
-  OPEN: "Baru (Perlu Ditangani)",
+  OPEN: "Laporan (Perlu Ditangani)",
   IN_PROGRESS: "Sedang Dikerjakan",
   RESOLVED: "Selesai Diperbaiki",
 };

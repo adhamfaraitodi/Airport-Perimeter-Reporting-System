@@ -24,7 +24,7 @@ import { dateText, message } from "../../../../_lib/draft-store";
 import { btnText } from "../../../../_lib/ui-classes";
 
 const states: Record<string, { label: string; icon: typeof ClipboardClock }> = {
-  OPEN: { label: "Baru", icon: ClipboardClock },
+  OPEN: { label: "Laporan", icon: ClipboardClock },
   IN_PROGRESS: { label: "Ditangani", icon: ClipboardPen },
   RESOLVED: { label: "Selesai", icon: ClipboardCheck },
   CLOSED: { label: "Ditutup", icon: ClipboardX },

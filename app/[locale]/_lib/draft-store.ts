@@ -40,7 +40,7 @@ export const useDrafts = create<DraftsState>()(
 );
 
 export const labels: Record<string, string> = {
-  OPEN: "Baru",
+  OPEN: "Laporan",
   IN_PROGRESS: "Ditangani",
   RESOLVED: "Selesai",
   CLOSED: "Ditutup",

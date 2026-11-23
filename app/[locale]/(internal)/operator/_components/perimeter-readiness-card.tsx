@@ -36,7 +36,7 @@ export function PerimeterReadinessCard({
       ? "var(--rd-lime)"
       : summary.readinessPercent >= 80
         ? "var(--rd-brown)"
-        : "var(--rd-coral)";
+        : "var(--rd-issue)";
 
   const readyCountsLabel = isEn
     ? `${summary.readyGrids}/${summary.totalGrids} ${r.readyGrids.toLowerCase()}`

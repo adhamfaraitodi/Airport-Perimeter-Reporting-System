@@ -33,7 +33,7 @@ interface TemplateDefinition {
 }
 
 const statusLabels: Record<string, { id: string; en: string }> = {
-  OPEN: { id: "Baru", en: "New" },
+  OPEN: { id: "Laporan", en: "New" },
   IN_PROGRESS: { id: "Sedang Ditangani", en: "In Progress" },
   RESOLVED: { id: "Selesai Ditangani", en: "Resolved" },
   CLOSED: { id: "Ditutup", en: "Closed" },

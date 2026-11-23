@@ -11,7 +11,7 @@ export interface PerimeterMapProps {
 }
 
 const legend = [
-  ["OPEN", "Baru"],
+  ["OPEN", "Laporan"],
   ["IN_PROGRESS", "Ditangani"],
   ["RESOLVED", "Selesai"],
 ] as const;

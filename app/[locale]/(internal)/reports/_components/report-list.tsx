@@ -30,7 +30,7 @@ const states: Record<
   { icon: typeof ClipboardList; label: string }
 > = {
   ALL: { icon: ClipboardList, label: "Total laporan" },
-  OPEN: { icon: ClipboardClock, label: "Baru" },
+  OPEN: { icon: ClipboardClock, label: "Laporan" },
   IN_PROGRESS: { icon: ClipboardPen, label: "Ditangani" },
   RESOLVED: { icon: ClipboardCheck, label: "Selesai" },
   CLOSED: { icon: ClipboardX, label: "Ditutup" },

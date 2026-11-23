@@ -63,6 +63,7 @@
     * {
       scroll-behavior: auto !important;
       transition: none !important;
+      animation: none !important;
     }
   }
 }
@@ -208,8 +209,12 @@ html.dark .login-page .login-brand-pattern {
   --rd-hover: rgba(20, 132, 141, 0.05);
   --rd-teal: #0e7c86;
   --rd-coral: #F43F5E;
+  --rd-issue: #c81e1e;
+  --rd-issue-glow: #ef4444;
   --rd-brown: #FBAE42;
-  --rd-lime: #617a16;
+  --rd-lime: #147238;
+  --rd-resolved-solid: #15803d;
+  --rd-resolved-on-solid: #ffffff;
   --rd-gray: #6b7280;
   --rd-tint-opacity: 12%;
   color-scheme: light;
@@ -233,26 +238,54 @@ html.dark .operator-dashboard {
   --rd-hover: rgba(78, 196, 198, 0.06);
   --rd-teal: #4ec4c6;
   --rd-coral: #f58a7b;
+  --rd-issue: #f87171;
+  --rd-issue-glow: #ff4d4f;
   --rd-brown: #DD9A3B;
-  --rd-lime: #b7d65b;
+  --rd-lime: #22c55e;
+  --rd-resolved-solid: #15803d;
+  --rd-resolved-on-solid: #ffffff;
   --rd-gray: #9aa3ab;
   --rd-tint-opacity: 16%;
   color-scheme: dark;
 }
 
+@keyframes rd-open-blip {
+  0%,
+  100% {
+    background-color: #7f1d1d;
+    box-shadow: 0 0 2px color-mix(in oklab, var(--rd-issue-glow) 18%, transparent);
+  }
+  50% {
+    background-color: #e02424;
+    box-shadow:
+      0 0 0 2px color-mix(in oklab, var(--rd-issue-glow) 45%, transparent),
+      0 0 14px 2px color-mix(in oklab, var(--rd-issue-glow) 78%, transparent);
+  }
+}
+
 /* Status color hook: add `rd-status` + `data-status="…"` to any element. */
 .rd-status {
   --rd-status: var(--rd-teal);
-  --rd-tint: color-mix(in srgb, var(--rd-status) var(--rd-tint-opacity), transparent);
+  --rd-tint: color-mix(in oklab, var(--rd-status) var(--rd-tint-opacity), transparent);
 }
 .rd-status[data-status="OPEN"] {
-  --rd-status: var(--rd-coral);
+  --rd-status: var(--rd-issue);
+}
+.rd-status[data-status="OPEN"].inline-flex.rounded-full {
+  background-color: #dc2626;
+  color: #ffffff;
+  box-shadow: 0 0 8px color-mix(in oklab, var(--rd-issue-glow) 46%, transparent);
+  animation: rd-open-blip 1.15s ease-in-out infinite;
 }
 .rd-status[data-status="IN_PROGRESS"] {
   --rd-status: var(--rd-brown);
 }
 .rd-status[data-status="RESOLVED"] {
   --rd-status: var(--rd-lime);
+}
+.rd-status[data-status="RESOLVED"].inline-flex.rounded-full {
+  background-color: var(--rd-resolved-solid);
+  color: var(--rd-resolved-on-solid);
 }
 .rd-status[data-status="CLOSED"] {
   --rd-status: var(--rd-gray);
