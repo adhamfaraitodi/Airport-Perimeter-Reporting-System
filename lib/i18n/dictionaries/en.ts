@@ -1,5 +1,5 @@
 import type { id } from "./id";
-
+//checj
 export const en: typeof id = {
   common: {
     appName: "Airport Perimeter Monitoring System",
