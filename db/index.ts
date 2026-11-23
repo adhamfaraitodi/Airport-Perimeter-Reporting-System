@@ -6,7 +6,7 @@ const connectionString =
   process.env.DATABASE_URL ||
   "postgresql://postgres@127.0.0.1:5432/airport_perimeter";
 
-// Singleton pool for Next.js hot-reloading in development (recreates pool if URL changes)
+// Singleton pool across Next.js dev HMR and warm serverless containers (recreates pool if URL changes)
 const globalForDb = globalThis as unknown as {
   pool: Pool | undefined;
   poolUrl: string | undefined;
@@ -21,15 +21,14 @@ export const pool =
   globalForDb.pool ??
   new Pool({
     connectionString,
-    max: 10,
-    connectionTimeoutMillis: 5000,
+    max: process.env.VERCEL ? 5 : 10,
+    // Allow extra time for Neon serverless scale-to-zero cold starts
+    connectionTimeoutMillis: 15000,
     idleTimeoutMillis: 30000,
   });
 
-if (process.env.NODE_ENV !== "production") {
-  globalForDb.pool = pool;
-  globalForDb.poolUrl = connectionString;
-}
+globalForDb.pool = pool;
+globalForDb.poolUrl = connectionString;
 
 export const db = drizzle(pool, { schema });
 export { schema };

@@ -11,7 +11,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  ...(process.env.VERCEL ? {} : { output: "standalone" }),
   experimental: {
     serverActions: {
       bodySizeLimit: "35mb",

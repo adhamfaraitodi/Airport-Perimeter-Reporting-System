@@ -20,6 +20,32 @@ export const AUTH_SECRET =
   process.env.BETTER_AUTH_SECRET ||
   (isNextBuild ? "build-time-placeholder-secret-not-for-runtime" : "");
 
+function resolveBaseURL(): string {
+  if (process.env.BETTER_AUTH_URL) return process.env.BETTER_AUTH_URL;
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return "http://localhost:3000";
+}
+
+function resolveTrustedOrigins(): string[] {
+  const origins = new Set<string>([resolveBaseURL()]);
+  if (process.env.BETTER_AUTH_URL) origins.add(process.env.BETTER_AUTH_URL);
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    origins.add(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`);
+  }
+  if (process.env.VERCEL_URL) {
+    origins.add(`https://${process.env.VERCEL_URL}`);
+  }
+  if (process.env.NODE_ENV !== "production") {
+    origins.add("http://localhost:3000");
+  }
+  return Array.from(origins);
+}
+
 /**
  * Helper to derive a deterministic internal email from NIP when Better-Auth
  * requires an email address on the user record.
@@ -30,7 +56,8 @@ export function nipToEmail(nip: string): string {
 
 export const auth = betterAuth({
   secret: AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  baseURL: resolveBaseURL(),
+  trustedOrigins: resolveTrustedOrigins(),
   advanced: {
     database: {
       generateId: "uuid",

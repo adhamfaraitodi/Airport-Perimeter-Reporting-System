@@ -1,7 +1,8 @@
-import fs from "fs";
-import path from "path";
 import crypto from "crypto";
 import sharp from "sharp";
+import { getUploadRootDir, uploadImageObject } from "@/lib/storage";
+
+export { getUploadRootDir };
 
 export interface ProcessedEvidencePhoto {
   photoId: string;
@@ -21,19 +22,9 @@ export interface ProcessEvidenceOptions {
 }
 
 /**
- * Resolves the root uploads directory on disk.
- * Uses `UPLOAD_DIR` env var in containerized deployments (e.g. `/app/uploads`)
- * and defaults to `<cwd>/public/uploads` for local development.
- */
-export function getUploadRootDir(): string {
-  return process.env.UPLOAD_DIR
-    ? path.resolve(/*turbopackIgnore: true*/ process.env.UPLOAD_DIR)
-    : path.join(/*turbopackIgnore: true*/ process.cwd(), "public", "uploads");
-}
-
-/**
  * Normalizes and converts uploaded evidence photos (JPEG, PNG, WebP)
  * to compressed, auto-oriented WebP format for optimal storage and fast mobile loading.
+ * Stores in Neon Object Storage (S3) when configured, or local disk in dev.
  */
 export async function processAndSaveEvidencePhoto(
   base64Data: string,
@@ -42,14 +33,6 @@ export async function processAndSaveEvidencePhoto(
   const photoId = crypto.randomUUID();
   const fileName = `${photoId}.webp`;
   const rawSubDir = options?.subDir || "reports";
-  const normalizedSubDir =
-    rawSubDir.replace(/^[/\\]?uploads[/\\]?/, "").replace(/^[/\\]+|[/\\]+$/g, "") ||
-    "reports";
-  const uploadDir = path.join(/*turbopackIgnore: true*/ getUploadRootDir(), normalizedSubDir);
-
-  if (!fs.existsSync(/*turbopackIgnore: true*/ uploadDir)) {
-    fs.mkdirSync(/*turbopackIgnore: true*/ uploadDir, { recursive: true });
-  }
 
   // Strip data URI prefix (e.g. data:image/png;base64,) if present
   const cleaned = base64Data.replace(/^data:image\/\w+;base64,/, "");
@@ -79,15 +62,17 @@ export async function processAndSaveEvidencePhoto(
     .webp({ quality: options?.quality ?? 80, effort: 4 })
     .toBuffer({ resolveWithObject: true });
 
-  const targetPath = path.join(/*turbopackIgnore: true*/ uploadDir, fileName);
-  fs.writeFileSync(/*turbopackIgnore: true*/ targetPath, outputBuffer);
-
-  const relativeUrl = `/uploads/${normalizedSubDir.replace(/\\/g, "/")}/${fileName}`;
+  const filePath = await uploadImageObject({
+    category: rawSubDir,
+    fileName,
+    buffer: outputBuffer,
+    contentType: "image/webp",
+  });
 
   return {
     photoId,
     fileName,
-    filePath: relativeUrl,
+    filePath,
     mimeType: "image/webp",
     sizeBytes: outputBuffer.length,
     width: info.width,
