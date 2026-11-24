@@ -8,6 +8,7 @@ import {
   type FormEvent,
 } from "react";
 import { LocateFixed, Plus, X } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 import {
   api,
   type BeginSubmissionPayload,
@@ -99,6 +100,7 @@ export function UpdateStatusDialog({
   onCancel,
   onLock,
 }: SubmissionFormProps) {
+  const { t } = useTranslation();
   const isTechnician = user.role === "TECHNICIAN";
   const resolvedFixedStatus: LifecycleStatus | undefined =
     fixedStatus ??
@@ -379,7 +381,7 @@ export function UpdateStatusDialog({
     action === "CREATE"
       ? "Buat laporan baru"
       : action === "DELETE"
-        ? "Tutup laporan"
+        ? t.operator.rejection.title
         : isTechnician
           ? "Tandai Sedang Ditangani"
           : isVerifyApprove
@@ -391,7 +393,7 @@ export function UpdateStatusDialog({
   const dialogSubtitle =
     customSubtitle ||
     (action === "DELETE"
-      ? "Penutupan menyembunyikan titik dari peta, bukan menghapus bukti atau menyatakan masalah selesai."
+      ? t.operator.rejection.subtitle
       : action === "CREATE"
         ? "Informasi yang jelas membantu tim menindaklanjuti kondisi perimeter."
         : isTechnician
@@ -404,24 +406,27 @@ export function UpdateStatusDialog({
 
   const narrativeLabelText =
     action === "DELETE"
-      ? "Alasan penutupan"
+      ? t.operator.rejection.reasonLabel
       : isVerifyApprove
         ? "Narasi verifikasi lapangan"
         : isVerifyReturn
           ? "Alasan pengembalian (kondisi lapangan)"
           : "Narasi laporan / tindakan";
 
-  const narrativePlaceholderText = isVerifyApprove
-    ? "Catat hasil pengecekan aktual di lapangan dan konfirmasi kelayakan perbaikan."
-    : isVerifyReturn
-      ? "Jelaskan kekurangan hasil perbaikan di lapangan agar dapat ditindaklanjuti kembali oleh teknisi."
-      : "Jelaskan kondisi, titik patokan, dan tindakan yang diperlukan.";
+  const narrativePlaceholderText =
+    action === "DELETE"
+      ? t.operator.rejection.reasonPlaceholder
+      : isVerifyApprove
+        ? "Catat hasil pengecekan aktual di lapangan dan konfirmasi kelayakan perbaikan."
+        : isVerifyReturn
+          ? "Jelaskan kekurangan hasil perbaikan di lapangan agar dapat ditindaklanjuti kembali oleh teknisi."
+          : "Jelaskan kondisi, titik patokan, dan tindakan yang diperlukan.";
 
   const submitLabelText =
     action === "CREATE"
       ? "Kirim laporan →"
       : action === "DELETE"
-        ? "Konfirmasi penutupan"
+        ? t.operator.rejection.confirmAction
         : isTechnician
           ? "Kirim untuk Verifikasi"
           : isVerifyApprove

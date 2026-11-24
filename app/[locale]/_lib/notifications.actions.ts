@@ -465,7 +465,7 @@ export async function dispatchReportNotificationAction(params: {
             part,
             side,
             grid,
-            note: params.narrative || "Ditutup oleh operator",
+            note: params.narrative || "Ditolak oleh operator",
           },
           targetUserId: reporterUserId,
         });

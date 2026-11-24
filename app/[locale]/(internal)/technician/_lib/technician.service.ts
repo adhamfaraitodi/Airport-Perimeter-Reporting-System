@@ -60,7 +60,7 @@ export async function executeTechnicianStatusUpdate(
 
   if (report.deletedAt || report.status === "CLOSED") {
     throw new Error(
-      "Laporan telah ditutup oleh Operator dan tidak dapat dimodifikasi lagi."
+      "Laporan telah ditolak oleh Operator dan tidak dapat dimodifikasi lagi."
     );
   }
 

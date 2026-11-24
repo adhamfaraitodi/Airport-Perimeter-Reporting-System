@@ -310,7 +310,7 @@ export async function commitReportSubmissionAction(input: CommitReportSubmission
     const previousStatus = report.status;
 
     if (report.deletedAt || report.status === "CLOSED") {
-      throw new Error("Laporan telah ditutup dan tidak dapat diubah statusnya.");
+      throw new Error("Laporan telah ditolak dan tidak dapat diubah statusnya.");
     }
 
     if (payload.expectedStatus && report.status !== payload.expectedStatus) {
@@ -321,8 +321,8 @@ export async function commitReportSubmissionAction(input: CommitReportSubmission
       if (!canRoleCloseReport(userRole, report.status)) {
         throw new Error(
           report.status === "RESOLVED"
-            ? "Laporan yang sudah selesai tidak dapat ditutup."
-            : "Hanya Operator atau Chief yang dapat menutup laporan."
+            ? "Laporan yang sudah selesai tidak dapat ditolak."
+            : "Hanya Operator atau Chief yang dapat menolak laporan."
         );
       }
 

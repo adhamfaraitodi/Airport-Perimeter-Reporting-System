@@ -13,6 +13,7 @@ import {
   ZoomIn,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "@/lib/i18n";
 import {
   formatApprovalLabel,
   getApprovalInfo,
@@ -27,7 +28,7 @@ const states: Record<string, { label: string; icon: typeof ClipboardClock }> = {
   OPEN: { label: "Laporan", icon: ClipboardClock },
   IN_PROGRESS: { label: "Ditangani", icon: ClipboardPen },
   RESOLVED: { label: "Selesai", icon: ClipboardCheck },
-  CLOSED: { label: "Ditutup", icon: ClipboardX },
+  CLOSED: { label: "Ditolak", icon: ClipboardX },
 };
 
 const button =
@@ -42,6 +43,7 @@ function timestamp(value?: string | null) {
 }
 
 function Status({ status }: { status: string }) {
+  const { t } = useTranslation();
   const item = states[status] || states.OPEN;
   return (
     <span
@@ -49,7 +51,7 @@ function Status({ status }: { status: string }) {
       className="rd-status inline-flex items-center gap-1 rounded-full bg-[var(--rd-tint)] px-2 py-0.5 text-sm text-[var(--rd-status)]"
     >
       <span className="size-1.5 rounded-full bg-current" />
-      {item.label}
+      {status === "CLOSED" ? t.status.CLOSED : item.label}
     </span>
   );
 }
@@ -172,6 +174,7 @@ export interface ReportDetailProps {
 }
 
 export function ReportDetail({ report, onBack }: ReportDetailProps) {
+  const { t } = useTranslation();
   const dialog = useRef<HTMLDialogElement | null>(null);
   const [photo, setPhoto] = useState<{ url: string; label: string } | null>(
     null
@@ -258,14 +261,13 @@ export function ReportDetail({ report, onBack }: ReportDetailProps) {
               className="rounded-lg border border-[var(--rd-border)] bg-[var(--rd-bg)] p-3"
             >
               <h3 id="closed-heading" className={heading}>
-                Laporan ditutup
+                {t.operator.rejection.bannerTitle}
               </h3>
               <p className={`${small} m-0 mb-2`}>
-                Penutupan menyembunyikan laporan dari tampilan aktif tanpa
-                menghapus riwayat dan bukti.
+                {t.operator.rejection.bannerDescription}
               </p>
               <p className="m-0 text-base whitespace-pre-wrap [overflow-wrap:anywhere]">
-                {(report as any).deleteReason || report.deletionReason || "Alasan penutupan tidak tercatat."}
+                {(report as any).deleteReason || report.deletionReason || t.operator.rejection.reasonMissing}
               </p>
             </section>
           )}

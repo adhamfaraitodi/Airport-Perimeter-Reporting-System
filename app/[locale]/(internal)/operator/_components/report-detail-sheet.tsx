@@ -6,6 +6,7 @@ import Gallery from "../../../_components/photo-gallery";
 import MapView from "../../../_components/perimeter-map-view";
 import type { ReportRecord } from "../../../_lib/client-api";
 import { dateText, labels } from "../../../_lib/draft-store";
+import { useTranslation } from "@/lib/i18n";
 import {
   formatApprovalLabel,
   getApprovalInfo,
@@ -21,11 +22,12 @@ import {
 } from "../../../_lib/ui-classes";
 
 export function ReportStatusBadge({ report }: { report: ReportRecord }) {
+  const { t } = useTranslation();
   const statusKey = report.deletedAt ? "CLOSED" : report.status;
   return (
     <span data-status={statusKey} className={statusPill}>
       <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
-      {report.deletedAt ? "Ditutup" : labels[report.status] || report.status}
+      {report.deletedAt ? t.status.CLOSED : labels[report.status] || report.status}
     </span>
   );
 }
@@ -59,6 +61,7 @@ export function ReportDetailSheet({
   onVerifyAction,
   onBack,
 }: ReportDetailSheetProps) {
+  const { t } = useTranslation();
   const findingLabel = report.findings?.length
     ? report.findings.map((f) => f.partName).join(", ")
     : `Perimeter sisi ${report.side || "belum ditentukan"}`;
@@ -135,7 +138,7 @@ export function ReportDetailSheet({
       <Gallery images={report.images} />
       {report.deletedAt && (
         <div className="my-5 border-l-[3px] border-solid border-[var(--rd-brown)] bg-[var(--rd-bg)] p-[15px] text-sm">
-          <strong>Laporan ditutup · {dateText(report.deletedAt)}</strong>
+          <strong>{t.operator.rejection.bannerTitle} · {dateText(report.deletedAt)}</strong>
           <p className={`${narrative} mt-2.5`}>{report.deletionReason}</p>
           <span>Status penanganan terakhir: {labels[report.status]}</span>
         </div>
@@ -206,7 +209,7 @@ export function ReportDetailSheet({
                   }
                 }}
               >
-                Tutup laporan
+                {t.operator.rejection.action}
               </button>
             )}
           </div>
@@ -223,7 +226,7 @@ export function ReportDetailSheet({
                     ? "Dikembalikan ke Teknisi"
                     : labels[item.status] ||
                       (item.status === "DELETE" || item.status === "CLOSED"
-                        ? "Ditutup"
+                        ? t.status.CLOSED
                         : item.status) ||
                       "Pembaruan laporan"}
                 </strong>
