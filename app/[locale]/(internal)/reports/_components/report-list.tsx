@@ -33,7 +33,7 @@ const states: Record<
   OPEN: { icon: ClipboardClock, label: "Laporan" },
   IN_PROGRESS: { icon: ClipboardPen, label: "Ditangani" },
   RESOLVED: { icon: ClipboardCheck, label: "Selesai" },
-  CLOSED: { icon: ClipboardX, label: "Ditutup" },
+  CLOSED: { icon: ClipboardX, label: "Ditolak" },
 };
 
 const button =
@@ -269,7 +269,7 @@ export function ReportList({
                     className="rounded-xl border-2 border-[var(--rd-border)] bg-[var(--rd-surface)] px-2 py-2.5 sm:flex sm:items-center sm:gap-3.5 sm:p-4 lg:border lg:bg-[var(--rd-bg)]/50 lg:px-4 lg:py-3.5"
                     title={
                       status === "OPEN"
-                        ? locale === "en" ? "New and ongoing reports, excluding closed" : "Laporan baru dan sedang ditangani, tidak termasuk laporan ditutup"
+                        ? locale === "en" ? "New and ongoing reports, excluding rejected" : "Laporan baru dan sedang ditangani, tidak termasuk laporan ditolak"
                         : label
                     }
                   >

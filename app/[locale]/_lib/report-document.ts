@@ -153,7 +153,7 @@ export async function downloadReportPdf(report: ReportRecord): Promise<void> {
 
     // Status label
     const statusLabel = report.deletedAt
-      ? "Ditutup"
+      ? "Ditolak"
       : labels[report.status] || report.status;
 
     // 3. Section 1: Informasi Umum Laporan (Table)
@@ -177,10 +177,10 @@ export async function downloadReportPdf(report: ReportRecord): Promise<void> {
     ];
 
     if (report.deletedAt) {
-      generalInfo.push(["Waktu Ditutup", dateText(report.deletedAt)]);
+      generalInfo.push(["Waktu Ditolak", dateText(report.deletedAt)]);
       generalInfo.push([
-        "Alasan Penutupan",
-        report.deletionReason || "Ditutup oleh operator",
+        "Alasan Penolakan",
+        report.deletionReason || "Ditolak oleh operator",
       ]);
     }
 
@@ -283,7 +283,7 @@ export async function downloadReportPdf(report: ReportRecord): Promise<void> {
         const hStatus =
           labels[h.status] ||
           (h.status === "DELETE" || h.status === "CLOSED"
-            ? "Ditutup"
+            ? "Ditolak"
             : h.status);
         return [
           String(idx + 1),
@@ -435,7 +435,7 @@ export interface DownloadAllReportsOptions {
  * 4. Bagian & Jenis Kerusakan
  * 5. Nama Pelapor
  * 6. Status
- * 7. Keterangan (Seluruh catatan: temuan awal, sedang diperbaiki, telah ditangani, ditutup)
+ * 7. Keterangan (Seluruh catatan: temuan awal, sedang diperbaiki, telah ditangani, ditolak)
  */
 export async function downloadAllReportsPdf(
   reports: ReportRecord[],
@@ -538,7 +538,7 @@ export async function downloadAllReportsPdf(
 
       // Kolom: Status
       const statusStr = r.deletedAt
-        ? "Ditutup"
+        ? "Ditolak"
         : labels[r.status] || r.status;
 
       // Kolom: Keterangan (seluruh catatan dari temuan, sedang diperbaiki, telah ditangani)
@@ -549,7 +549,7 @@ export async function downloadAllReportsPdf(
       if (r.history && r.history.length > 0) {
         for (const h of r.history) {
           if (h.narrative && h.narrative.trim()) {
-            const st = labels[h.status] || (h.status === "CLOSED" ? "Ditutup" : h.status);
+            const st = labels[h.status] || (h.status === "CLOSED" ? "Ditolak" : h.status);
             const actor = h.actorName ? ` (${h.actorName})` : "";
             noteLines.push(`• ${st}${actor}: ${h.narrative.trim()}`);
           }
@@ -558,7 +558,7 @@ export async function downloadAllReportsPdf(
       if (r.deletionReason && r.deletionReason.trim()) {
         const alreadyIncluded = noteLines.some((line) => line.includes(r.deletionReason!.trim()));
         if (!alreadyIncluded) {
-          noteLines.push(`• Ditutup: ${r.deletionReason.trim()}`);
+          noteLines.push(`• Ditolak: ${r.deletionReason.trim()}`);
         }
       }
       const keterangan = noteLines.length > 0 ? noteLines.join("\n") : "-";

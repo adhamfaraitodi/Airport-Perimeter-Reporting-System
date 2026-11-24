@@ -344,7 +344,7 @@ export default function TechnicianDashboardPage() {
                 }
                 statusActionLabel={
                   selected.deletedAt
-                    ? "Laporan Ditutup"
+                    ? t.operator.rejection.statusLabel
                     : selected.status === "OPEN"
                       ? "Tandai Ditangani"
                       : selected.status === "IN_PROGRESS"

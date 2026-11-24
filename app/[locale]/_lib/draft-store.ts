@@ -43,7 +43,7 @@ export const labels: Record<string, string> = {
   OPEN: "Laporan",
   IN_PROGRESS: "Ditangani",
   RESOLVED: "Selesai",
-  CLOSED: "Ditutup",
+  CLOSED: "Ditolak",
 };
 
 export const countText = (text: string): number => Array.from(text || "").length;

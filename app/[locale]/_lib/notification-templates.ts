@@ -36,7 +36,7 @@ const statusLabels: Record<string, { id: string; en: string }> = {
   OPEN: { id: "Laporan", en: "New" },
   IN_PROGRESS: { id: "Sedang Ditangani", en: "In Progress" },
   RESOLVED: { id: "Selesai Ditangani", en: "Resolved" },
-  CLOSED: { id: "Ditutup", en: "Closed" },
+  CLOSED: { id: "Ditolak", en: "Rejected" },
 };
 
 export const NOTIFICATION_TEMPLATES: Record<
@@ -139,18 +139,18 @@ export const NOTIFICATION_TEMPLATES: Record<
       },
     },
     REPORT_CLOSED_REPORTER: {
-      title: () => "Laporan Ditutup oleh Operator",
+      title: () => "Laporan Ditolak oleh Operator",
       description: (p) =>
         `Laporan ${p.part || "perimeter"} di Sisi ${
           p.side || "-"
-        } telah ditutup. Catatan: ${p.note || "Ditutup oleh operator"}`,
+        } ditolak. Alasan: ${p.note || "Ditolak oleh operator"}`,
     },
     REPORT_CLOSED_TECHNICIAN: {
-      title: () => "Laporan Ditutup",
+      title: () => "Laporan Ditolak",
       description: (p) =>
         `Laporan ${p.part || "perimeter"} di Sisi ${
           p.side || "-"
-        } telah ditutup oleh operator pengendali.`,
+        } telah ditolak oleh operator pengendali.`,
     },
     SYSTEM_ALERT: {
       title: (p) => p.title || "Notifikasi Sistem",
@@ -254,18 +254,18 @@ export const NOTIFICATION_TEMPLATES: Record<
       },
     },
     REPORT_CLOSED_REPORTER: {
-      title: () => "Report Closed by Operator",
+      title: () => "Report Rejected by Operator",
       description: (p) =>
         `Report for ${p.part || "perimeter"} on ${
           p.side || "-"
-        } Side has been closed. Reason: ${p.note || "Closed by operator"}`,
+        } Side has been rejected. Reason: ${p.note || "Rejected by operator"}`,
     },
     REPORT_CLOSED_TECHNICIAN: {
-      title: () => "Report Closed",
+      title: () => "Report Rejected",
       description: (p) =>
         `Report for ${p.part || "perimeter"} on ${
           p.side || "-"
-        } Side has been closed by control operator.`,
+        } Side has been rejected by control operator.`,
     },
     SYSTEM_ALERT: {
       title: (p) => p.title || "System Notification",

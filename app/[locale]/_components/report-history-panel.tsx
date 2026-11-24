@@ -34,7 +34,7 @@ export const REPORT_STATUS_FILTERS = [
   ["OPEN", "Laporan"],
   ["IN_PROGRESS", "Ditangani"],
   ["RESOLVED", "Selesai"],
-  ["CLOSED", "Ditutup"],
+  ["CLOSED", "Ditolak"],
 ] as const;
 
 export type FilterStatus = (typeof REPORT_STATUS_FILTERS)[number][0];
@@ -691,7 +691,7 @@ export function ReportHistoryPanel({
             </div>
 
             <p className="mb-4 text-sm leading-relaxed text-[var(--rd-muted)]">
-              Pilih rentang tanggal laporan yang akan disertakan. Seluruh laporan dengan berbagai status (Laporan, Ditangani, Selesai, Ditutup) dalam rentang ini akan diekspor.
+              Pilih rentang tanggal laporan yang akan disertakan. Seluruh laporan dengan berbagai status (Laporan, Ditangani, Selesai, Ditolak) dalam rentang ini akan diekspor.
             </p>
 
             {/* Date inputs */}
@@ -733,7 +733,7 @@ export function ReportHistoryPanel({
               <span className="mt-1 block text-[11px] text-[var(--rd-muted)]">
                 {matchingReports.length === 0
                   ? "Tidak ada laporan pada rentang tanggal ini."
-                  : "Mencakup semua status: Laporan, Ditangani, Selesai, dan Ditutup."}
+                  : "Mencakup semua status: Laporan, Ditangani, Selesai, dan Ditolak."}
               </span>
             </div>
 
