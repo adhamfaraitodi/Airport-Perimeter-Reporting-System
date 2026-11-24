@@ -12,7 +12,10 @@ import { useTheme } from "../../_lib/use-theme";
 import { alertBox, focusRing } from "../../_lib/ui-classes";
 import { AppHeader } from "../../_components/app-header";
 import { toast } from "@/components/ui/sonner";
-import { calculatePerimeterReadiness } from "@/lib/perimeter-readiness";
+import {
+  calculateCategoryDamageBreakdown,
+  calculatePerimeterReadiness,
+} from "@/lib/perimeter-readiness";
 import { PerimeterMap } from "./_components/perimeter-map";
 import { PerimeterReadinessCard } from "./_components/perimeter-readiness-card";
 import { ReportDetailSheet } from "./_components/report-detail-sheet";
@@ -129,6 +132,11 @@ export default function DashboardPage() {
     [reports]
   );
 
+  const categoryBreakdown = useMemo(
+    () => calculateCategoryDamageBreakdown(reports),
+    [reports]
+  );
+
   const selected = reports.find((report) => report.id === selectedId) || null;
   const isOperatorOrChief =
     user?.role === "OPERATOR" || user?.role === "CHIEF";
@@ -158,11 +166,15 @@ export default function DashboardPage() {
 
         <PerimeterReadinessCard
           summary={readiness}
+          categoryBreakdown={categoryBreakdown}
           loading={loading}
           activeSearch={search}
           onSelectGrid={(code) => {
+            if (!pendingAction && !locked) setSelectedId(null);
             setFilter("ALL");
-            setSearch((prev) => (prev.toUpperCase() === code ? "" : code));
+            setSearch((prev) =>
+              prev.trim().toUpperCase() === code ? "" : code
+            );
           }}
         />
 
@@ -194,7 +206,7 @@ export default function DashboardPage() {
             </button>
           </div>
         )}
-        <div className="flex h-auto min-h-0 flex-col md:grid md:h-[calc(100dvh-350px)] md:min-h-[520px] md:grid-cols-[minmax(0,1fr)_400px] md:gap-3 min-[1100px]:grid-cols-[minmax(0,1fr)_580px] min-[1100px]:gap-5">
+        <div className="flex h-auto min-h-0 flex-col md:grid md:h-[calc(100dvh-435px)] md:min-h-[500px] md:grid-cols-[minmax(0,1fr)_400px] md:gap-3 min-[1100px]:grid-cols-[minmax(0,1fr)_580px] min-[1100px]:gap-5">
           <PerimeterMap
             reports={visible}
             damagedGridCodes={readiness.damagedGridCodes}

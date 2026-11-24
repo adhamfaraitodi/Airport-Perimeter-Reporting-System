@@ -18,6 +18,17 @@ export interface PerimeterReadinessSummary {
   resolvedCount: number;
 }
 
+export interface CategoryDamageCount {
+  partId: string;
+  partName: string;
+  count: number;
+}
+
+export interface CategoryDamageBreakdown {
+  totalActiveDamages: number;
+  categories: CategoryDamageCount[];
+}
+
 const SNAP_THRESHOLD_CELLS = 0.25;
 
 /**
@@ -129,5 +140,68 @@ export function calculatePerimeterReadiness(
     openCount,
     awaitingVerificationCount,
     resolvedCount,
+  };
+}
+
+/**
+ * Counts active damage items (`damages.length`) per impacted perimeter part across
+ * active (`OPEN` | `IN_PROGRESS` and not soft-deleted) reports.
+ * Returns only categories with active damages (`count > 0`), ordered by count desc then name asc.
+ */
+export function calculateCategoryDamageBreakdown(
+  reports: ReadonlyArray<
+    Pick<ReportRecord, "status" | "deletedAt" | "findings">
+  >
+): CategoryDamageBreakdown {
+  const buckets = new Map<string, CategoryDamageCount>();
+  const nameToKey = new Map<string, string>();
+  let totalActiveDamages = 0;
+
+  for (const report of reports) {
+    if (report.deletedAt) continue;
+    if (report.status !== "OPEN" && report.status !== "IN_PROGRESS") continue;
+
+    for (const finding of report.findings ?? []) {
+      const damageCount = Array.isArray(finding.damages)
+        ? finding.damages.length
+        : 0;
+      if (damageCount === 0) continue;
+
+      const rawPartId = finding.partId?.trim() || "";
+      const rawPartName = finding.partName?.trim() || "";
+      const normalizedName = rawPartName.toLocaleLowerCase("id");
+
+      const key =
+        (rawPartId && buckets.has(rawPartId) ? rawPartId : "") ||
+        (normalizedName ? nameToKey.get(normalizedName) || "" : "") ||
+        rawPartId ||
+        normalizedName;
+
+      if (!key) continue;
+
+      let entry = buckets.get(key);
+      if (!entry) {
+        entry = {
+          partId: rawPartId || key,
+          partName: rawPartName || rawPartId,
+          count: 0,
+        };
+        buckets.set(key, entry);
+        if (normalizedName) nameToKey.set(normalizedName, key);
+      }
+
+      entry.count += damageCount;
+      totalActiveDamages += damageCount;
+    }
+  }
+
+  const categories = Array.from(buckets.values()).sort(
+    (a, b) =>
+      b.count - a.count || a.partName.localeCompare(b.partName, "id")
+  );
+
+  return {
+    totalActiveDamages,
+    categories,
   };
 }

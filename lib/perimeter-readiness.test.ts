@@ -6,6 +6,7 @@ import {
   PERIMETER_GRID_TOTAL,
 } from "../app/[locale]/_data/perimeter-grids";
 import {
+  calculateCategoryDamageBreakdown,
   calculatePerimeterReadiness,
   resolvePerimeterGridCode,
 } from "./perimeter-readiness";
@@ -164,4 +165,108 @@ assert.equal(PERIMETER_GRID_SET.size, 60, "PERIMETER_GRID_SET must contain 60 un
   assert.equal(summary.awaitingVerificationCount, 1);
 }
 
-console.log("PASS: lib/perimeter-readiness.test.ts (all 7 test suites passed)");
+// 8. Category damage breakdown returns only impacted categories (OPEN + IN_PROGRESS) ordered by count desc then name asc
+{
+  const breakdown = calculateCategoryDamageBreakdown([
+    {
+      status: "OPEN",
+      deletedAt: null,
+      findings: [
+        {
+          partId: "pondasi",
+          partName: "Pondasi",
+          damages: [
+            { id: "d1", name: "Retak" },
+            { id: "d2", name: "Runtuh" },
+          ],
+        },
+        {
+          partId: "pagar-harmonika",
+          partName: "Pagar Harmonika /BRC",
+          damages: [{ id: "d3", name: "Robek" }],
+        },
+      ],
+    },
+    {
+      status: "IN_PROGRESS",
+      deletedAt: null,
+      findings: [
+        {
+          partId: "pondasi",
+          partName: "Pondasi",
+          damages: [{ id: "d4", name: "Miring" }],
+        },
+        {
+          partId: "legacy-part",
+          partName: "Pintu Gerbang",
+          damages: [{ id: "d5", name: "Engsel Lepas" }],
+        },
+      ],
+    },
+    {
+      status: "RESOLVED",
+      deletedAt: null,
+      findings: [
+        {
+          partId: "tiang-pagar",
+          partName: "Tiang Pagar",
+          damages: [{ id: "d6", name: "Patah" }],
+        },
+      ],
+    },
+    {
+      status: "OPEN",
+      deletedAt: "2026-11-20T08:00:00.000Z",
+      findings: [
+        {
+          partId: "tiang-pagar",
+          partName: "Tiang Pagar",
+          damages: [{ id: "d7", name: "Miring" }],
+        },
+      ],
+    },
+  ]);
+
+  assert.equal(breakdown.totalActiveDamages, 5);
+  assert.deepEqual(breakdown.categories, [
+    { partId: "pondasi", partName: "Pondasi", count: 3 },
+    { partId: "pagar-harmonika", partName: "Pagar Harmonika /BRC", count: 1 },
+    { partId: "legacy-part", partName: "Pintu Gerbang", count: 1 },
+  ]);
+}
+
+// 9. Category damage breakdown returns empty when no active damages exist and skips empty findings
+{
+  const emptyBreakdown = calculateCategoryDamageBreakdown([]);
+  assert.equal(emptyBreakdown.totalActiveDamages, 0);
+  assert.deepEqual(emptyBreakdown.categories, []);
+
+  const filteredBreakdown = calculateCategoryDamageBreakdown([
+    {
+      status: "OPEN",
+      deletedAt: null,
+      findings: [
+        {
+          partId: "kawat-duri",
+          partName: "Kawat Duri /Razor",
+          damages: [
+            { id: "k1", name: "Putus" },
+            { id: "k2", name: "Kendur" },
+          ],
+        },
+        {
+          partId: "pondasi",
+          partName: "Pondasi",
+          damages: [],
+        },
+      ],
+    },
+  ]);
+
+  assert.equal(filteredBreakdown.totalActiveDamages, 2);
+  assert.deepEqual(filteredBreakdown.categories, [
+    { partId: "kawat-duri", partName: "Kawat Duri /Razor", count: 2 },
+  ]);
+}
+
+console.log("PASS: lib/perimeter-readiness.test.ts (all 9 test suites passed)");
