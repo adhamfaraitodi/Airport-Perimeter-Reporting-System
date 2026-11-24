@@ -43,10 +43,9 @@ const navigationBounds = L.latLngBounds(
   NAVIGATION_BOUNDS_BOX.northEast
 );
 
-const pinClass =
-  "rd-status block size-[20px] -rotate-45 rounded-[50%_50%_50%_3px] border-[3px] border-solid border-white bg-[var(--rd-status)] shadow-[0_2px_8px_rgba(41,74,56,0.38)]";
-const pinSelectedClass =
-  "outline-3 outline-offset-3 outline-solid outline-[var(--rd-text)]";
+// Geometry mirrored from public/iconPin.svg (path bounds 43.75 x 87.5 centered at x=50)
+const ICON_PIN_PATH =
+  "M53.125 49.7734V90.625C53.125 91.4538 52.7958 92.2487 52.2097 92.8347C51.6237 93.4208 50.8288 93.75 50 93.75C49.1712 93.75 48.3764 93.4208 47.7903 92.8347C47.2043 92.2487 46.875 91.4538 46.875 90.625V49.7734C41.4013 48.9834 36.43 46.1493 32.9616 41.8417C29.4932 37.534 27.7852 32.0725 28.1812 26.5563C28.5772 21.04 31.048 15.8786 35.0962 12.1106C39.1444 8.34258 44.4696 6.2478 50 6.2478C55.5305 6.2478 60.8557 8.34258 64.9039 12.1106C68.9521 15.8786 71.4228 21.04 71.8189 26.5563C72.2149 32.0725 70.5069 37.534 67.0385 41.8417C63.5701 46.1493 58.5988 48.9834 53.125 49.7734Z";
 
 const icon = (status: string, selected = false) => {
   const safeStatus = ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"].includes(
@@ -56,11 +55,13 @@ const icon = (status: string, selected = false) => {
     : "LOCATION";
   return L.divIcon({
     className: "",
-    html: `<span data-status="${safeStatus}" class="${pinClass}${
-      selected ? ` ${pinSelectedClass}` : ""
-    }"></span>`,
-    iconSize: [20, 24],
-    iconAnchor: [10, 23],
+    html: `<svg data-status="${safeStatus}" viewBox="18 -4 64 108" width="20" height="34" fill="none" aria-hidden="true" class="rd-status block overflow-visible" style="filter:drop-shadow(0 2px 4px rgba(41,74,56,0.38))">${
+      selected
+        ? `<path d="${ICON_PIN_PATH}" fill="none" stroke-width="16" stroke-linejoin="round" stroke-linecap="round" style="stroke:var(--rd-text)"/>`
+        : ""
+    }<path d="${ICON_PIN_PATH}" stroke="#ffffff" stroke-width="9" stroke-linejoin="round" style="fill:var(--rd-status);paint-order:stroke fill"/></svg>`,
+    iconSize: [20, 34],
+    iconAnchor: [10, 31],
   });
 };
 
