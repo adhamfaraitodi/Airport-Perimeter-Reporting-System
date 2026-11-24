@@ -128,6 +128,7 @@ export const id = {
     perimeterSide: "Perimeter sisi",
     side: "Sisi",
     grid: "Grid",
+    pinCoordinates: "Koordinat pin",
     unmappedSegment: "Segmen belum dipetakan",
     findingsFallback: "Laporan temuan perimeter",
     noNarrative: "Tidak ada narasi tambahan",
@@ -174,6 +175,9 @@ export const id = {
       awaitingVerificationLabel: "Menunggu Verifikasi",
       resolvedLabel: "Selesai",
       moreCount: "lainnya",
+      categoryTitle: "Kerusakan per Kategori",
+      activeDamagesUnit: "temuan aktif",
+      noCategoryData: "Tidak ada kategori terdampak saat ini",
     },
     verification: {
       approveAction: "Verifikasi Selesai",

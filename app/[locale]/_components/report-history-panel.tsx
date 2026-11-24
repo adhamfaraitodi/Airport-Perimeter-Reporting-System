@@ -15,6 +15,7 @@ import {
   Images,
   Loader2,
   MapPin,
+  MapPinned,
   Search,
   ShieldCheck,
   UserRound,
@@ -64,6 +65,21 @@ export function formatReportDate(
   return `${df.format(date)} WIB`;
 }
 
+export function formatReportCoordinates(
+  latitude?: number | null,
+  longitude?: number | null
+): string | null {
+  if (
+    typeof latitude !== "number" ||
+    typeof longitude !== "number" ||
+    !Number.isFinite(latitude) ||
+    !Number.isFinite(longitude)
+  ) {
+    return null;
+  }
+  return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+}
+
 export interface ReportCardItemProps {
   report: ReportRecord;
   selected?: boolean;
@@ -102,6 +118,10 @@ export function ReportCardItem({
     );
 
   const displayId = `#${String(report.id).slice(-6).toUpperCase()}`;
+  const coordinatesLabel = formatReportCoordinates(
+    report.latitude,
+    report.longitude
+  );
 
   return (
     <div
@@ -208,6 +228,20 @@ export function ReportCardItem({
                 ? `${t.historyPanel.side} ${report.side}`
                 : t.historyPanel.unmappedSegment}
           </span>
+          {coordinatesLabel && (
+            <span
+              className="inline-flex min-w-0 items-center gap-1.5 tabular-nums"
+              title={t.historyPanel.pinCoordinates}
+            >
+              <MapPinned
+                size={15}
+                className="shrink-0 text-[var(--rd-link)]"
+                aria-hidden="true"
+              />
+              <span className="sr-only">{t.historyPanel.pinCoordinates}: </span>
+              <span>{coordinatesLabel}</span>
+            </span>
+          )}
           <span className="inline-flex items-center gap-1.5">
             <UserRound
               size={15}

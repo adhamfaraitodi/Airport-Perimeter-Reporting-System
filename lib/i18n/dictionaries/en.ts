@@ -130,6 +130,7 @@ export const en: typeof id = {
     perimeterSide: "Perimeter side",
     side: "Side",
     grid: "Grid",
+    pinCoordinates: "Pin coordinates",
     unmappedSegment: "Unmapped segment",
     findingsFallback: "Perimeter findings report",
     noNarrative: "No additional narrative",
@@ -176,6 +177,9 @@ export const en: typeof id = {
       awaitingVerificationLabel: "Awaiting Verification",
       resolvedLabel: "Resolved",
       moreCount: "more",
+      categoryTitle: "Damage by Category",
+      activeDamagesUnit: "active items",
+      noCategoryData: "No impacted categories at the moment",
     },
     verification: {
       approveAction: "Verify & Approve",
