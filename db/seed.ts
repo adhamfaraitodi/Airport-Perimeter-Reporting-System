@@ -205,7 +205,19 @@ async function seed() {
         );
       }
     } else {
-      console.log(`  = User NIP ${item.nip} sudah ada (lewati).`);
+      await db
+        .update(schema.user)
+        .set({
+          role: item.role,
+          status: "ACTIVE",
+          username: item.nip,
+          displayUsername: item.name,
+          position: item.position || "Officer",
+          unit: item.unit,
+          phone: item.phone,
+        })
+        .where(eq(schema.user.id, existing[0].id));
+      console.log(`  = User NIP ${item.nip} sudah ada (disinkronkan).`);
     }
   }
 
